@@ -1,0 +1,38 @@
+LOADMANAGER.CS - INITIAL TUTORIAL ROUTING
+=========================================
+
+Implemented scene-name correction
+---------------------------------
+The Tutorial scene is named TUTORIAL. The previous mixed-case "Tutorial" string
+could fail on case-sensitive platforms. tutorialSceneName now defaults to the
+correct exact name.
+
+New Inspector routing fields
+----------------------------
+initialTutorialId
+    Stable ID checked at startup. Default: sorting.initial.
+
+tutorialSceneName
+    Scene loaded before that Tutorial is completed. Default: TUTORIAL.
+
+firstLevelSceneName
+    Scene loaded after completion. Default: Level1.
+
+LoadGame flow
+-------------
+LoadGame activates the loading screen, creates the small
+PlayerPrefsTutorialCompletionStore through its interface, and asks whether
+initialTutorialId is completed.
+
+- Not completed: destination is TUTORIAL.
+- Completed: destination is Level1.
+
+The existing minimum-duration asynchronous loading coroutine is then started for
+that destination. This prevents a returning player from being routed into an empty
+Tutorial scene after the one-time Tutorial has already been completed.
+
+Unchanged behavior
+------------------
+The loading bar, minimum eight-second display, asynchronous activation, singleton,
+and loading-screen cleanup remain unchanged.
+

@@ -1,0 +1,98 @@
+BOX.CS - DRAG LIFECYCLE SIGNALS
+===============================
+
+Purpose of this change
+----------------------
+Box already owns mouse drag input. The old implementation also called
+HandAnimation and ToolTipTutorial directly. That mixed gameplay input with one
+specific Tutorial and caused a rejected second click to appear to advance a valid
+placement.
+
+Box now reports drag facts. It no longer decides what those facts mean to a
+Tutorial.
+
+New events
+----------
+DragStarted is an Action<Box>. It is raised only after all drag-start validation
+succeeds, the pointer is projected onto the drag plane, dragOffset is calculated,
+and isDragging becomes true.
+
+DropRejectedOrCancelled is an Action<Box>. It is raised when a drag that actually
+started is rejected by Board or is cancelled because interaction becomes
+unavailable.
+
+These are instance events. SortingTutorialController subscribes only to Boxes in
+the active stage, which avoids receiving input from unrelated objects.
+
+OnMouseDown execution
+---------------------
+Existing Hammer and Swap checks still run first for Boxes already on the Board.
+Rail dragging still stops for retired, already-dragged, or Board Boxes; a finished
+game; a resolving Board; a missing Camera; or a pointer that cannot reach the drag
+plane.
+
+Only after these checks does Box:
+
+1. Save startPos.
+2. Create the drag plane.
+3. Calculate dragOffset.
+4. Set isDragging true.
+5. Invoke DragStarted(this).
+
+The Tutorial uses this event to hide guidance while the player is performing the
+gesture. It does not mark progress here because a drag can still be cancelled.
+
+OnMouseUp execution
+-------------------
+Box asks Board.TryPlaceBox to accept the current drop. There are two outcomes:
+
+Valid drop:
+    Board accepts the Box. Box does not call the Tutorial. Board's
+    PlacementAccepted event is the authoritative success signal.
+
+Invalid drop:
+    Box returns to startPos and invokes DropRejectedOrCancelled(this). The sorting
+    Tutorial keeps the same step and restarts the same Hand instruction.
+
+This separation fixes the extra-click bug. A successful mouse-up advances through
+Board.PlacementAccepted. A later invalid click cannot accidentally provide the
+missing success transition.
+
+CancelDrag execution
+--------------------
+CancelDrag records whether a drag was active before clearing isDragging. It
+restores startPos and clears the highlighted Node. It raises the cancellation event
+only when wasDragging is true, preventing false rejection notifications from
+cleanup calls that did not represent a player drag.
+
+Removed coupling
+----------------
+The active Box implementation no longer calls:
+
+- HandAnimation.instance.TryRestartAnimation after an invalid drop.
+- ToolTipTutorial.instance.CompleteAnim after a valid drop.
+- SpawnContoller.isTutorialState to decide Tutorial UI behavior.
+
+Compatibility note
+------------------
+Older versions remain below #if false. Those references are intentionally inactive
+and were not edited. BoardControllerV2 was also left unchanged as requested.
+
+Subscription cleanup
+--------------------
+SortingTutorialController unsubscribes both Box events at stage transition,
+completion, cancellation, disable, or scene unload. Destroying a Box also destroys
+its event source, so matched Boxes cannot produce later callbacks.
+
+Persistent Tutorial highlight extension
+---------------------------------------
+The restored sorting Tutorial owns a persistent set of highlighted Nodes. While
+Board.HasPlacementConstraint is true, OnMouseDrag records the Node under the mouse
+but does not unhighlight, replace, or globally clear the controller-owned set.
+OnMouseUp and CancelDrag likewise preserve those Nodes; the Tutorial controller is
+their visual owner and clears them at authoritative lifecycle boundaries.
+
+Mouse-up still asks Board.TryPlaceBox for the decision. An unhighlighted cell is
+rejected by the registered constraint, so Box returns to its rail start position
+and reports DropRejectedOrCancelled. When no placement constraint exists, normal
+levels retain the original transient hovered-Node highlight behavior.

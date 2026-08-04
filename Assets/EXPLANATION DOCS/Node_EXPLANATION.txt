@@ -1,0 +1,104 @@
+NODE.CS - VISIBLE BOARD-CELL HIGHLIGHT PRESENTATION
+===================================================
+
+Purpose of this document
+------------------------
+This document was created before modifying Node.cs for the adjacent-cell visual
+repair and updated after validation. It explains the confirmed failure, geometry
+calculation, implemented fields and methods, and normal-level compatibility.
+
+Confirmed failure
+-----------------
+The Tutorial controller correctly calculates its highlightedCells set, calls
+Node.Highlight for every accepted coordinate, and uses that same set to reject
+other placements. Therefore placement logic is working.
+
+Node.Highlight currently activates transform child zero. Node.prefab still has the
+historical Highlight.prefab as that inactive child, and its MeshRenderer is enabled.
+The problem is its height.
+
+The historical Board geometry placed a Node at world Y 0.300. The Highlight child
+has local Y 0.54 under a Node whose Y scale is 0.03, so it appeared approximately
+0.0162 world units above the Node, at Y 0.3162. Tutorial boxes were displayed at
+approximately Y 0.340, making that overlay visible just below a box.
+
+The current Board places the Node at world Y 0.185 and separately adds a 0.155
+placedBoxYOffset, keeping boxes at Y 0.340. The unchanged Highlight child now sits
+around Y 0.2012, approximately 0.115 below its historical visible height. It is
+being activated correctly but is hidden below the board artwork/surface.
+
+Why Board geometry will not be changed
+--------------------------------------
+Moving Nodes back to Y 0.300 would also move their colliders and affect pointer
+cell detection. Changing placedBoxYOffset would move every gameplay Box. Those are
+core gameplay coordinates and already work, so the visual must adapt to them.
+
+Implemented serialized fields
+-----------------------------
+highlightVisual
+    An explicit Transform reference to the existing Highlight child. This removes
+    the fragile assumption that the visual will always remain child index zero.
+
+highlightHeightAboveNode
+    A world-space vertical offset. It will be 0.131 for the current prefab:
+    0.185 Node Y + 0.131 = 0.316 Highlight Y. This restores the historical visible
+    overlay plane while leaving the Box at 0.340.
+
+highlightColor
+    The existing field will become the actual renderer color source. Node.prefab
+    will configure a clear orange color for allowed Tutorial cells.
+
+Implemented runtime behavior
+----------------------------
+Node will lazily cache the explicit visual, falling back to child zero only for old
+prefab compatibility. It will cache all Renderers below that inactive visual by
+using GetComponentsInChildren with includeInactive=true.
+
+Highlight now:
+
+1. Resolve the existing visual safely.
+2. Move its world Y to Node Y plus highlightHeightAboveNode.
+3. apply highlightColor through MaterialPropertyBlock to _BaseColor and/or _Color
+   only when the actual material exposes those properties.
+4. Ensure the dedicated Highlight renderer is enabled.
+5. Activate the Highlight GameObject.
+
+MaterialPropertyBlock is used instead of renderer.material so no new material
+instances are allocated for the twenty Board cells and no shared material asset is
+mutated.
+
+Unhighlight will deactivate only the dedicated visual. The invisible Node root,
+its collider, original material, occupancy state, and Hammer color path remain
+untouched.
+
+Failure safety
+--------------
+If an older/custom Node has no assigned visual, Node will try child zero. If there
+is still no visual, Highlight/Unhighlight will return safely rather than throwing
+an index exception. One warning per affected Node will explain the missing setup.
+
+Compatibility
+-------------
+SortingTutorialController continues owning which Nodes are allowed and when they
+are cleared. Board placement, soda resolution, Match logic, Hand targeting, and
+normal cell coordinates do not change. Normal hover guidance that already calls
+Node.Highlight also benefits from the corrected visual height.
+
+Validation performed
+--------------------
+- Full Assembly-CSharp compilation passed with no C# errors.
+- Node.prefab explicitly references stripped Transform 5652685455098548091, which
+  is its existing Highlight prefab child.
+- Node.prefab configures height offset 0.131 and orange RGBA (1, 0.45, 0.05, 1).
+- The calculated visible plane is Y 0.316; boxes are Y 0.340, leaving the overlay
+  0.024 below a placed Box as in the historical presentation.
+- GetComponentsInChildren<Renderer>(true) includes the initially inactive visual.
+- Highlight enables those Renderers; Unhighlight deactivates the same visual.
+- SortingTutorialController still clears every tracked Node on placement, stage
+  transition, completion, cancellation, disable, and scene cleanup.
+
+Interactive visual confirmation
+-------------------------------
+The source, prefab reference, geometry, and compiler validation are complete. The
+Unity Game view must be restarted after script/prefab import to visually confirm
+the orange overlays with the project's active camera and lighting.

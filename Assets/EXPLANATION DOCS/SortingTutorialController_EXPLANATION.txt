@@ -1,0 +1,238 @@
+SORTINGTUTORIALCONTROLLER.CS - CURRENT TWO-STAGE FEATURE TUTORIAL
+================================================================
+
+Role
+----
+SortingTutorialController is the only class that knows the current Tutorial means
+"place rail Boxes, sort soda colors, produce Matches, then run Stage 2." It derives
+from TutorialControllerBase and connects Board gameplay events to the shared Hand
+and tooltip presentation.
+
+Serializable content types
+--------------------------
+TutorialBoardDirection
+    Right, Left, Down, and Up values used by the configurable search priority.
+
+TutorialSodaAmount
+    One SodaColor plus a non-negative count. Count clamps negative values to zero.
+
+TutorialBoxRecipe
+    A serialized list of TutorialSodaAmount. ToDictionary combines duplicate color
+    entries, skips empty entries, and returns the exact recipe accepted by
+    SpawnContoller.
+
+SortingTutorialStageConfig
+    Contains stageName, optional runtime reference-Box setup, reference cell and
+    recipe, ordered rail recipes, required packed-Match count, final Board-empty
+    requirement, and an initial fallback target cell.
+
+Inspector references
+--------------------
+board
+    Source of accepted-placement and full-resolution events.
+
+spawnController
+    Deterministic Box/Soda creation service and live rail owner.
+
+handAnimation
+    Reusable presentation owned through TutorialManager.
+
+toolTipTutorial
+    Prompt, placement-complete, and success-panel presentation.
+
+directionPriority
+    Current TUTORIAL order is Right, Left, Down, Up.
+
+destinationRetryDelay
+    Delay used when no destination exists yet and before replaying guidance after a
+    rejected drop.
+
+stages
+    Serialized current two-stage content described near the end of this document.
+
+Stable progress collections
+---------------------------
+stageBoxes
+    Stable Box references returned for this stage. This is separate from the live
+    spawnedBoxes list.
+
+stageSourceIds
+    Instance IDs of every configured rail Box in the stage.
+
+acceptedSourceIds
+    IDs whose placement Board has authoritatively accepted.
+
+handledPlacementOrders
+    Exactly-once guard against duplicate accepted-placement callbacks.
+
+Additional runtime state stores current stage, Match count, current instructed
+Box, actual last placed Box, target world position, pending placement token, and
+per-step accepted/resolved flags.
+
+CurrentState and CurrentStageNumber are read-only diagnostic properties. They make
+the internal state observable to debugging tools without allowing outside code to
+advance it.
+
+Validation before start
+-----------------------
+ValidateTutorial checks all four scene references, Board grid initialization, at
+least two non-null stages, a non-empty direction list, non-empty rail recipes, and
+a valid reference recipe for stages that create one. Failure logs one manager
+warning and leaves the level playable.
+
+Start lifecycle
+---------------
+OnTutorialStarted first acquires the shared Hand. If ownership fails, the Tutorial
+cancels safely. It then subscribes Board events exactly once, resets tooltip UI,
+and starts RunTutorial.
+
+RunTutorial: stage preparation
+------------------------------
+For each stage, PrepareStage unsubscribes previous Box events and clears every
+stage-specific collection/flag. It removes only destroyed references from the live
+rail list and refuses to begin if live rail Boxes remain. A stage that creates a
+reference Box also requires an empty Board.
+
+Stage 1 reference creation
+--------------------------
+CreateReferenceBox asks SpawnContoller to build the configured Box directly at
+Board.GetPlacementWorldPosition. It then calls Board.TryPlaceBox, so the reference
+uses the same registration and resolution rules as every other Board Box.
+
+The reference does not enter spawnedBoxes or stageSourceIds, so its setup event is
+not mistaken for a player step. The routine waits until Board.IsResolving is false
+before spawning actionable rail Boxes.
+
+Rail stage creation
+-------------------
+SpawnStageRailBoxes converts serialized recipes to dictionaries and yields through
+SpawnTutorialBatch. It stores the returned Boxes independently, records each
+instance ID, and subscribes DragStarted and DropRejectedOrCancelled for those
+specific sources.
+
+One placement step
+------------------
+For every not-yet-accepted source, RunTutorial performs this exact loop:
+
+1. Find the next surviving unaccepted stage Box.
+2. Calculate a recommended destination.
+3. If none exists, hide Hand/UI and retry safely after destinationRetryDelay.
+4. Reset per-step correlation flags.
+5. Show the correct tooltip and play Hand from source to target.
+6. Wait for Board.PlacementAccepted, not mouse distance or a list count.
+7. Stop the Hand and show placement-complete UI.
+8. Wait for the matching Board.PlacementResolutionCompleted event.
+9. Only then select and show the next actionable instruction.
+
+Accepted placement handling
+---------------------------
+HandlePlacementAccepted ignores events when inactive, reference setup Boxes,
+unrelated Boxes, already accepted sources, and duplicate PlacementOrders.
+
+For a valid stage event it stores the actual Box as lastSuccessfullyPlacedBox,
+records its PlacementOrder, marks progress once, stops the Hand, and displays the
+short completion visual.
+
+The player may use any Board-accepted cell and may even choose another remaining
+stage source before the demonstrated one. Because membership and actual accepted
+data are tracked, the flow adapts instead of deadlocking.
+
+Resolution handling and Match counting
+--------------------------------------
+HandlePlacementResolutionCompleted accepts only the event whose PlacementOrder
+matches pendingPlacementOrder. It adds Board's packed-Match delta, clears the token,
+and releases the coroutine waiting for resolution.
+
+Consequently no new Hand instruction can begin during soda movement, sorting,
+Match animation, removal, or cleanup.
+
+Invalid/cancelled drag behavior
+-------------------------------
+DragStarted stops/hides current guidance while the player interacts. A rejected or
+cancelled drop does not change acceptedSourceIds. It re-shows the same prompt and
+restarts the saved Hand instruction after destinationRetryDelay.
+
+Adaptive target calculation
+---------------------------
+TryCalculateNextDestination first uses lastSuccessfullyPlacedBox if that exact Box
+is still present in board.allBoxes. If a Match removed it, Board.FindMostRecentBoxOnBoard
+provides the most recent active reference.
+
+The method tests serialized directions in order. Each candidate goes through
+Board.CanPlaceAt, which checks bounds, Node existence, occupancy, and resolver
+availability. The Hand target uses Board.GetPlacementWorldPosition, including the
+0.155 placement offset; no distance threshold is involved.
+
+If no active reference exists, the stage's initialTargetCell is checked. If no
+valid cell exists, the Hand stays hidden and the routine waits safely.
+
+Stage completion
+----------------
+After every configured rail Box has an accepted placement and correlated resolver
+completion, the controller unsubscribes stage Box events. It then requires:
+
+- packedMatchesThisStage >= requiredPackedMatches.
+- Board empty when requireEmptyBoard is enabled.
+
+A mismatch cancels with a precise warning rather than hanging forever. A valid
+Stage 1 transitions once to Stage 2. Stage 2 spawns explicitly and begins its own
+first Hand instruction without a timing guess.
+
+Final completion and cleanup
+----------------------------
+After the final stage, RequestCompletion goes through TutorialManager. The
+completion hook stops the routine, unsubscribes Board/Box events, releases the Hand,
+clears runtime collections, and opens the success panel once.
+
+Cancellation performs the same technical cleanup but hides step UI and does not
+write completion.
+
+Current mathematically consistent recipes
+-----------------------------------------
+Stage 1:
+    Runtime reference at cell (1,2): Orange x1
+    Rail Box 1: Orange x1
+    Rail Box 2: Orange x1
+    Rail Box 3: Orange x1
+    Total: Orange x4 = one full Box/Match
+    Required Matches: 1; Board must end empty
+
+Stage 2:
+    Rail Box 1: Red x2, Orange x1
+    Rail Box 2: Red x2, Orange x1
+    Rail Box 3: Orange x2
+    Totals: Red x4 and Orange x4 = two full Boxes/Matches
+    Required Matches: 2; Board must end empty
+
+Adjacent-cell highlight restoration extension
+---------------------------------------------
+TutorialAdjacentCellUtility is a small pure geometry helper. It produces only
+in-bounds right, left, down, and up coordinates and keeps only coordinates accepted
+by its availability predicate. It is independent of scene objects, which allows
+deterministic testing of center, edge, corner, occupied, and diagonal cases.
+
+The controller maintains highlightedCells, a HashSet used as the authoritative
+allowed-cell set, plus highlightedNodes, the exact Nodes whose historical child
+visual it activated. TryRefreshHighlightsAndDestination clears the previous set,
+selects a surviving reference, asks the utility for orthogonal cells filtered by
+Board.CanPlaceAt, activates every valid Node, and chooses the Hand recommendation
+from the same set using directionPriority.
+
+IsHighlightedTutorialPlacement is the Board predicate. During an actionable step,
+it accepts only a tracked stage source whose requested coordinate is currently in
+highlightedCells. During reference-box setup it permits only the controller's own
+preparation placement. Rejection never changes acceptedSourceIds.
+
+HandlePlacementAccepted stores the actual placed Box, immediately clears the old
+highlights, and waits for the correlated resolution. Only after
+PlacementResolutionCompleted does the controller inspect active Board Boxes and
+prepare the next set. SelectSurvivingTargetPack ignores retired, off-board, and
+empty Boxes. It ranks candidates by shared-color usefulness for the next source,
+SodaCount, previous-reference continuity, just-placed survival, and PlacementOrder.
+Stage 1 therefore follows the accumulating Orange pack even if the new source is
+emptied and removed.
+
+A rejected or cancelled drag calls RestoreTutorialHighlights and restarts the same
+instruction. Stage transition clears the visual set. Cleanup unregisters the
+Board predicate, clears every activated Node, and removes the active reference on
+completion, cancellation, disable, or scene unload.

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1e7f0d4b65a4a7da86cf2e9b51908f3, type: 3}
+  m_Name: VisualStyleSettings
+  m_EditorClassIdentifier: 
+  backgroundExposure: 0.05
+  contrast: 3
+  colorFilter: {r: 1, g: 1, b: 1, a: 1}
+  saturation: 4
+  tonemapping: 1
+  bloomThreshold: 2
+  bloomIntensity: 0.2
+  bloomScatter: 0.55
+  bloomClamp: 2
+  highQualityBloom: 1
+  sodaBrightness: 1
+  sodaGlossiness: 0.8
+  sodaHighlightStrength: 1.5
+  sodaRimStrength: 0.22
+  sodaMaterials:
+  - {fileID: 2100000, guid: 6da0f3936f2385645b3dfa3229a24f5e, type: 2}
+  - {fileID: 2100000, guid: 5bb41ef95b9017442ab5c67b24e9e83a, type: 2}
+  - {fileID: 2100000, guid: 80a6a34e31a1e1440acb037089149992, type: 2}
+  - {fileID: 2100000, guid: 7c8a516ba9ac50a4a8b6b01379cc222e, type: 2}
+  - {fileID: 2100000, guid: 896316e54238fa54583b82f2479870ac, type: 2}
+  - {fileID: 2100000, guid: 2168fc53d8887444cb6a290ffd117086, type: 2}

@@ -1,0 +1,101 @@
+TUTORIALCONTROLLERBASE.CS - FEATURE TUTORIAL LIFECYCLE CONTRACT
+===============================================================
+
+Purpose
+-------
+Every feature Tutorial needs shared registration and lifecycle behavior, but each
+feature needs different gameplay rules. TutorialControllerBase supplies the shared
+contract while derived classes keep their own rules.
+
+TutorialRepeatMode
+------------------
+Once
+    Run only while the completion store says the Tutorial is incomplete.
+
+Always
+    Run whenever its scene/activation condition is available.
+
+DevelopmentOnly
+    Repeat in the Unity Editor or a development build; behave like Once in a
+    release build.
+
+Serialized registration metadata
+--------------------------------
+tutorialId
+    Stable unique identifier. TUTORIAL uses sorting.initial. Changing an ID creates
+    a different persistence key, so IDs should remain stable after release.
+
+requiredLevel
+    Minimum PlayerPrefs "Level" value. Zero allows the initial Tutorial before
+    normal level progression.
+
+priority
+    Higher values are evaluated first when several Tutorials are eligible.
+
+autoStart
+    Allows TutorialManager to start the controller automatically after registration.
+
+repeatBehavior
+    One of the policies described above.
+
+forceStartInDevelopment
+    Inspector override that ignores stored completion in Editor/development builds.
+    It does not affect release builds.
+
+Runtime properties
+------------------
+The metadata is exposed through read-only properties. IsRunning is changed only by
+the internal lifecycle wrappers, so feature code cannot accidentally mark itself
+running or complete without the manager.
+
+Registration lifecycle
+----------------------
+OnEnable calls TutorialManager.Instance.Register(this). OnDisable unregisters only
+when a manager exists. Unregistering an active controller safely cancels it first.
+
+InternalValidate
+----------------
+The base rejects an empty TutorialId, then calls the derived ValidateTutorial.
+SortingTutorialController uses that hook to verify scene references, Board
+initialization, direction priority, and recipes before starting.
+
+InternalCanStart
+----------------
+This method checks that the component is active/enabled, reads the current saved
+level, compares requiredLevel, and calls the derived CanStartTutorial hook. A future
+feature can override the hook for an unlock flag or scene-specific condition.
+
+Internal lifecycle wrappers
+---------------------------
+InternalBegin guards against a duplicate start, sets IsRunning true, and calls
+OnTutorialStarted.
+
+InternalComplete accepts only a running Tutorial, sets IsRunning false, and calls
+OnTutorialCompleted.
+
+InternalCancel follows the same guard and calls OnTutorialCancelled(reason).
+
+These methods are internal so only the manager in the same assembly coordinates
+the lifecycle.
+
+Requests from a feature controller
+----------------------------------
+RequestCompletion asks TutorialManager to complete this controller. The manager
+verifies it is active, writes completion, releases shared Hand ownership, and then
+calls the completion hook.
+
+RequestCancellation sends a reason through the same verified manager path.
+
+Required and optional derived hooks
+-----------------------------------
+OnTutorialStarted is abstract because every feature must define its starting flow.
+
+ValidateTutorial, CanStartTutorial, OnTutorialCompleted, and OnTutorialCancelled
+are virtual so a simple future Tutorial only overrides what it needs.
+
+Development reset
+-----------------
+The component Context Menu item "Reset This Tutorial Completion" calls the
+manager's scoped ResetCompletion using this stable ID. It does not touch other save
+data.
+

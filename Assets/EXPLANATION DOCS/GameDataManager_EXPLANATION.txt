@@ -1,0 +1,41 @@
+GAMEDATAMANAGER.CS - SAFE DEVELOPMENT RESET
+===========================================
+
+Problem in the previous Start method
+------------------------------------
+Start called ResetData unconditionally. ResetData uses PlayerPrefs.DeleteAll, so
+every launch erased level, currency, tools, and any Tutorial completion state.
+
+Implemented field
+-----------------
+resetDataOnStartForDevelopment is a private serialized bool shown under a
+Development header. Its Tooltip warns that it deletes every PlayerPrefs key.
+
+Implemented Start order
+-----------------------
+Start now does:
+
+1. If resetDataOnStartForDevelopment is true, call ResetData.
+2. Call LoadData.
+
+The default and current scene value is false. Saved data therefore survives normal
+launches. A developer can deliberately enable the field in the Inspector for a
+full reset test.
+
+ResetData remains public
+------------------------
+No API was removed. Existing development UI or scripts can still request a full
+reset explicitly. The centralized Tutorial system does not use DeleteAll; it resets
+only its own Tutorial.Completed.<id> key.
+
+Why this is related to Tutorials
+--------------------------------
+TutorialManager writes sorting.initial completion through PlayerPrefs. Without
+this gate, the completion store would appear broken because GameDataManager would
+delete it on the next scene start.
+
+Normal save behavior
+--------------------
+SaveData, LoadData, currency methods, tool counters, and level progression were not
+otherwise changed.
+

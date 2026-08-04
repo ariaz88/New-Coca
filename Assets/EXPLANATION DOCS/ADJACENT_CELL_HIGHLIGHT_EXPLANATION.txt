@@ -1,0 +1,152 @@
+ADJACENT-CELL TUTORIAL HIGHLIGHT - HISTORICAL FINDINGS AND IMPLEMENTATION CONTRACT
+=================================================================================
+
+Purpose of this document
+------------------------
+This document was created before changing the restored Tutorial implementation,
+as required, and was updated after implementation and validation. It records what
+was found, what was reused, what was deliberately left untouched, and how the
+finished repair works.
+
+Historical implementation found in Box.cs
+-----------------------------------------
+The inactive code below #if false contains the old Tutorial-specific OnMouseDrag
+and TutorialMouseUp methods.
+
+During drag, the old code did this when the Board was not empty:
+
+1. Call Board.GetAdjacentPositionsForLastBox().
+2. Call Node.Highlight() for every returned coordinate.
+3. Read the Node under the mouse.
+4. Treat it as a candidate only when its coordinate was in that adjacent set.
+
+TutorialMouseUp then recalculated the same set. A drop was accepted only when the
+current Node was unoccupied and its coordinate belonged to the set. Otherwise the
+Box returned to startPos and the old Hand restarted.
+
+This confirms the requested adjacency gate is restoration work, not a new gameplay
+rule invented for this change.
+
+Git-history finding
+-------------------
+git log -S searches for TutorialMouseUp and GetAdjacentPositionsForLastBox identify
+the initial commit 7d7a1a0. git show confirms that commit contains the same
+adjacency validation and Highlight/Unhighlight calls. The later candy/toy art pass
+did not modify Box.cs, Node.cs, Node.prefab, or Highlight.prefab.
+
+Visual assets found
+-------------------
+Node.cs already provides:
+
+Node.Highlight()
+    Activates transform child zero.
+
+Node.Unhighlight()
+    Deactivates transform child zero.
+
+Node.prefab contains that child as an inactive instance of Highlight.prefab.
+Highlight.prefab uses the Highlight.fbx mesh and its imported highlight material/
+texture. Therefore the visual can be restored without swapping the Node's original
+Renderer material or editing art assets.
+
+Activating/deactivating the child is also the safest restoration path: the Node's
+normal material and color are never overwritten, so Unhighlight restores the
+original appearance exactly.
+
+Board geometry found
+--------------------
+The active Board.GetAdjacentPositions(column,row) iterates the four DirectOffsets
+and returns only in-bounds coordinates. It never returns diagonals.
+
+The active Board.CanPlaceAt checks that a coordinate is in bounds, has a Node, has
+no Box, is not marked occupied, and Board interaction is currently enabled.
+
+Together these existing methods already produce the required counts:
+
+- Center: up to four.
+- Non-corner edge: up to three.
+- Corner: up to two.
+- Occupied orthogonal neighbors: excluded.
+- Diagonals: never generated.
+
+Why the entire old Box flow must not be restored
+------------------------------------------------
+The historical implementation also directly calls HandAnimation and
+ToolTipTutorial, uses mutable spawnedBoxes-era state, manually sets Node occupancy,
+and follows Board.lastPlacedBox before asynchronous Match cleanup is complete.
+Reactivating it would undo the event-driven Tutorial repair and could recreate the
+extra-click/deadlock bugs.
+
+Implemented compatible solution
+-------------------------------
+Board.cs now has one neutral, owner-scoped optional placement constraint. The
+active sorting Tutorial owns it. Board.TryPlaceBox still requires all normal
+CanPlaceAt rules and then requires the optional constraint when one is registered.
+With no constraint, normal levels behave exactly as before.
+
+Box.cs now detects when Board owns a persistent placement constraint. In that
+case, drag-hover code does not clear or replace controller-owned highlights. Its
+mouse-up still calls Board.TryPlaceBox. A rejected cell returns the Box to startPos
+and emits DropRejectedOrCancelled; accepted placement remains a Board event.
+
+SortingTutorialController.cs now owns:
+
+- The HashSet of allowed highlighted coordinates.
+- The list of Nodes it activated, for exact cleanup.
+- The active surviving target pack.
+- Recalculation after every full Board resolution.
+- Selection of the Hand target from the highlighted set using direction priority.
+- Reapplication after invalid/cancelled drops.
+- Cleanup on placement, stage transition, completion, cancellation, disable, and
+  scene unload.
+
+Surviving-pack rule
+-------------------
+The newly placed Box is not automatically the next reference. After the resolver
+finishes, the controller inspects active, non-retired, non-empty Board Boxes. It
+ranks them by shared-color usefulness for the next rail source, then SodaCount,
+then prefers the previous active reference, the just-placed surviving Box, and the
+latest PlacementOrder. This keeps Stage 1 following the accumulating Orange pack
+when the placed source becomes empty and is removed.
+
+Empty-Board rule
+----------------
+When a stage has no active reference yet, only its configured initial target cell
+will be highlighted and accepted. Once that first Box resolves, subsequent steps
+use the normal orthogonal-neighbor set.
+
+Files intentionally unchanged
+-----------------------------
+- Node.cs and Node.prefab.
+- Highlight.prefab, Highlight.fbx, and highlight materials/textures.
+- UniversalSodaTransferSystem and TransferAlgorithm.
+- Version2 scripts.
+- Normal Level 1 placement rules.
+
+Validation performed
+--------------------
+The complete Assembly-CSharp source compiled successfully with Unity's generated
+Roslyn response file. A deterministic executable test of
+TutorialAdjacentCellUtility passed with this result:
+
+PASS: center=4, edge=3, corner=2, occupied excluded, diagonals excluded
+
+The source lifecycle was also audited for invalid-drop restoration, authoritative
+Board acceptance, post-resolver refresh, Match-safe reference selection, stage
+cleanup, Tutorial cleanup, and removal of the optional predicate. Interactive Play
+Mode remains required to confirm the final visuals, animations, Stage 1/Stage 2,
+restart, success panel, Start Level 1 button, and unchanged normal gameplay in the
+Unity Editor.
+
+Visible-overlay follow-up repair
+--------------------------------
+Play Mode confirmed that the placement gate works but the allowed cells do not
+look highlighted. The controller calls were rechecked and the prefab child is
+being activated. The historical overlay is hidden vertically: it was authored for
+a Node at Y 0.300, but the active Board now creates Nodes at Y 0.185 and raises only
+Boxes with placedBoxYOffset 0.155.
+
+Node_EXPLANATION.txt documents the full calculation and implemented repair. Node
+now elevates only the existing Highlight child to Y 0.316 and applies its configured
+orange color through MaterialPropertyBlock. Board coordinates, colliders,
+allowed-cell membership, and Tutorial lifecycle code were not changed.

@@ -1,0 +1,51 @@
+TUTORIALCOMPLETIONSTORE.CS - COMPLETION PERSISTENCE BOUNDARY
+============================================================
+
+Why an interface is used
+------------------------
+Feature Tutorials should not know whether completion is stored in PlayerPrefs, a
+JSON save, cloud data, or a future project save manager. ITutorialCompletionStore
+creates that small boundary.
+
+ITutorialCompletionStore methods
+--------------------------------
+IsCompleted(tutorialId)
+    Returns whether a stable Tutorial ID is complete.
+
+MarkCompleted(tutorialId)
+    Persists completion.
+
+Reset(tutorialId)
+    Deletes only that Tutorial's completion state for development/testing.
+
+PlayerPrefsTutorialCompletionStore
+----------------------------------
+This sealed implementation is the current backend. It builds keys as:
+
+Tutorial.Completed.<trimmed tutorial ID>
+
+For example, sorting.initial becomes:
+
+Tutorial.Completed.sorting.initial
+
+IsCompleted
+-----------
+An empty ID returns false. A valid ID reads an integer whose default is zero; only
+the value 1 means completed.
+
+MarkCompleted
+-------------
+An empty ID is ignored safely. Otherwise the method stores 1 and calls
+PlayerPrefs.Save so completion survives a later process exit.
+
+Reset
+-----
+An empty ID is ignored. Otherwise only the built Tutorial key is deleted and saved.
+It never calls PlayerPrefs.DeleteAll, so player currency and progression are safe.
+
+Replacing the backend later
+---------------------------
+TutorialManager stores the interface type, not the concrete type. A future save
+integration can implement these same three methods and be assigned in the manager
+without changing SortingTutorialController or later feature Tutorials.
+

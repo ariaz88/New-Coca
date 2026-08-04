@@ -1,0 +1,100 @@
+TOOLTIPTUTORIAL.CS - TUTORIAL UI PRESENTATION
+=============================================
+
+Responsibility after the repair
+-------------------------------
+ToolTipTutorial renders prompts, the short placement-complete animation, and the
+final success panel. It no longer watches Board state, waits for spawnedBoxes, or
+starts the next Tutorial step from a coroutine.
+
+This matters because UI animation duration is not a gameplay completion signal.
+SortingTutorialController now decides when a step advances and calls this class
+only to display that decision.
+
+Serialized references
+---------------------
+nextBox
+    Existing "move a box" prompt object.
+
+completedIteration
+    Existing placement-complete visual.
+
+startPos and endPos
+    UI reference positions for prompt movement.
+
+firstBoxText
+    TMP label changed between MOVE FIRST BOX and MOVE THE BOX.
+
+StartLevel1 and RestartTutorial
+    Existing Buttons. Listeners are removed before being added, and removed again
+    on disable, preventing duplicate clicks after reload/enable cycles.
+
+SuccessPanel
+    Existing final panel.
+
+tutorialIdToReset
+    Completion key reset by the development Restart button. TUTORIAL assigns
+    sorting.initial.
+
+Awake and OnEnable restore the compatibility singleton. OnDisable removes the
+singleton only when this component owns it.
+
+ShowMovePrompt
+--------------
+ShowMovePrompt(bool isFirstMove) first kills both step-related DOTween Sequences.
+It sets the label, hides the complete visual, activates nextBox, resets its position
+and scale, then builds one sequence:
+
+1. Scale from zero with Ease.OutBack.
+2. Pause briefly.
+3. Move from startPos to endPos with Ease.InOutSine.
+
+The sequence is linked to the GameObject so destruction kills it automatically.
+
+ShowPlacementComplete
+---------------------
+This method kills the prompt sequence, hides nextBox, activates the completed
+visual at endPos, and animates it in, waits, and animates it out. OnComplete hides
+the object.
+
+It does not start another prompt. The next prompt is started only after Board's
+resolution-completed event is consumed by SortingTutorialController.
+
+HideStepPresentation
+--------------------
+This is the common cleanup for drag start, stage transition, completion, and
+cancellation. It kills both step sequences, hides both step objects, and restores
+the prompt's configured starting position.
+
+ShowCompletionPanel
+-------------------
+completionPanelShown is an exactly-once guard. The method hides step UI, activates
+SuccessPanel, scales it from zero, and activates its first child when the animation
+finishes. Repeated completion notifications cannot replay or duplicate the panel.
+
+ResetPresentation
+-----------------
+Used at Tutorial start. It kills every sequence, clears exactly-once guards, and
+hides prompts and the success panel. This provides a fresh state on scene reload.
+
+Scene navigation
+----------------
+GoToLevel1 loads Level1.
+
+ResetTutorial first resets only sorting.initial through TutorialManager, then loads
+the correctly capitalized TUTORIAL scene.
+
+LoadSceneOnce uses sceneLoadRequested so rapid double clicks cannot load either
+scene twice.
+
+Compatibility wrappers
+----------------------
+NextMoveAnim, CompleteAnim, and PanelAnimation remain public for old Inspector
+UnityEvents and inactive scripts. They delegate to the new presentation API and do
+not contain progression logic.
+
+Overlap prevention
+------------------
+KillStepSequences runs before every step animation. KillSequences also kills the
+panel animation. OnDisable removes button listeners and kills all active tweens.
+There is never more than one prompt/complete state transition running at a time.

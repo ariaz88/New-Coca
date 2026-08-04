@@ -1,0 +1,179 @@
+TUTORIALMANAGER.CS - CENTRAL TUTORIAL COORDINATOR
+=================================================
+
+What the manager owns
+---------------------
+TutorialManager owns shared Tutorial lifecycle:
+
+- Registration and eligibility evaluation.
+- Exactly one active Tutorial.
+- Completion persistence.
+- Shared Hand ownership.
+- Completion and cancellation boundaries.
+- Safe cleanup when scenes change.
+
+It intentionally contains no soda colors, Board-cell search, Box recipes, Hammer
+rules, or other feature-specific meaning.
+
+Creation and persistence
+------------------------
+RuntimeInitializeOnLoadMethod(BeforeSceneLoad) requests Instance before the first
+scene activates. If no instance exists, Instance creates a GameObject named
+TutorialManager and adds the component.
+
+Awake rejects duplicates, creates PlayerPrefsTutorialCompletionStore, subscribes
+to SceneManager.activeSceneChanged, and calls DontDestroyOnLoad. OnDestroy removes
+the scene subscription and clears the static instance.
+
+Registration collections
+------------------------
+registeredTutorials
+    Controllers currently available in loaded/active scene objects.
+
+warnedInvalidTutorials
+    Prevents the same invalid configuration from spamming a warning every frame.
+
+cancelledTutorials
+    Suppresses an enabled controller after a runtime cancellation. Without this
+    set, a failed controller would immediately auto-start and cancel in a loop.
+    Re-enabling/re-registering it provides a fresh attempt.
+
+Register and Unregister
+-----------------------
+Register ignores nulls/duplicates, adds the controller, clears any previous
+cancellation suppression, and schedules evaluation.
+
+Unregister cancels the controller if it is active, removes it from every tracking
+set, and leaves other registered Tutorials available.
+
+Why evaluation waits one frame
+------------------------------
+ScheduleEvaluation starts only one EvaluateNextFrame coroutine. Waiting one frame
+allows Board.Start, SpawnContoller.Start, and other scene initialization to finish
+before reference validation or Tutorial setup.
+
+Selection algorithm
+-------------------
+Evaluation does nothing while another Tutorial is active. It removes destroyed
+controllers, sorts by descending priority, then checks each controller:
+
+1. Not cancelled in this registration.
+2. autoStart is enabled.
+3. Level and feature-specific start conditions pass.
+4. Configuration validation passes.
+5. Repeat/completion policy says it should run.
+
+The first eligible controller becomes active and receives InternalBegin. Therefore
+only one feature Tutorial can own input guidance at a time.
+
+Repeat/completion policy
+------------------------
+Always ignores saved completion.
+
+DevelopmentOnly repeats only in Editor/development builds.
+
+forceStartInDevelopment also ignores completion only in those builds.
+
+All other cases run only when completionStore.IsCompleted returns false.
+
+CompleteTutorial
+----------------
+The caller must be the active controller. The manager then:
+
+1. Marks its stable ID completed.
+2. Releases shared Hand ownership.
+3. Clears activeTutorial.
+4. Calls the controller completion hook.
+5. Schedules evaluation for any other eligible Tutorial.
+
+This ordering means the success panel can appear from the feature completion hook
+after shared guidance has already stopped.
+
+CancelTutorial
+--------------
+The caller must also be active. The manager releases the Hand, clears the active
+slot, adds cancellation suppression, calls the feature cleanup hook, logs one clear
+warning with the reason, and evaluates other controllers.
+
+Hand ownership
+--------------
+TryAcquireHand requires the requesting controller to be active and requires a
+non-null Hand. It rejects ownership by another controller, records owner/Hand, and
+calls HandAnimation.Acquire.
+
+ReleaseHand verifies the owner, calls HandAnimation.Release, and clears both
+references. Completion, cancellation, and scene changes all use this path.
+
+Scene safety
+------------
+activeSceneChanged cancels a still-active scene Tutorial, removes destroyed
+registrations/set entries, and schedules a clean evaluation for the new scene.
+Each scene-specific controller also unregisters through OnDisable, so callbacks do
+not accumulate across reloads.
+
+Future feature Tutorials
+------------------------
+A later Hammer or feature Tutorial derives from TutorialControllerBase, configures
+a unique ID/level/priority, acquires the shared Hand if needed, and implements only
+its own gameplay events. TutorialManager requires no new feature-specific branch.
+
+Editor replay option
+--------------------
+TutorialManager exposes an Editor-only testing section containing:
+
+editorTestingTutorialId
+    The stable ID affected by the testing controls. TUTORIAL configures this as
+    sorting.initial.
+
+forceTutorialInEditor
+    Displayed by Unity as Force Tutorial In Editor. When checked, ShouldRun accepts
+    the configured Tutorial before consulting repeat behavior or saved completion.
+
+Both serialized fields and all force-specific Inspector code are wrapped in
+UNITY_EDITOR. A final player build contains no force checkbox and IsForcedInEditor
+always returns false, so release eligibility continues to use the normal saved
+completion logic.
+
+Scene Manager and persistent Manager
+------------------------------------
+The runtime bootstrap still creates the persistent Manager before scene load. The
+TUTORIAL scene also contains a Manager solely so its testing configuration is
+visible and serialized in that scene. When the scene component's Awake sees the
+existing singleton, ApplyEditorTestingSettingsFrom copies only its Tutorial ID and
+force checkbox into the persistent Manager, then destroys the duplicate GameObject.
+
+No registration lists, active controller, Hand ownership, or coroutine references
+are copied. Consequently there is still exactly one runtime coordinator and no
+duplicate Tutorial callbacks.
+
+Preserving saved completion during a forced run
+-----------------------------------------------
+ShouldRun returns an editorForced result alongside its run decision. The Manager
+stores that result in activeTutorialWasEditorForced for the selected active run.
+CompleteTutorial skips completionStore.MarkCompleted only when this flag is true.
+It neither deletes a previously completed value nor creates a completed value for
+an unfinished save. The PlayerPrefs state therefore remains byte-for-byte
+logically unchanged by enabling Force and completing the flow.
+
+CompleteTutorial and CancelTutorial clear the runtime force flag. This prevents a
+later, unrelated Tutorial from inheriting the previous run's policy.
+
+Preventing an immediate replay loop
+-----------------------------------
+completedTutorials records controllers that completed during their current
+registration. EvaluateNextFrame skips them even when Force remains checked. This
+allows the completion panel to stay open instead of immediately rebuilding Stage
+1. Unregister removes the controller from the set; a scene reload or new Play Mode
+therefore receives a fresh registration and may run once again.
+
+Reset Tutorial Progress context action
+--------------------------------------
+The TutorialManager component context menu contains Reset Tutorial Progress. It
+trims and validates editorTestingTutorialId, calls the existing ResetCompletion
+API, and logs the specific ID it cleared. ResetCompletion delegates to the shared
+completion store and also removes matching completed/cancelled runtime suppression
+so the selected controller can be evaluated again during Play Mode.
+
+ScheduleEvaluation now exits outside Play Mode. This makes the context command
+safe in Edit Mode: PlayerPrefs is updated, but Unity is not asked to start a
+coroutine on a non-playing MonoBehaviour.

@@ -1,0 +1,183 @@
+TUTORIAL.UNITY - IMPLEMENTED INSPECTOR AND CONTENT SETUP
+========================================================
+
+Where the controller is attached
+--------------------------------
+SortingTutorialController is attached to the existing Board GameObject. This keeps
+the four current sorting-Tutorial references in one visible place without adding a
+new scene hierarchy object.
+
+Registration values
+-------------------
+Tutorial ID: sorting.initial
+Required Level: 0
+Priority: 100
+Auto Start: enabled
+Repeat Behavior: Once
+Force Start In Development: disabled
+
+The ID is the stable persistence and restart-reset key. Required Level zero allows
+the initial Tutorial to run before normal level numbering matters.
+
+Sorting controller references
+-----------------------------
+Board
+    Existing Board component on the same GameObject.
+
+Spawn Controller
+    Existing SpawnContoller on SpawnMamager.
+
+Hand Animation
+    Existing HandAnimation on the Board GameObject.
+
+Tool Tip Tutorial
+    Existing ToolTipTutorial on the Board GameObject.
+
+All references are direct serialized scene references. Runtime name searches are
+not used for core Tutorial flow.
+
+Adaptive destination settings
+-----------------------------
+Direction Priority:
+    1. Right
+    2. Left
+    3. Down
+    4. Up
+
+Destination Retry Delay: 0.25 seconds
+
+Designers can reorder the list in the Inspector without editing code. Board still
+makes the final validity decision for each candidate.
+
+Stage 1 Inspector content
+-------------------------
+Stage Name: Stage 1 - Orange Sorting
+Create Reference Box: enabled
+Reference Cell: (1, 2)
+Reference Recipe: Orange x1
+
+Rail recipes, in order:
+    Box 1: Orange x1
+    Box 2: Orange x1
+    Box 3: Orange x1
+
+Required Packed Matches: 1
+Require Empty Board: enabled
+Initial Target Cell: (1, 2)
+
+The scene still contains no manually placed OpenBox. The reference is created at
+runtime through SpawnContoller and registered through Board.TryPlaceBox. This
+avoids a stale scene object while restoring the intended anchor and exact total of
+four Orange sodas.
+
+Stage 2 Inspector content
+-------------------------
+Stage Name: Stage 2 - Two Color Sorting
+Create Reference Box: disabled
+
+Rail recipes, in order:
+    Box 1: Red x2, Orange x1
+    Box 2: Red x2, Orange x1
+    Box 3: Orange x2
+
+Required Packed Matches: 2
+Require Empty Board: enabled
+Initial Target Cell: (1, 2)
+
+The totals are Red x4 and Orange x4, so two Matches are mathematically required.
+
+HandAnimation Inspector values
+------------------------------
+Main Camera and Hand Image retain their existing references.
+
+Pixels Per Second: 530
+Pause At Target: 0.5
+Screen Offset: (70, 0)
+Movement Ease: InOutSine
+
+There is no distance-success threshold. HandAnimation only presents the target;
+Board acceptance is success.
+
+ToolTipTutorial Inspector values
+--------------------------------
+All existing prompt, text, button, and success-panel references are retained.
+Tutorial ID To Reset is sorting.initial.
+
+The Start Level 1 button still calls the component's existing listener path. The
+Restart button now resets only this Tutorial and loads TUTORIAL with exact casing.
+
+SpawnContoller Inspector values
+-------------------------------
+All six existing start and end rail Transforms, Box prefab, Soda prefab, speed, and
+respawn delay remain assigned.
+
+Spawn Delay: 0.03
+Move Duration: 0.5
+Max Box Count: 6
+
+In TUTORIAL, only the first three positions are used by each configured stage. In
+normal scenes, up to all six remain available for replenishment.
+
+TutorialManager Editor-testing object
+-------------------------------------
+TUTORIAL contains a root GameObject named TutorialManager with the central
+TutorialManager component. Its Editor Testing values are:
+
+Editor Testing Tutorial ID: sorting.initial
+Force Tutorial In Editor: enabled
+
+The normal runtime bootstrap still creates the persistent singleton before scene
+load. During Editor Play Mode, the scene component copies these two test values to
+that singleton and then removes only its own duplicate GameObject. This makes the
+checkbox editable and saved in TUTORIAL.unity without producing two active
+managers, two evaluations, or duplicated event subscriptions.
+
+The component's Reset Tutorial Progress context command deletes only the
+sorting.initial completion value through the shared completion store. The force
+checkbox itself will never delete or overwrite saved progress.
+
+Completion panel and navigation
+-------------------------------
+SortingTutorialController opens the existing success panel after Stage 2 resolver
+completion. ToolTipTutorial guards the panel and scene loads against duplicates.
+The existing button loads Level1.
+
+Development reset options
+-------------------------
+Use one of these scoped methods when retesting:
+
+- Press the Restart Tutorial button on the completion panel.
+- Use "Reset This Tutorial Completion" from SortingTutorialController's component
+  context menu.
+- Enable Force Tutorial In Editor on the TutorialManager scene GameObject.
+- Use "Reset Tutorial Progress" from that TutorialManager component's context
+  menu.
+
+GameDataManager's full PlayerPrefs reset is intentionally separate and should be
+used only when all player data must be erased.
+
+Manual Play Mode validation sequence
+------------------------------------
+1. Reset sorting.initial completion and open TUTORIAL.
+2. Confirm the Stage 1 reference Orange Box appears at (1,2).
+3. Confirm three Orange x1 rail Boxes arrive and the first Hand starts.
+4. Make an invalid drop. Verify the same step returns and progress does not change.
+5. Make a valid drop in the suggested cell. Verify immediate acceptance without an
+   extra click and wait for sorting before the next Hand.
+6. On a later move, choose another Board-accepted cell. Verify the next target uses
+   the actual placement/reference that survived resolution.
+7. Finish Stage 1. Verify one Match/removal completes and Stage 2 starts once.
+8. Finish Stage 2. Verify two Matches, empty Board, hidden Hand, and one success
+   panel.
+9. Double-click Start Level 1. Verify Level1 loads once.
+10. Return through startup with completion stored. Verify LoadManager routes to
+    Level1 rather than starting the one-time Tutorial again.
+11. Restart the Tutorial from its button. Verify TUTORIAL loads and guidance has no
+    duplicate callbacks.
+12. In Level1 verify placement, sorting, rail replenishment, Hammer, and Swap.
+
+Console expectation
+-------------------
+No Tutorial-related exception should appear. A deliberate missing reference or
+impossible recipe should produce one clear warning and cancel the affected
+Tutorial safely instead of freezing gameplay.

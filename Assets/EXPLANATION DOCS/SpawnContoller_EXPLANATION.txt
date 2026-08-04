@@ -1,0 +1,114 @@
+SPAWNCONTOLLER.CS - LIVE RAIL SERVICE AND DETERMINISTIC TUTORIAL SPAWNING
+========================================================================
+
+Important naming note
+---------------------
+The existing class/file spelling, SpawnContoller, is intentionally retained. A
+rename would break serialized Unity references and unrelated scripts.
+
+New responsibility boundary
+---------------------------
+SpawnContoller owns the live rail and creates Boxes. It no longer decides Tutorial
+stage progression, starts the Hand, checks Matches, or opens the completion panel.
+
+spawnedBoxes remains a live list
+-------------------------------
+spawnedBoxes contains only objects currently on the rail. Board removes an object
+after accepting it. Normal level replenishment waits for this live list to become
+empty.
+
+The sorting Tutorial does not use this list as history. It receives a separate
+stable List<Box> from SpawnTutorialBatch and stores instance IDs/placement tokens.
+Therefore an empty live list means "rail is empty," not "Tutorial has no progress."
+
+Scene lifecycle
+---------------
+Awake preserves the singleton reference and sets isTutorialState by comparing the
+active scene name to the exact string TUTORIAL.
+
+Start begins LevelSpawnRoutine only outside TUTORIAL. The removed legacy
+TutorialSpawnRoutine can no longer race SortingTutorialController.
+
+OnDestroy clears the singleton only when this instance owns it.
+
+Inspector fields
+----------------
+startPos and endPos
+    Parallel arrays describing where each rail Box appears and where it finishes
+    its entrance movement.
+
+spawnDelay
+    Small delay between creating Boxes.
+
+moveDuration
+    Duration of the rail entrance movement.
+
+maxBoxCount
+    Maximum normal-level batch size. The actual count is clamped to the available
+    start/end Transforms.
+
+boxPrefab and sodaPrefab
+    Existing prefabs used for both normal and Tutorial content.
+
+respawnDelay, stopSpawn, speed, spawnedBoxes, isTutorialState
+    Existing public compatibility fields. speed remains serialized even though
+    movement uses moveDuration, preserving scene/API compatibility.
+
+SpawnTutorialBatch
+------------------
+This public IEnumerator accepts an ordered list of color/count dictionaries and a
+completion callback.
+
+Its execution is:
+
+1. Remove destroyed references from the live rail list.
+2. Validate recipes, prefabs, and enough start/end Transforms.
+3. Refuse to overwrite a non-empty live rail.
+4. Create each configured Box at its start position.
+5. Add it to spawnedBoxes and to a separate result list.
+6. Wait spawnDelay between creations.
+7. Animate all created Boxes to their end positions.
+8. Wait for every movement coroutine.
+9. Return the stable List<Box> through the callback.
+
+Failure returns an empty result and logs a clear warning. It never clears or
+silently destroys live player Boxes.
+
+CreateConfiguredBox
+-------------------
+This method creates one Box at an exact world position and fills it from an
+IReadOnlyDictionary<SodaColor,int>. addToRailList is false by default, which is why
+SortingTutorialController can create the Stage 1 reference Box without pretending
+it is on the rail.
+
+The method validates prefabs and the Box component, calls PopulateConfiguredSodas,
+refreshes Box contents, and optionally adds the object to spawnedBoxes.
+
+Configured soda creation
+------------------------
+PopulateConfiguredSodas sums all positive recipe counts and compares them to
+Box.GetSodaPositions(). It refuses an oversized recipe. It then uses slot order,
+instantiates Soda as a Box child, and calls Soda.SetColor. Finally Box.RefreshContents
+maps the new Soda objects to logical slots.
+
+Normal LevelSpawnRoutine
+------------------------
+Normal play still performs repeated rail batches:
+
+1. Hide any Hand presentation.
+2. Spawn a random batch.
+3. Wait for entrance movements.
+4. Wait until Board placement removes every object from spawnedBoxes.
+5. Wait respawnDelay.
+6. Repeat until stopSpawn or gameEnded.
+
+SpawnRandomSodas retains random counts and colors, limited by discovered Box slots.
+MoveBox now explicitly assigns the final end position after interpolation, avoiding
+small floating-point placement errors.
+
+Removed deadlock
+----------------
+AllBoxesDragged and its special "empty means false" behavior were removed. The
+Tutorial no longer waits on that method, and the normal rail correctly treats an
+empty live list as ready for replenishment.
+

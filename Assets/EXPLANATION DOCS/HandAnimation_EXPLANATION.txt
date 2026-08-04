@@ -1,0 +1,105 @@
+HANDANIMATION.CS - REUSABLE HAND PRESENTATION
+=============================================
+
+New responsibility
+------------------
+HandAnimation is now a presentation component. It displays a repeated gesture
+between a source world position and a target world position. It does not inspect
+Board, spawnedBoxes, Box indices, Match state, or Tutorial stages.
+
+This is what makes the Hand reusable for a later Hammer, icon, tool, or feature
+Tutorial: the feature controller supplies meaning; HandAnimation supplies visuals.
+
+Inspector fields
+----------------
+mainCamera
+    Camera used to convert gameplay world positions into screen positions. If it
+    is unassigned, Camera.main is used.
+
+handImage
+    UI GameObject containing the Hand RectTransform.
+
+pixelsPerSecond
+    Movement speed in UI pixels. Duration is distance divided by this value, with
+    a 0.05-second minimum.
+
+pauseAtTarget
+    How long the Hand waits at the demonstrated destination before returning.
+
+screenOffset
+    A UI-pixel offset applied to both ends of the gesture. The current scene uses
+    (70, 0), preserving the intended visual alignment.
+
+movementEase
+    DOTween Ease used for both travel directions. TUTORIAL uses InOutSine.
+
+Ownership
+---------
+Acquire(owner) accepts a TutorialControllerBase when the Hand is free or already
+owned by that same controller. A different controller cannot take it.
+
+TutorialManager.TryAcquireHand is the normal entry point. The manager guarantees
+one active Tutorial, while HandAnimation performs a second local ownership check.
+
+Release(owner) kills animation, hides the Hand, clears the last instruction, and
+removes ownership. A controller that does not own the Hand cannot stop or release
+another controller's guidance.
+
+Awake/OnEnable restore the compatibility singleton reference. OnDisable stops all
+presentation and clears the singleton, so a disabled or re-enabled Hand cannot
+leave a stale static reference.
+
+Play methods
+------------
+There are two Play overloads:
+
+- Play(owner, Transform source, Transform target)
+- Play(owner, Vector3 sourceWorld, Vector3 targetWorld)
+
+The Transform overload is convenient for scene objects. The Vector3 overload is
+needed for runtime Board targets that do not require a dedicated Transform.
+
+Play validates ownership, converts both points into the coordinate system of the
+Hand's parent RectTransform, kills any old sequence, activates the Hand, and builds
+one DOTween Sequence:
+
+1. Move source to target.
+2. Pause at target.
+3. Move target back to source.
+4. Loop with LoopType.Restart.
+
+SetLink(...KillOnDestroy) prevents a tween from surviving its scene object.
+
+Coordinate conversion
+---------------------
+TryConvertWorldToHandSpace first uses the world Camera to obtain a screen point.
+It applies screenOffset, finds the Hand parent RectTransform, and then calls
+RectTransformUtility.ScreenPointToLocalPointInRectangle.
+
+For Screen Space Overlay Canvas, the UI camera argument is null. For other Canvas
+modes, Canvas.worldCamera is used. This supports the existing scene and future
+Canvas configurations.
+
+Stop and Restart
+----------------
+Stop(owner) kills the active sequence and delayed restart, then normally hides the
+Hand. Restart(owner, delay) keeps the saved source/target and replays that exact
+instruction after a delay. SortingTutorialController uses Restart only after an
+invalid or cancelled drop, so the current step remains active.
+
+Every new Play, Restart, Stop, Release, disable, or destruction path first kills
+the old sequence/coroutine. This prevents overlapping Hand animations during fast
+input.
+
+Compatibility methods
+---------------------
+HideHande, ShowHand, KillAnim, DeactivateAnimation, RunAnimation, and
+TryRestartAnimation remain public so old Inspector events and BoardControllerV2
+still compile. They are presentation-only wrappers. TryRestartAnimation does
+nothing unless a Tutorial already owns a valid instruction; it cannot recreate the
+old spawnedBoxes-based state machine.
+
+WorldToRectTransformPosition
+----------------------------
+This public static helper is retained for compatibility. New Hand playback uses
+the more precise parent-space conversion described above.
