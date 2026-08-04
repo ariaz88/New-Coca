@@ -24,12 +24,45 @@ unavailable.
 These are instance events. SortingTutorialController subscribes only to Boxes in
 the active stage, which avoids receiving input from unrelated objects.
 
+Owner-scoped drag constraint
+----------------------------
+Stage 2 needs a stronger rule than a DragStarted event. DragStarted is a report
+sent after Box has already accepted the pointer and set isDragging true. Rejecting
+the Box from that event would be too late: the object could move for one frame and
+then snap back. The requirement is stricter: an out-of-order Box must never begin
+moving.
+
+Box therefore has two private fields:
+
+dragConstraintOwner
+    The system that temporarily owns the rule. In this project the owner is the
+    active SortingTutorialController instance.
+
+dragConstraint
+    A Func<Box, bool>. It receives the Box being clicked and returns true only
+    when that Box may begin a drag.
+
+TrySetDragConstraint(owner, constraint) installs the rule. It rejects null values
+and refuses to replace a rule owned by another object. ClearDragConstraint(owner)
+removes the rule only when the same owner asks. This mirrors Board's owner-scoped
+placement constraint and prevents one feature from accidentally disabling another
+feature's input rule.
+
+Normal levels never install a drag constraint, so dragConstraint remains null and
+their input behavior is unchanged.
+
 OnMouseDown execution
 ---------------------
 Existing Hammer and Swap checks still run first for Boxes already on the Board.
 Rail dragging still stops for retired, already-dragged, or Board Boxes; a finished
 game; a resolving Board; a missing Camera; or a pointer that cannot reach the drag
 plane.
+
+Before pointer capture, OnMouseDown evaluates the optional dragConstraint. When it
+returns false, the method returns immediately. It does not save a new startPos,
+create a drag plane, set isDragging, invoke DragStarted, move the Transform, or hide
+the Tutorial Hand. This is why clicking the Stage 2 middle/right Box early produces
+no movement at all.
 
 Only after these checks does Box:
 
@@ -82,7 +115,9 @@ Subscription cleanup
 --------------------
 SortingTutorialController unsubscribes both Box events at stage transition,
 completion, cancellation, disable, or scene unload. Destroying a Box also destroys
-its event source, so matched Boxes cannot produce later callbacks.
+its event source, so matched Boxes cannot produce later callbacks. The same cleanup
+also calls ClearDragConstraint(this), ensuring a Tutorial rule cannot leak into a
+later stage or normal gameplay.
 
 Persistent Tutorial highlight extension
 ---------------------------------------

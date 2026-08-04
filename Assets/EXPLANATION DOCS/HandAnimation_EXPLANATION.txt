@@ -28,7 +28,10 @@ pauseAtTarget
 
 screenOffset
     A UI-pixel offset applied to both ends of the gesture. The current scene uses
-    (70, 0), preserving the intended visual alignment.
+    (70, 0). HandAnimation also applies a non-serialized (0, -70) correction for
+    the Hand sprite's upper-left fingertip. Keeping the intrinsic sprite correction
+    outside scene data ensures it also applies when the scene was already loaded
+    during a script reload.
 
 movementEase
     DOTween Ease used for both travel directions. TUTORIAL uses InOutSine.
@@ -73,12 +76,41 @@ SetLink(...KillOnDestroy) prevents a tween from surviving its scene object.
 Coordinate conversion
 ---------------------
 TryConvertWorldToHandSpace first uses the world Camera to obtain a screen point.
-It applies screenOffset, finds the Hand parent RectTransform, and then calls
+It adds screenOffset and FingertipPivotCompensation to produce
+effectiveScreenOffset, finds the Hand parent RectTransform, and then calls
 RectTransformUtility.ScreenPointToLocalPointInRectangle.
 
 For Screen Space Overlay Canvas, the UI camera argument is null. For other Canvas
 modes, Canvas.worldCamera is used. This supports the existing scene and future
 Canvas configurations.
+
+Why the fingertip needed a separate correction
+-----------------------------------------------
+The gameplay target is a world-space point at the destination Box/cell pivot. The
+Hand is a UI Image whose RectTransform pivot is in the center of a 180 x 143 image.
+DOTween correctly moved that center pivot to the converted target, but the visible
+finger is near the image's upper-left corner. Therefore the tween was numerically
+correct while the fingertip appeared above the desired green-check position.
+
+FingertipPivotCompensation is (0, -70). The existing screenOffset X value already
+handles the finger's horizontal location; subtracting about half the image height
+aligns the visible fingertip vertically. Both the source and target use the same
+effective offset, so the complete demonstrated gesture points consistently.
+
+Why this value is not serialized:
+    screenOffset is scene/design data and appears in the Inspector. The fingertip
+    compensation belongs to this particular sprite geometry. During the first
+    repair attempt, changing a serialized default did not replace the old value on
+    a Tutorial scene that Unity already had loaded in memory. Domain reload keeps
+    existing serialized component state. Moving the intrinsic correction into the
+    runtime calculation makes it apply after script compilation even when the
+    loaded scene still contains its earlier Inspector value.
+
+Junior-developer lesson:
+    A Transform can arrive at the correct coordinate while the artwork still looks
+    wrong. Always ask which visual point should align: center pivot, corner, icon
+    hotspot, or fingertip. Also distinguish C# field defaults from values already
+    serialized into a Unity scene or prefab.
 
 Stop and Restart
 ----------------

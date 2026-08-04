@@ -74,6 +74,18 @@ Its execution is:
 Failure returns an empty result and logs a clear warning. It never clears or
 silently destroys live player Boxes.
 
+Relationship to Stage 2 left-to-right input
+-------------------------------------------
+SpawnTutorialBatch preserves recipe/index order and returns stable Box references,
+but SpawnContoller does not decide which Box the player may drag. That is feature
+Tutorial meaning and belongs to SortingTutorialController.
+
+The current first three endPos Transforms are arranged left, middle, and right.
+After their entrance coroutines finish, SortingTutorialController sorts the actual
+Box world X positions and installs the Stage 2 drag rules. This division keeps the
+spawner reusable: it creates and positions objects; the feature controller decides
+the teaching order.
+
 CreateConfiguredBox
 -------------------
 This method creates one Box at an exact world position and fills it from an
@@ -111,4 +123,3 @@ Removed deadlock
 AllBoxesDragged and its special "empty means false" behavior were removed. The
 Tutorial no longer waits on that method, and the normal rail correctly treats an
 empty live list as ready for replenishment.
-

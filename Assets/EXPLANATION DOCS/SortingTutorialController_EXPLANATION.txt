@@ -110,6 +110,12 @@ SpawnTutorialBatch. It stores the returned Boxes independently, records each
 instance ID, and subscribes DragStarted and DropRejectedOrCancelled for those
 specific sources.
 
+For configured stage index 1 (the second/two-color stage), it also sorts stageBoxes
+by each Box Transform's world X coordinate. The Tutorial camera has no horizontal
+rotation, so increasing world X is the visible left-to-right rail order. Sorting by
+the final positions is safer than assuming a future Inspector array will always be
+ordered correctly.
+
 One placement step
 ------------------
 For every not-yet-accepted source, RunTutorial performs this exact loop:
@@ -133,9 +139,10 @@ For a valid stage event it stores the actual Box as lastSuccessfullyPlacedBox,
 records its PlacementOrder, marks progress once, stops the Hand, and displays the
 short completion visual.
 
-The player may use any Board-accepted cell and may even choose another remaining
-stage source before the demonstrated one. Because membership and actual accepted
-data are tracked, the flow adapts instead of deadlocking.
+The player may use any currently highlighted, Board-accepted cell. In Stage 1 the
+remaining rail sources are not input-locked, so the event data still lets the flow
+adapt if another stage source is chosen. Stage 2 deliberately adds the stricter
+left-to-right source rule described below; another source cannot begin moving.
 
 Resolution handling and Match counting
 --------------------------------------
@@ -151,6 +158,52 @@ Invalid/cancelled drag behavior
 DragStarted stops/hides current guidance while the player interacts. A rejected or
 cancelled drop does not change acceptedSourceIds. It re-shows the same prompt and
 restarts the saved Hand instruction after destinationRetryDelay.
+
+Stage 2 ordered rail input
+--------------------------
+The two-color stage sorts its three rail Boxes by world X, matching the Tutorial
+camera's visible left-to-right order. Each Box receives an owner-scoped drag rule.
+Only currentSourceBox may begin a drag while the controller is WaitingForPlacement;
+clicking or dragging the middle/right Box early does not capture the pointer or move
+the Box. After Board acceptance and resolution, currentSourceBox advances to the
+next surviving Box. Cleanup removes every rule, leaving normal levels unchanged.
+
+The important code pieces are:
+
+OrderedRailSelectionStageIndex
+    Constant value 1. C# lists use zero-based indexes, so index 0 is Stage 1 and
+    index 1 is Stage 2.
+
+stageBoxes.Sort(...)
+    Compares transform.position.x and creates the spatial order left, middle,
+    right after the rail entrance animation has finished.
+
+TrySetDragConstraint(this, CanBeginOrderedStageDrag)
+    Installs a predicate on every Stage 2 source Box. "this" is the controller and
+    therefore the owner allowed to remove the rule later.
+
+CanBeginOrderedStageDrag(Box box)
+    Returns true only when all of these facts are true:
+    1. The Tutorial is still running.
+    2. The current stage is Stage 2.
+    3. The state machine is WaitingForPlacement.
+    4. The clicked Box exists and is exactly currentSourceBox.
+    5. Board has not already accepted that Box.
+
+Why the state check matters:
+    Input also stays locked while a destination is being calculated and while
+    Board is resolving soda movement/Matches. The rule opens only during the
+    intentional player-action window.
+
+Why the rule runs inside Box.OnMouseDown:
+    The controller's DragStarted handler is notification, not authorization. By
+    the time that event fires, isDragging is already true. The predicate must run
+    before pointer capture to guarantee zero movement for an incorrect Box.
+
+Turn advancement is still event-driven. A successful left Box placement raises
+Board.PlacementAccepted, then the controller waits for the correlated
+PlacementResolutionCompleted. Only after resolution does the loop assign the
+middle Box as currentSourceBox. The same sequence then unlocks the right Box.
 
 Adaptive target calculation
 ---------------------------

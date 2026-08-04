@@ -86,13 +86,28 @@ Initial Target Cell: (1, 2)
 
 The totals are Red x4 and Orange x4, so two Matches are mathematically required.
 
+Stage 2 ordered input behavior
+------------------------------
+The three spawned Boxes are consumed from the visible left side of the rail to the
+right: left, middle, then right. SortingTutorialController sorts the returned Box
+references by final world X and installs a temporary owner-scoped drag predicate on
+each one. Only the Box currently indicated by the Hand can enter its drag lifecycle.
+
+Trying the middle or right Box early should have no visible effect: its Transform
+must not move, DragStarted must not fire, and the Hand/prompt should remain on the
+current instruction. After the left Box is accepted and Board finishes resolving,
+the middle Box unlocks. The right Box unlocks only after the middle Box completes.
+
+This is runtime controller behavior rather than another Inspector checkbox. It is
+specific to configured stage index 1, which is the current two-color phase.
+
 HandAnimation Inspector values
 ------------------------------
 Main Camera and Hand Image retain their existing references.
 
 Pixels Per Second: 530
 Pause At Target: 0.5
-Screen Offset: (70, 0)
+Screen Offset: (70, 0), plus HandAnimation's (0, -70) fingertip pivot correction
 Movement Ease: InOutSine
 
 There is no distance-success threshold. HandAnimation only presents the target;
@@ -167,14 +182,19 @@ Manual Play Mode validation sequence
 6. On a later move, choose another Board-accepted cell. Verify the next target uses
    the actual placement/reference that survived resolution.
 7. Finish Stage 1. Verify one Match/removal completes and Stage 2 starts once.
-8. Finish Stage 2. Verify two Matches, empty Board, hidden Hand, and one success
+8. Before moving the Stage 2 left Box, try dragging the middle and right Boxes.
+   Verify neither Box moves at all and the current Hand instruction remains.
+9. Place the left Box and wait for resolution. Try the right Box before the middle
+   Box; verify the right Box remains fixed and only the middle Box can move.
+10. Place the middle Box, wait for resolution, then verify the right Box unlocks.
+11. Finish Stage 2. Verify two Matches, empty Board, hidden Hand, and one success
    panel.
-9. Double-click Start Level 1. Verify Level1 loads once.
-10. Return through startup with completion stored. Verify LoadManager routes to
+12. Double-click Start Level 1. Verify Level1 loads once.
+13. Return through startup with completion stored. Verify LoadManager routes to
     Level1 rather than starting the one-time Tutorial again.
-11. Restart the Tutorial from its button. Verify TUTORIAL loads and guidance has no
+14. Restart the Tutorial from its button. Verify TUTORIAL loads and guidance has no
     duplicate callbacks.
-12. In Level1 verify placement, sorting, rail replenishment, Hammer, and Swap.
+15. In Level1 verify placement, sorting, rail replenishment, Hammer, and Swap.
 
 Console expectation
 -------------------
