@@ -1,0 +1,125 @@
+ANDROID BUILD AND RESPONSIVE UI - JUNIOR DEVELOPER EXPLANATION
+================================================================
+
+Goal
+----
+Create a portrait Android APK while keeping the game usable on phones whose
+resolution is smaller than the 1125 x 2436 design resolution.
+
+Important idea: resolution is not layout
+----------------------------------------
+1125 x 2436 is the reference used while designing the UI. It is not a minimum
+device resolution and it must not be treated as a fixed number of pixels.
+
+Unity's Canvas Scaler converts the reference design into the current screen size.
+The important configuration is:
+
+- UI Scale Mode: Scale With Screen Size
+- Reference Resolution: 1125 x 2436
+- Screen Match Mode: Match Width Or Height
+- Match: 0.5
+
+A Match value of 0.5 balances width and height. This is safer than matching only
+height on phones with a different aspect ratio: the whole interface scales down
+on smaller screens without either dimension completely controlling the result.
+
+Files using this configuration
+------------------------------
+- Assets/Scenes/MainMenu.unity
+- Assets/Scenes/TUTORIAL.unity
+- Assets/Scenes/Level1.unity through Level5.unity
+- Assets/Prefabs/Full Canvas/Canvas.prefab
+
+The shared Canvas prefab matters because newly created or prefab-driven gameplay
+screens inherit the same rule. Existing scene Canvas Scalers were also updated so
+their serialized overrides cannot keep the old height-only behavior.
+
+What Canvas Scaler does not solve
+---------------------------------
+Canvas scaling changes size; it does not invent good anchors. UI elements near an
+edge should be anchored to that edge, and full-screen backgrounds should stretch.
+Phones with notches or camera cut-outs may additionally need a Safe Area wrapper.
+Always test at several aspect ratios in Unity's Device Simulator and on hardware.
+
+AndroidBuildAutomation.cs
+-------------------------
+Source:
+Assets/Scripts/Main Scripts/Editor/AndroidBuildAutomation.cs
+
+This is an Editor-only build helper. The #if UNITY_EDITOR guard prevents it from
+being compiled into the shipped game.
+
+Main responsibilities:
+
+1. Read all enabled scenes from Unity Build Settings.
+2. Switch the active build target to Android when required.
+3. force portrait orientation and disable landscape auto-rotation.
+4. Build an ARM64 APK with the IL2CPP scripting backend.
+5. Use debug signing for the Development test APK.
+6. Write a build result file containing status, warnings, size, and duration.
+7. Restore temporary Editor build settings in a finally block.
+
+Why ARM64 and IL2CPP?
+---------------------
+ARM64 requires IL2CPP in this Unity setup. IL2CPP converts managed C# assemblies
+into native C++, then Android's compiler produces the final ARM64 libraries. The
+first build is therefore much slower than a normal C# compilation, while later
+builds can reuse Unity's build cache.
+
+Optimized Frame Pacing (Swappy) is disabled for this build. The installed Swappy
+native package requires the shared C++ runtime, while Unity's generated IL2CPP
+project uses the static runtime. Gradle cannot safely mix the two. Disabling the
+optional integration removes that incompatible native dependency; it does not
+change the puzzle rules, touch input, UI scaling, or the target frame rate.
+
+Why debug signing?
+------------------
+The release keystore configured in Player Settings points to a path from another
+machine. A keystore contains the private identity used to publish application
+updates and must not be guessed, recreated, or silently replaced. The automated
+test build temporarily disables the custom keystore so Unity can create an
+installable Development APK with debug signing.
+
+Before publishing to Google Play, the project owner must supply the real release
+keystore and passwords, store them securely, disable Development Build, and
+usually produce an Android App Bundle (AAB) instead of this test APK.
+
+Kotlin dependency alignment
+---------------------------
+Source:
+Assets/Plugins/Android/mainTemplate.gradle
+
+Unity IAP and older Android plugins requested different Kotlin standard-library
+versions. Gradle then found duplicate Kotlin classes. The template applies one
+rule to every Gradle subproject (both unityLibrary and launcher) and forces the
+stdlib, jdk7, and jdk8 artifacts to the same compatible 1.8.22 version. This does
+not create a new gameplay system; it only makes Android dependency resolution
+deterministic.
+
+How to make a test build later
+------------------------------
+In Unity, use:
+
+Build > Coca Sorting > Build Android Test APK
+
+The output path is:
+
+Builds/Android/CocaSorting-mobile.apk
+
+The neighboring build-result.txt records whether Unity reported success.
+
+Validation checklist
+--------------------
+1. Install the APK on at least one physical ARM64 Android phone.
+2. Test a screen smaller than 1125 x 2436 and a different aspect ratio.
+3. Check Main Menu, Tutorial, gameplay HUD, pause/settings, and win/lose panels.
+4. Confirm buttons remain visible and tappable near notches and navigation bars.
+5. Confirm the app remains portrait when the phone rotates.
+6. Complete a level and restart the app to verify save/load behavior.
+7. For release, repeat validation with release signing and a non-Development AAB.
+
+Mentor exercise
+---------------
+In Device Simulator, compare 720 x 1600, 1080 x 1920, and 1125 x 2436. Explain
+which changes come from Canvas scaling, which come from aspect ratio, and which
+would require better RectTransform anchors or a Safe Area component.

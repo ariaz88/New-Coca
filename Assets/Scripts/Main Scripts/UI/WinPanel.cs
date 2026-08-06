@@ -8,6 +8,11 @@ using DG.Tweening;
 
 public class WinPanel : MonoBehaviour
 {
+    // Logical Level 1 is stored as 1, while its Unity Build Index is 3.
+    // Keeping this offset here prevents Tutorial (Build Index 2) from being
+    // loaded when the saved level advances from Level 1 to Level 2.
+    private const int FirstLevelBuildIndex = 3;
+
     [SerializeField] Button threeXReward;
     [SerializeField] Button noThanksButton;
     [SerializeField] GameObject winPanel;
@@ -96,19 +101,23 @@ public class WinPanel : MonoBehaviour
 
     private void GoToNextLevel()
     {
-        int nextLevelIndex = GameDataManager.instance.IncrementLevel();
+        int nextLogicalLevel = GameDataManager.instance.IncrementLevel();
+        int nextSceneBuildIndex =
+            FirstLevelBuildIndex + nextLogicalLevel - 1;
 
-        // Get the total number of scenes
         int totalScenes = SceneManager.sceneCountInBuildSettings;
 
-        if (nextLevelIndex < totalScenes)
+        if (nextSceneBuildIndex >= FirstLevelBuildIndex &&
+            nextSceneBuildIndex < totalScenes)
         {
-            SceneManager.LoadScene(nextLevelIndex);
+            SceneManager.LoadScene(nextSceneBuildIndex);
         }
         else
         {
-            Debug.LogWarning("Invalid scene index. No more levels available.");
-            // Optionally, handle what to do if there are no more levels.
+            Debug.LogWarning(
+                $"Cannot load logical Level {nextLogicalLevel}: Build Index " +
+                $"{nextSceneBuildIndex} is not configured. " +
+                "Add the next level to Build Profiles or handle game completion.");
         }
     }
 

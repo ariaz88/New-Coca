@@ -47,6 +47,18 @@ public class Box : MonoBehaviour
     private long placementOrder;
     private object dragConstraintOwner;
     private Func<Box, bool> dragConstraint;
+    private const string DragOverlayShaderResourcePath = "DraggedBoxOverlay";
+    private readonly List<DragRendererState> dragRendererStates =
+        new List<DragRendererState>();
+    private readonly List<Material> dragOverlayMaterials = new List<Material>();
+    private Shader dragOverlayShader;
+
+    private sealed class DragRendererState
+    {
+        public Renderer Renderer;
+        public int SortingOrder;
+        public Material[] SharedMaterials;
+    }
 
     [Header("Board")]
     public int column = -1;
@@ -67,6 +79,22 @@ public class Box : MonoBehaviour
     public Material highLightMaterialForSwap;
 
     public int Capacity => sodaSlots.Count;
+    public int DiscoverableCapacity
+    {
+        get
+        {
+            int explicitSlotCount = sodaSlots != null
+                ? sodaSlots.Count(slot => slot != null)
+                : 0;
+            if (explicitSlotCount > 0)
+            {
+                return explicitSlotCount;
+            }
+
+            return GetComponentsInChildren<Transform>(true)
+                .Count(child => child != transform && IsSodaSlotName(child.name));
+        }
+    }
     public int SodaCount => Sodas.Count(soda => soda != null);
     public int FreeSlots => Capacity - SodaCount - ReservedSlotCount;
     public int DistinctColorCount => GetSodaColorCounts().Count;
@@ -735,6 +763,7 @@ public class Box : MonoBehaviour
 
         dragOffset = transform.position - pointer;
         isDragging = true;
+        EnableDraggedDisplayPriority();
         DragStarted?.Invoke(this);
     }
 
@@ -785,6 +814,7 @@ public class Box : MonoBehaviour
         }
 
         isDragging = false;
+        RestoreNormalDisplayPriority();
         Board board = Board.instance;
         Node node = board != null
             ? board.GetDropTargetNode(GetPlacementReferencePosition())
@@ -816,6 +846,7 @@ public class Box : MonoBehaviour
     {
         bool wasDragging = isDragging;
         isDragging = false;
+        RestoreNormalDisplayPriority();
         transform.position = startPos;
         if (Board.instance != null && Board.instance.HasPlacementConstraint)
         {
@@ -830,6 +861,97 @@ public class Box : MonoBehaviour
         {
             DropRejectedOrCancelled?.Invoke(this);
         }
+    }
+
+    /// <summary>
+    /// Gives this Box and its Soda renderers visual priority without changing
+    /// the transform used by dragging or placement. ToyGloss moves only their
+    /// rendered depth close to the camera; the original materials and sorting
+    /// orders are restored as soon as dragging ends.
+    /// </summary>
+    private void EnableDraggedDisplayPriority()
+    {
+        RestoreNormalDisplayPriority();
+
+        if (dragOverlayShader == null)
+        {
+            dragOverlayShader = Resources.Load<Shader>(DragOverlayShaderResourcePath);
+        }
+
+        foreach (Renderer childRenderer in GetComponentsInChildren<Renderer>(true))
+        {
+            if (childRenderer == null)
+            {
+                continue;
+            }
+
+            Material[] originalMaterials = childRenderer.sharedMaterials;
+            dragRendererStates.Add(new DragRendererState
+            {
+                Renderer = childRenderer,
+                SortingOrder = childRenderer.sortingOrder,
+                SharedMaterials = originalMaterials
+            });
+
+            if (dragOverlayShader != null)
+            {
+                Material[] overlayMaterials = new Material[originalMaterials.Length];
+                for (int i = 0; i < originalMaterials.Length; i++)
+                {
+                    Material originalMaterial = originalMaterials[i];
+                    if (originalMaterial == null)
+                    {
+                        continue;
+                    }
+
+                    Material overlayMaterial = new Material(dragOverlayShader)
+                    {
+                        name = originalMaterial.name + " (Drag Overlay)",
+                        hideFlags = HideFlags.HideAndDontSave
+                    };
+                    int overlayRenderQueue = overlayMaterial.renderQueue;
+                    overlayMaterial.CopyPropertiesFromMaterial(originalMaterial);
+                    overlayMaterial.renderQueue = overlayRenderQueue;
+                    overlayMaterials[i] = overlayMaterial;
+                    dragOverlayMaterials.Add(overlayMaterial);
+                }
+
+                childRenderer.sharedMaterials = overlayMaterials;
+            }
+
+            childRenderer.sortingOrder = short.MaxValue;
+        }
+    }
+
+    private void RestoreNormalDisplayPriority()
+    {
+        foreach (DragRendererState state in dragRendererStates)
+        {
+            if (state?.Renderer == null)
+            {
+                continue;
+            }
+
+            state.Renderer.sharedMaterials = state.SharedMaterials;
+            state.Renderer.sortingOrder = state.SortingOrder;
+        }
+
+        dragRendererStates.Clear();
+
+        foreach (Material overlayMaterial in dragOverlayMaterials)
+        {
+            if (overlayMaterial != null)
+            {
+                Destroy(overlayMaterial);
+            }
+        }
+
+        dragOverlayMaterials.Clear();
+    }
+
+    private void OnDisable()
+    {
+        RestoreNormalDisplayPriority();
     }
 
     private void ClearCurrentHighlight()

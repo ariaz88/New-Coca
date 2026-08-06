@@ -1,6 +1,15 @@
 BOX.CS - DRAG LIFECYCLE SIGNALS
 ===============================
 
+Phase 2 capacity helper
+-----------------------
+Box.DiscoverableCapacity lets the editor read the same capacity definition used
+at runtime without entering Play Mode. It first counts explicitly assigned
+sodaSlots; if that list is empty, it counts children named SodaPosition<number>.
+BoardEditor uses this read-only value to prevent a level designer from adding
+more initial Soda colors than the selected Box prefab can actually contain. The
+runtime Capacity property remains based on the slots discovered by Box.Awake.
+
 Purpose of this change
 ----------------------
 Box already owns mouse drag input. The old implementation also called
@@ -70,7 +79,8 @@ Only after these checks does Box:
 2. Create the drag plane.
 3. Calculate dragOffset.
 4. Set isDragging true.
-5. Invoke DragStarted(this).
+5. Enable temporary dragged-Box display priority.
+6. Invoke DragStarted(this).
 
 The Tutorial uses this event to hide guidance while the player is performing the
 gesture. It does not mark progress here because a drag can still be cancelled.
@@ -97,6 +107,23 @@ CancelDrag records whether a drag was active before clearing isDragging. It
 restores startPos and clears the highlighted Node. It raises the cancellation event
 only when wasDragging is true, preventing false rejection notifications from
 cleanup calls that did not represent a player drag.
+
+Dragged Box display priority
+----------------------------
+EnableDraggedDisplayPriority collects every Renderer under the dragged Box,
+including the Soda renderers. It saves each renderer's existing sorting order and
+materials, temporarily assigns private DraggedBoxOverlay material copies, and
+applies the highest temporary sorting order.
+
+DraggedBoxOverlay changes only the rendered clip-space depth of those temporary
+material copies. The shared ToyGloss shader and all scene materials remain
+untouched. The dragged Box therefore appears above Board Boxes while its body and
+Sodas keep correct internal 3D occlusion. Its Transform, scale, drag plane, pointer
+projection, collider, and Board placement reference never change.
+
+OnMouseUp, CancelDrag, and OnDisable all call RestoreNormalDisplayPriority. The
+saved materials and sorting order are restored for every renderer, covering
+successful placement, rejected drops, returns to the rail, and object cleanup.
 
 Removed coupling
 ----------------

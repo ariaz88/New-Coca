@@ -81,10 +81,12 @@ Match sequence before doing asynchronous work. It then:
 2. Yields through UniversalSodaTransferSystem.Resolve.
 3. If the resolver component is unexpectedly missing, logs a warning and still
    closes the lifecycle cleanly.
-4. Cleans boardBoxes, evaluates Board-full state, and refreshes the UI.
-5. Sets IsResolving false.
-6. Calculates the packed-Match delta.
-7. Raises PlacementResolutionCompleted exactly once.
+4. Waits until every adjacent blocked-cell break started by this resolution has
+   completed and created its playable Node.
+5. Cleans boardBoxes, evaluates Board-full state, and refreshes the UI.
+6. Sets IsResolving false.
+7. Calculates the packed-Match delta.
+8. Raises PlacementResolutionCompleted exactly once.
 
 The completion event is deliberately last. A Tutorial can begin its next Hand
 instruction immediately after receiving it because Board input has already been
@@ -135,3 +137,88 @@ SortingTutorialController registers the predicate when its Tutorial starts and
 clears it during lifecycle cleanup. TryPlaceBox first requires CanPlaceAt and then
 requires this predicate when one exists. The predicate is absent in normal levels,
 so CanPlaceAt remains their only placement rule.
+
+Dynamic per-level layout extension (Phase 1)
+--------------------------------------------
+Board width and height remain serialized on each scene, but Board now also stores
+removedCells. RebuildLayoutCache converts that list into a fast HashSet, and
+IsPlayableCell is the shared shape rule. GenerateBoard skips removed coordinates,
+adjacency excludes them, drop validation treats them as unavailable, and
+CheckBoardFill counts only real Nodes. BoardEditor displays the shape as a visual
+green-O/dark-X grid so level designers do not edit coordinates or code manually.
+
+GetFirstPlayableNode and GetPlayableNodesSerpentine remove the clear tool's old
+dependency on fixed cells such as grid[0,0] and grid[3,4]. See
+DYNAMIC_BOARD_LAYOUT_EXPLANATION.txt for setup steps and regression tests.
+
+Per-level initial Box extension (Phase 2)
+-----------------------------------------
+Board.initialBoxes is a sparse serialized list: only cells that begin occupied
+have an InitialBoardBoxData entry. Each entry stores its coordinate, an optional
+Box prefab override, and an ordered list of the existing Soda.SodaColor enum.
+Missing entries mean empty cells, so large Boards do not allocate configuration
+objects for every coordinate.
+
+GenerateInitialBoxes runs after GenerateBoard. It reuses SpawnContoller.boxPrefab
+when no override is assigned, reads capacity from the real Box SodaPosition
+slots, creates Soda objects with Soda.SetColor, and registers the result through
+the same allBoxes, boardBoxes, Node.isOccupied, and Box.MarkPlaced state used by
+normal gameplay. It does not invoke placement events or start the resolver,
+because loading a level is not a player move. See
+INITIAL_BOX_LEVEL_SETUP_EXPLANATION.txt for the editor workflow and safety rules.
+
+Scene preview and removed-cell visuals
+--------------------------------------
+BoardEditor registers DrawLayoutGizmos with Unity's DrawGizmo system. Playable
+cells are translucent green cubes and removed cells are solid brown cubes. The
+loop uses the configured width and height and is not limited to 20 cells.
+
+GenerateRemovedCellVisual creates one collider-free brown GameObject for every
+removed coordinate during GenerateBoard. Designers may assign a prefab/material,
+or leave both empty for an automatic URP-compatible Cube. These objects are visual
+feedback only; IsPlayableCell and CanPlaceAt remain the gameplay authority.
+
+Breakable blocked-cell extension
+--------------------------------
+The existing removedCells data now represents cells that begin blocked. This
+reuses the established shape data, lookup HashSet, brown visuals, Node prefab,
+occupancy arrays, and match resolver instead of adding a parallel blocker system.
+
+Board keeps removedCellVisuals, a Dictionary from Vector2Int to the generated
+brown GameObject. The dictionary lets a match animate and destroy the exact
+visual in constant time. breakingBlockedCells is a HashSet used as an exactly-once
+guard when multiple packed Boxes touch the same blocker.
+
+Only RetireBox(box, packed: true) starts blocker removal. NotifyBoxRemoved is used
+by other removal paths such as tools, and empty source Boxes are retired with
+packed=false; neither path unlocks blockers. This is why a Hammer deletion or an
+empty transfer source cannot accidentally behave like a completed match.
+
+BeginUnlockAdjacentBlockedCells checks the shared DirectOffsets array. It does
+not call GetAdjacentPositions because that public method deliberately filters out
+blocked cells. The raw offsets allow Board to find a blocked coordinate while
+still enforcing bounds and orthogonal-only rules.
+
+BreakBlockedCellRoutine scales the visual toward zero. A scale break works with
+the generated opaque material and with custom prefabs, so no transparent shader
+or extra material instance is required. `blockedCellBreakDuration` is serialized,
+Inspector-configurable, and clamped to zero or greater in OnValidate.
+
+UnlockBlockedCell performs the authoritative state transition:
+
+- remove the coordinate from removedCellLookup and runtime removedCells;
+- remove and destroy the matching brown visual;
+- clear allBoxes at that coordinate;
+- instantiate the existing Node prefab through CreatePlayableNode;
+- mark that Node unoccupied and clear its highlight;
+- remove the coordinate from breakingBlockedCells.
+
+CreatePlayableNode is also used by GenerateBoard, which prevents startup and
+runtime-unlock Node setup from drifting apart. The new Node automatically becomes
+visible to drop detection, placement highlighting, occupancy checks, Board-full
+logic, and subsequent neighbour queries because those systems already read grid
+and removedCellLookup live.
+
+ResolvePlacement waits while breakingBlockedCells is non-empty. This keeps
+CanInteract false until the animation and state transition finish, and guarantees
+PlacementResolutionCompleted describes the final unlocked layout.

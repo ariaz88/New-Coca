@@ -2882,9 +2882,23 @@ MonoBehaviour:
   boxPref: {fileID: 7247333143549396864, guid: 34fafd3cea28b6e4cbfcf55d9882584a, type: 3}
   width: 4
   height: 5
+  removedCells: []
   localOrigin: {x: 0.149, y: 0.185, z: 0.16}
   cellSpacing: {x: 0.279, y: 0.279}
   placedBoxYOffset: 0.155
+  initialBoxes: []
+  drawLayoutGizmos: 1
+  playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}
+  removedCellGizmoColor: {r: 0.38, g: 0.18, b: 0.07, a: 0.75}
+  gizmoCellHeight: 0.025
+  gizmoCellFill: 0.82
+  gizmoVerticalOffset: 0.17
+  removedCellVisualPrefab: {fileID: 0}
+  removedCellVisualMaterial: {fileID: 0}
+  removedCellVisualColor: {r: 0.38, g: 0.18, b: 0.07, a: 1}
+  removedCellVisualFill: 0.78
+  removedCellVisualHeight: 0.06
+  removedCellVisualYOffset: 0.15
   awardPackedBoxRewards: 1
   coinsPerPackedBox: 100
   packedBoxMoveDuration: 0.37
@@ -7513,7 +7527,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1125, y: 2436}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 1
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96

@@ -52,6 +52,22 @@ public struct BoardPlacementResolutionEvent
 }
 
 /// <summary>
+/// Sparse, per-scene level-design data for one Board cell that starts occupied.
+/// A missing entry means the playable cell starts empty. Item order maps directly
+/// to SodaPosition0, SodaPosition1, and so on.
+/// </summary>
+[System.Serializable]
+public sealed class InitialBoardBoxData
+{
+    public Vector2Int coordinate;
+
+    [Tooltip("Optional. When empty, the active SpawnContoller Box Prefab is reused.")]
+    public GameObject boxPrefabOverride;
+
+    public List<Soda.SodaColor> startingSodas = new List<Soda.SodaColor>();
+}
+
+/// <summary>
 /// Active board implementation.
 /// This version is data-driven: it resolves the connected orthogonal component
 /// around the placed box and asks UniversalSodaTransferSystem for one safe,
@@ -61,6 +77,9 @@ public struct BoardPlacementResolutionEvent
 [RequireComponent(typeof(UniversalSodaTransferSystem))]
 public class Board : MonoBehaviour
 {
+    private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorProperty = Shader.PropertyToID("_Color");
+
     private static readonly Vector2Int[] DirectOffsets =
     {
         new Vector2Int(0, 1),
@@ -74,9 +93,37 @@ public class Board : MonoBehaviour
     [SerializeField] private GameObject boxPref;
     [SerializeField, Min(1)] private int width = 4;
     [SerializeField, Min(1)] private int height = 5;
+    [SerializeField, Tooltip("Cells omitted from this scene's Board layout. Coordinates are zero-based.")]
+    private List<Vector2Int> removedCells = new List<Vector2Int>();
     [SerializeField] private Vector3 localOrigin = new Vector3(0.149f, 0.185f, 0.16f);
     [SerializeField] private Vector2 cellSpacing = new Vector2(0.279f, 0.279f);
     [SerializeField] private float placedBoxYOffset = 0.155f;
+
+    [Header("Per-Level Initial Boxes")]
+    [SerializeField, Tooltip("Sparse list: only cells that start with a box are stored.")]
+    private List<InitialBoardBoxData> initialBoxes = new List<InitialBoardBoxData>();
+
+    [Header("Scene View Layout Preview")]
+    [SerializeField] private bool drawLayoutGizmos = true;
+    [SerializeField] private Color playableCellGizmoColor = new Color(0.2f, 0.9f, 0.35f, 0.9f);
+    [SerializeField] private Color removedCellGizmoColor = new Color(0.38f, 0.18f, 0.07f, 0.75f);
+    [SerializeField, Min(0.001f)] private float gizmoCellHeight = 0.025f;
+    [SerializeField, Range(0.1f, 1f)] private float gizmoCellFill = 0.82f;
+    [SerializeField, Min(0f), Tooltip("Raises the Scene-view preview above the physical board surface.")]
+    private float gizmoVerticalOffset = 0.17f;
+
+    [Header("Breakable Blocked Cell Visual")]
+    [SerializeField, Tooltip("Optional. When empty, Board creates a Cube automatically.")]
+    private GameObject removedCellVisualPrefab;
+    [SerializeField, Tooltip("Optional material override for generated blocked-cell visuals.")]
+    private Material removedCellVisualMaterial;
+    [SerializeField] private Color removedCellVisualColor = new Color(0.38f, 0.18f, 0.07f, 1f);
+    [SerializeField, Range(0.1f, 1f)] private float removedCellVisualFill = 0.78f;
+    [SerializeField, Min(0.01f)] private float removedCellVisualHeight = 0.06f;
+    [SerializeField, Tooltip("Raises the Play-mode blocked-cell cube above the physical board surface.")]
+    private float removedCellVisualYOffset = 0.15f;
+    [SerializeField, Min(0f), Tooltip("Seconds used to shrink and break an adjacent brown cell after a packed match.")]
+    private float blockedCellBreakDuration = 0.25f;
 
     [Header("Rewards")]
     [SerializeField] private bool awardPackedBoxRewards = true;
@@ -101,6 +148,11 @@ public class Board : MonoBehaviour
     private long placementSequence;
     private long packedMatchSequence;
     private int nextStableId = 1;
+    private readonly HashSet<Vector2Int> removedCellLookup = new HashSet<Vector2Int>();
+    private readonly HashSet<Vector2Int> breakingBlockedCells = new HashSet<Vector2Int>();
+    private readonly Dictionary<Vector2Int, GameObject> removedCellVisuals =
+        new Dictionary<Vector2Int, GameObject>();
+    private Material generatedRemovedCellMaterial;
     private object placementConstraintOwner;
     private System.Func<Box, int, int, bool> placementConstraint;
 
@@ -112,12 +164,15 @@ public class Board : MonoBehaviour
 
     public int Height => height;
     public int Width => width;
+    public int PlayableCellCount => width * height - removedCellLookup.Count;
     public bool IsResolving { get; private set; }
     public bool CanInteract => !IsResolving;
     public bool HasPlacementConstraint => placementConstraintOwner != null && placementConstraint != null;
 
     private void Awake()
     {
+        RebuildLayoutCache();
+
         if (instance != null && instance != this)
         {
             Debug.LogError("Only one Board may be active.", this);
@@ -142,10 +197,16 @@ public class Board : MonoBehaviour
         lastPlacedBox = null;
         retiredBoxes.Clear();
         GenerateBoard();
+        GenerateInitialBoxes();
     }
 
     private void OnDestroy()
     {
+        if (generatedRemovedCellMaterial != null)
+        {
+            Destroy(generatedRemovedCellMaterial);
+        }
+
         if (instance == this)
         {
             instance = null;
@@ -155,6 +216,16 @@ public class Board : MonoBehaviour
     public bool IsInside(int column, int row)
     {
         return column >= 0 && column < width && row >= 0 && row < height;
+    }
+
+    /// <summary>
+    /// Returns true only when the coordinate is inside the rectangular bounds and
+    /// has not been removed by this scene's custom Board layout.
+    /// </summary>
+    public bool IsPlayableCell(int column, int row)
+    {
+        return IsInside(column, row) &&
+               !removedCellLookup.Contains(new Vector2Int(column, row));
     }
 
     public bool CanPlaceAt(int column, int row)
@@ -334,7 +405,7 @@ public class Board : MonoBehaviour
         {
             int column = box.column + offset.x;
             int row = box.row + offset.y;
-            if (!IsInside(column, row))
+            if (!IsPlayableCell(column, row))
             {
                 continue;
             }
@@ -400,7 +471,7 @@ public class Board : MonoBehaviour
         {
             int nextColumn = column + offset.x;
             int nextRow = row + offset.y;
-            if (IsInside(nextColumn, nextRow))
+            if (IsPlayableCell(nextColumn, nextRow))
             {
                 adjacentPositions.Add((nextColumn, nextRow));
             }
@@ -683,6 +754,60 @@ public class Board : MonoBehaviour
         return (fallbackColumn, fallbackRow);
     }
 
+    /// <summary>
+    /// Returns active Nodes in a row-by-row serpentine path. Presentation systems
+    /// such as the clear cylinder can use this without assuming a fixed Board size.
+    /// </summary>
+    public List<Node> GetPlayableNodesSerpentine()
+    {
+        List<Node> nodes = new List<Node>();
+        if (grid == null)
+        {
+            return nodes;
+        }
+
+        for (int row = 0; row < height; row++)
+        {
+            if (row % 2 == 0)
+            {
+                for (int column = 0; column < width; column++)
+                {
+                    AddPlayableNode(nodes, column, row);
+                }
+            }
+            else
+            {
+                for (int column = width - 1; column >= 0; column--)
+                {
+                    AddPlayableNode(nodes, column, row);
+                }
+            }
+        }
+
+        return nodes;
+    }
+
+    public Node GetFirstPlayableNode()
+    {
+        if (grid == null)
+        {
+            return null;
+        }
+
+        for (int row = 0; row < height; row++)
+        {
+            for (int column = 0; column < width; column++)
+            {
+                if (grid[column, row] != null)
+                {
+                    return grid[column, row];
+                }
+            }
+        }
+
+        return null;
+    }
+
     internal float RetireTerminalBoxes(ICollection<Box> component)
     {
         if (component == null || component.Count == 0)
@@ -745,6 +870,13 @@ public class Board : MonoBehaviour
             Debug.LogWarning("Board cannot run soda transfers because UniversalSodaTransferSystem is missing.", this);
         }
 
+        // A placement is not fully resolved until every blocker touched by its
+        // packed matches has finished breaking and become a real empty Node.
+        while (breakingBlockedCells.Count > 0)
+        {
+            yield return null;
+        }
+
         CleanupBoardList();
         CheckBoardFill();
         UIManager.instance?.UpdateUI();
@@ -771,6 +903,7 @@ public class Board : MonoBehaviour
 
         if (packed)
         {
+            BeginUnlockAdjacentBlockedCells(box.column, box.row);
             packedMatchSequence++;
             Vector3 sourcePosition = box.transform.position;
             AwardPackedBox(box);
@@ -932,10 +1065,17 @@ public class Board : MonoBehaviour
             return;
         }
 
+        bool foundPlayableCell = false;
         for (int column = 0; column < width; column++)
         {
             for (int row = 0; row < height; row++)
             {
+                if (grid[column, row] == null)
+                {
+                    continue;
+                }
+
+                foundPlayableCell = true;
                 if (allBoxes[column, row] == null)
                 {
                     return;
@@ -943,7 +1083,10 @@ public class Board : MonoBehaviour
             }
         }
 
-        GameManager.instance?.CheckLoseCondition(true);
+        if (foundPlayableCell)
+        {
+            GameManager.instance?.CheckLoseCondition(true);
+        }
     }
 
     private void GenerateBoard()
@@ -958,29 +1101,490 @@ public class Board : MonoBehaviour
         {
             for (int row = 0; row < height; row++)
             {
-                Vector3 localPosition = localOrigin +
-                                        new Vector3(
-                                            column * cellSpacing.x,
-                                            0f,
-                                            row * cellSpacing.y);
-                GameObject cell = Instantiate(
-                    nodePref,
-                    transform.TransformPoint(localPosition),
-                    transform.rotation,
-                    transform);
-                Node node = cell.GetComponent<Node>();
-                if (node == null)
+                if (!IsPlayableCell(column, row))
                 {
-                    Debug.LogError("Node prefab must contain a Node component.", cell);
+                    GenerateRemovedCellVisual(column, row);
                     continue;
                 }
 
-                node.column = column;
-                node.row = row;
-                node.isOccupied = false;
-                grid[column, row] = node;
+                CreatePlayableNode(column, row);
             }
         }
+    }
+
+    private Node CreatePlayableNode(int column, int row)
+    {
+        if (nodePref == null || grid == null || !IsInside(column, row))
+        {
+            return null;
+        }
+
+        Node existingNode = grid[column, row];
+        if (existingNode != null)
+        {
+            return existingNode;
+        }
+
+        GameObject cell = Instantiate(
+            nodePref,
+            transform.TransformPoint(GetCellLocalPosition(column, row)),
+            transform.rotation,
+            transform);
+        Node node = cell.GetComponent<Node>();
+        if (node == null)
+        {
+            Debug.LogError("Node prefab must contain a Node component.", cell);
+            Destroy(cell);
+            return null;
+        }
+
+        node.column = column;
+        node.row = row;
+        node.isOccupied = false;
+        grid[column, row] = node;
+        return node;
+    }
+
+    private void GenerateInitialBoxes()
+    {
+        if (initialBoxes == null || initialBoxes.Count == 0)
+        {
+            return;
+        }
+
+        HashSet<Vector2Int> spawnedCoordinates = new HashSet<Vector2Int>();
+        foreach (InitialBoardBoxData data in initialBoxes)
+        {
+            if (data == null || !IsPlayableCell(data.coordinate.x, data.coordinate.y) ||
+                !spawnedCoordinates.Add(data.coordinate))
+            {
+                Debug.LogWarning("An invalid, removed, or duplicate initial Box cell was skipped.", this);
+                continue;
+            }
+
+            GameObject prefab = ResolveInitialBoxPrefab(data);
+            if (prefab == null)
+            {
+                Debug.LogWarning(
+                    $"Initial Box {data.coordinate} needs a prefab override or an assigned SpawnContoller Box Prefab.",
+                    this);
+                continue;
+            }
+
+            Vector3 position = GetPlacementWorldPosition(data.coordinate.x, data.coordinate.y);
+            GameObject boxObject = Instantiate(prefab, position, Quaternion.Euler(-90f, 0f, 0f));
+            Box box = boxObject.GetComponent<Box>();
+            if (box == null)
+            {
+                Debug.LogError($"Initial Box prefab '{prefab.name}' does not contain Box.", boxObject);
+                Destroy(boxObject);
+                continue;
+            }
+
+            box.name = $"Initial Box ({data.coordinate.x}, {data.coordinate.y})";
+            box.DiscoverSlots();
+            if (box.Capacity <= 0)
+            {
+                Debug.LogError($"'{prefab.name}' has no SodaPosition slots.", boxObject);
+                Destroy(boxObject);
+                continue;
+            }
+
+            PopulateInitialSodas(box, data);
+            box.RefreshContents();
+            RegisterInitialBox(box, data.coordinate.x, data.coordinate.y);
+        }
+    }
+
+    private static GameObject ResolveInitialBoxPrefab(InitialBoardBoxData data)
+    {
+        if (data != null && data.boxPrefabOverride != null)
+        {
+            return data.boxPrefabOverride;
+        }
+
+        return SpawnContoller.instance != null ? SpawnContoller.instance.boxPrefab : null;
+    }
+
+    private void PopulateInitialSodas(Box box, InitialBoardBoxData data)
+    {
+        if (box == null || data == null || data.startingSodas == null ||
+            data.startingSodas.Count == 0)
+        {
+            return;
+        }
+
+        GameObject sodaPrefab = box.sodaPrefab != null
+            ? box.sodaPrefab
+            : SpawnContoller.instance != null ? SpawnContoller.instance.sodaPrefab : null;
+        if (sodaPrefab == null)
+        {
+            Debug.LogWarning($"'{box.name}' has initial items but no Soda Prefab.", box);
+            return;
+        }
+
+        int itemCount = Mathf.Min(data.startingSodas.Count, box.Capacity);
+        if (data.startingSodas.Count > box.Capacity)
+        {
+            Debug.LogWarning(
+                $"'{box.name}' defines {data.startingSodas.Count} sodas but its real capacity is {box.Capacity}. " +
+                "Extra items were ignored.",
+                box);
+        }
+
+        for (int slotIndex = 0; slotIndex < itemCount; slotIndex++)
+        {
+            Transform slot = box.GetSlot(slotIndex);
+            if (slot == null)
+            {
+                continue;
+            }
+
+            GameObject sodaObject = Instantiate(
+                sodaPrefab,
+                slot.position,
+                Quaternion.Euler(-90f, 0f, 0f),
+                box.transform);
+            Soda soda = sodaObject.GetComponent<Soda>();
+            if (soda == null)
+            {
+                Debug.LogError($"Soda Prefab '{sodaPrefab.name}' does not contain Soda.", sodaObject);
+                Destroy(sodaObject);
+                continue;
+            }
+
+            soda.SetColor(data.startingSodas[slotIndex]);
+        }
+    }
+
+    private void RegisterInitialBox(Box box, int column, int row)
+    {
+        if (box == null || grid == null || allBoxes == null || !IsPlayableCell(column, row) ||
+            grid[column, row] == null || allBoxes[column, row] != null)
+        {
+            if (box != null)
+            {
+                Destroy(box.gameObject);
+            }
+
+            return;
+        }
+
+        allBoxes[column, row] = box;
+        grid[column, row].isOccupied = true;
+        box.transform.position = GetPlacementWorldPosition(column, row);
+        box.MarkPlaced(column, row, nextStableId++, ++placementSequence);
+        boardBoxes.Add(box);
+    }
+
+    private void GenerateRemovedCellVisual(int column, int row)
+    {
+        // Scene editing uses Gizmos only. Real blocker objects must exist only in Play Mode.
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        Vector3 localPosition = GetCellLocalPosition(column, row);
+        localPosition.y += removedCellVisualYOffset;
+
+        GameObject visual;
+        bool createdFallbackCube = false;
+        if (removedCellVisualPrefab != null)
+        {
+            visual = Instantiate(removedCellVisualPrefab, transform);
+            visual.transform.localPosition = localPosition;
+            visual.transform.localRotation = Quaternion.identity;
+        }
+        else
+        {
+            createdFallbackCube = true;
+            visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visual.transform.SetParent(transform, false);
+            visual.transform.localPosition = localPosition;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = new Vector3(
+                Mathf.Abs(cellSpacing.x) * removedCellVisualFill,
+                removedCellVisualHeight,
+                Mathf.Abs(cellSpacing.y) * removedCellVisualFill);
+        }
+
+        visual.name = $"Blocked Cell ({column}, {row})";
+        removedCellVisuals[new Vector2Int(column, row)] = visual;
+
+        foreach (Collider visualCollider in visual.GetComponentsInChildren<Collider>(true))
+        {
+            visualCollider.enabled = false;
+            Destroy(visualCollider);
+        }
+
+        MaterialPropertyBlock properties = new MaterialPropertyBlock();
+        properties.SetColor(BaseColorProperty, removedCellVisualColor);
+        properties.SetColor(ColorProperty, removedCellVisualColor);
+        foreach (Renderer visualRenderer in visual.GetComponentsInChildren<Renderer>(true))
+        {
+            Material visualMaterial = removedCellVisualMaterial;
+            if (visualMaterial == null && createdFallbackCube)
+            {
+                visualMaterial = GetOrCreateRemovedCellMaterial();
+            }
+
+            if (visualMaterial != null)
+            {
+                visualRenderer.sharedMaterial = visualMaterial;
+            }
+
+            visualRenderer.SetPropertyBlock(properties);
+        }
+    }
+
+    /// <summary>
+    /// Starts one non-chaining break for each blocked orthogonal neighbour of a
+    /// packed Box. The lookup remains blocked until its own animation completes.
+    /// </summary>
+    private void BeginUnlockAdjacentBlockedCells(int column, int row)
+    {
+        foreach (Vector2Int offset in DirectOffsets)
+        {
+            Vector2Int coordinate = new Vector2Int(column + offset.x, row + offset.y);
+            if (!IsInside(coordinate.x, coordinate.y) ||
+                !removedCellLookup.Contains(coordinate) ||
+                !breakingBlockedCells.Add(coordinate))
+            {
+                continue;
+            }
+
+            StartCoroutine(BreakBlockedCellRoutine(coordinate));
+        }
+    }
+
+    private IEnumerator BreakBlockedCellRoutine(Vector2Int coordinate)
+    {
+        removedCellVisuals.TryGetValue(coordinate, out GameObject visual);
+        if (visual != null && blockedCellBreakDuration > 0f)
+        {
+            Transform visualTransform = visual.transform;
+            Vector3 startingScale = visualTransform.localScale;
+            float elapsed = 0f;
+
+            while (visual != null && elapsed < blockedCellBreakDuration)
+            {
+                elapsed += Time.deltaTime;
+                float progress = Mathf.Clamp01(elapsed / blockedCellBreakDuration);
+                float breakScale = 1f - Mathf.SmoothStep(0f, 1f, progress);
+                visualTransform.localScale = startingScale * breakScale;
+                yield return null;
+            }
+        }
+
+        UnlockBlockedCell(coordinate, visual);
+    }
+
+    private void UnlockBlockedCell(Vector2Int coordinate, GameObject visual)
+    {
+        removedCellLookup.Remove(coordinate);
+        removedCells?.Remove(coordinate);
+        removedCellVisuals.Remove(coordinate);
+
+        if (visual != null)
+        {
+            Destroy(visual);
+        }
+
+        // Creating the real Node refreshes occupancy and drop/highlight lookup.
+        // All neighbour queries read grid/removedCellLookup live, so the new cell
+        // participates immediately without rebuilding the whole Board.
+        if (allBoxes != null)
+        {
+            allBoxes[coordinate.x, coordinate.y] = null;
+        }
+
+        Node node = CreatePlayableNode(coordinate.x, coordinate.y);
+        if (node != null)
+        {
+            node.isOccupied = false;
+            node.Unhighlight();
+        }
+
+        breakingBlockedCells.Remove(coordinate);
+    }
+
+    private Material GetOrCreateRemovedCellMaterial()
+    {
+        if (generatedRemovedCellMaterial != null)
+        {
+            return generatedRemovedCellMaterial;
+        }
+
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+        {
+            shader = Shader.Find("Standard");
+        }
+
+        if (shader == null)
+        {
+            return null;
+        }
+
+        generatedRemovedCellMaterial = new Material(shader)
+        {
+            name = "Generated Blocked Cell Material"
+        };
+        generatedRemovedCellMaterial.SetColor(BaseColorProperty, removedCellVisualColor);
+        generatedRemovedCellMaterial.SetColor(ColorProperty, removedCellVisualColor);
+        return generatedRemovedCellMaterial;
+    }
+
+    private Vector3 GetCellLocalPosition(int column, int row)
+    {
+        return localOrigin + new Vector3(
+            column * cellSpacing.x,
+            0f,
+            row * cellSpacing.y);
+    }
+
+    private void AddPlayableNode(List<Node> nodes, int column, int row)
+    {
+        Node node = grid[column, row];
+        if (node != null)
+        {
+            nodes.Add(node);
+        }
+    }
+
+    private void RebuildLayoutCache()
+    {
+        removedCellLookup.Clear();
+        if (removedCells == null)
+        {
+            removedCells = new List<Vector2Int>();
+            return;
+        }
+
+        foreach (Vector2Int cell in removedCells)
+        {
+            if (IsInside(cell.x, cell.y))
+            {
+                removedCellLookup.Add(cell);
+            }
+        }
+    }
+
+    private void OnValidate()
+    {
+        width = Mathf.Max(1, width);
+        height = Mathf.Max(1, height);
+        blockedCellBreakDuration = Mathf.Max(0f, blockedCellBreakDuration);
+
+        if (removedCells == null)
+        {
+            removedCells = new List<Vector2Int>();
+        }
+
+        HashSet<Vector2Int> validUniqueCells = new HashSet<Vector2Int>();
+        for (int index = removedCells.Count - 1; index >= 0; index--)
+        {
+            Vector2Int cell = removedCells[index];
+            if (!IsInside(cell.x, cell.y) || !validUniqueCells.Add(cell))
+            {
+                removedCells.RemoveAt(index);
+            }
+        }
+
+        // A Board with no playable cell cannot support spawning or placement.
+        if (validUniqueCells.Count >= width * height)
+        {
+            removedCells.Remove(new Vector2Int(0, 0));
+        }
+
+        if (initialBoxes == null)
+        {
+            initialBoxes = new List<InitialBoardBoxData>();
+        }
+
+        HashSet<Vector2Int> uniqueInitialCells = new HashSet<Vector2Int>();
+        for (int index = initialBoxes.Count - 1; index >= 0; index--)
+        {
+            InitialBoardBoxData data = initialBoxes[index];
+            if (data == null || !IsInside(data.coordinate.x, data.coordinate.y) ||
+                removedCells.Contains(data.coordinate) ||
+                !uniqueInitialCells.Add(data.coordinate))
+            {
+                initialBoxes.RemoveAt(index);
+                continue;
+            }
+
+            if (data.startingSodas == null)
+            {
+                data.startingSodas = new List<Soda.SodaColor>();
+            }
+        }
+
+        RebuildLayoutCache();
+    }
+
+    /// <summary>
+    /// Called by BoardEditor through Unity's official DrawGizmo registration.
+    /// This keeps the complete board preview visible in the Scene window and
+    /// gives it a dedicated Board entry in the Scene Gizmos menu.
+    /// </summary>
+    public void DrawLayoutGizmos()
+    {
+        if (!drawLayoutGizmos || width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        Matrix4x4 previousMatrix = Gizmos.matrix;
+        Color previousColor = Gizmos.color;
+        Gizmos.matrix = transform.localToWorldMatrix;
+
+        Vector3 cellSize = new Vector3(
+            Mathf.Abs(cellSpacing.x) * gizmoCellFill,
+            gizmoCellHeight,
+            Mathf.Abs(cellSpacing.y) * gizmoCellFill);
+
+        for (int column = 0; column < width; column++)
+        {
+            for (int row = 0; row < height; row++)
+            {
+                Vector3 center = GetCellLocalPosition(column, row);
+                center.y += gizmoVerticalOffset + gizmoCellHeight * 0.5f;
+
+                if (IsConfiguredRemovedCell(column, row))
+                {
+                    Gizmos.color = removedCellGizmoColor;
+                    Gizmos.DrawCube(center, cellSize);
+                    Gizmos.color = new Color(
+                        removedCellGizmoColor.r,
+                        removedCellGizmoColor.g,
+                        removedCellGizmoColor.b,
+                        1f);
+                    Gizmos.DrawWireCube(center, cellSize);
+                }
+                else
+                {
+                    Gizmos.color = new Color(
+                        playableCellGizmoColor.r,
+                        playableCellGizmoColor.g,
+                        playableCellGizmoColor.b,
+                        Mathf.Min(playableCellGizmoColor.a, 0.18f));
+                    Gizmos.DrawCube(center, cellSize);
+                    Gizmos.color = playableCellGizmoColor;
+                    Gizmos.DrawWireCube(center, cellSize);
+                }
+            }
+        }
+
+        Gizmos.matrix = previousMatrix;
+        Gizmos.color = previousColor;
+    }
+
+    private bool IsConfiguredRemovedCell(int column, int row)
+    {
+        return removedCells != null &&
+               removedCells.Contains(new Vector2Int(column, row));
     }
 }
 

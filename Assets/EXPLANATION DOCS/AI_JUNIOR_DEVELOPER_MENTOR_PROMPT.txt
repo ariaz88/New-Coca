@@ -101,7 +101,7 @@ files.
 
 CURRENT REQUIRED C# SCRIPT MAP
 ------------------------------
-Teach only the 37 current, usable project scripts below. This is intentionally not
+Teach only the 38 current, usable project scripts below. This is intentionally not
 a catalog of every .cs file stored in the repository. Duplicate implementations,
 abandoned experiments, redundant prototypes, inactive versions, commented shells,
 and third-party library internals are excluded from the curriculum.
@@ -275,6 +275,12 @@ D. CURRENT VISUAL CONFIGURATION
     Runtime initializer that applies VisualStyleSettings to cameras, lighting,
     URP/global volume, and materials, using reflection where package versions vary.
 
+38. Assets/Scripts/Main Scripts/Core Gameplay/Editor/BoardEditor.cs
+    Custom Unity Inspector for configuring each scene's Board columns, rows, and
+    playable/removed-cell shape through a visual grid. It also configures sparse
+    per-level initial Boxes, prefab overrides, real-capacity ordered Soda colors,
+    copy/paste, per-cell removal, and clear-all. It is editor-only code.
+
 
 FILES TO DISMISS FROM THE CURRICULUM
 ------------------------------------
@@ -308,12 +314,13 @@ in the folder:
 7. SpawnContoller_EXPLANATION.txt
 8. Box_EXPLANATION.txt
 9. Board_EXPLANATION.txt
-10. Node_EXPLANATION.txt
-11. ADJACENT_CELL_HIGHLIGHT_EXPLANATION.txt
-12. HandAnimation_EXPLANATION.txt
-13. ToolTipTutorial_EXPLANATION.txt
-14. SortingTutorialController_EXPLANATION.txt
-15. TUTORIAL_SCENE_SETUP_EXPLANATION.txt
+10. DYNAMIC_BOARD_LAYOUT_EXPLANATION.txt
+11. Node_EXPLANATION.txt
+12. ADJACENT_CELL_HIGHLIGHT_EXPLANATION.txt
+13. HandAnimation_EXPLANATION.txt
+14. ToolTipTutorial_EXPLANATION.txt
+15. SortingTutorialController_EXPLANATION.txt
+16. TUTORIAL_SCENE_SETUP_EXPLANATION.txt
 
 After these foundations, teach the remaining required scripts by subsystem rather
 than arbitrary alphabetical order:
@@ -325,7 +332,7 @@ than arbitrary alphabetical order:
 6. Audio, vibration, and visual style.
 
 Do not add excluded repository files back into the course merely to make the list
-longer. Create a visible checklist for these 37 required scripts, then teach one
+longer. Create a visible checklist for these 38 required scripts, then teach one
 coherent lesson part at a time.
 
 TEACHING FORMAT FOR EVERY DOCUMENT AND SCRIPT
@@ -537,7 +544,7 @@ Begin with an orientation lesson, not with code modification. Show me:
    and major systems in your own words.
 2. A current-production architecture map that marks BoxSpawner as the one retained
    compatibility dependency.
-3. The 37-script required catalog and a report of any entry that current source or
+3. The 38-script required catalog and a report of any entry that current source or
    serialization proves is no longer needed.
 4. The complete document/lesson dependency order and progress checklist.
 5. Any required files you cannot access.

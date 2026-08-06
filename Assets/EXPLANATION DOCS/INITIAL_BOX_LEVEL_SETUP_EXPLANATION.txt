@@ -1,0 +1,141 @@
+INITIAL BOXES AND CUSTOM LEVEL SETUP - PHASE 2
+================================================
+
+Purpose
+-------
+Each level scene can now start with selected playable Board cells already
+occupied by configured Boxes. The designer chooses the Box prefab and the exact
+ordered Soda colors without editing C#.
+
+Architecture inspection and reuse decisions
+-------------------------------------------
+The project already had the necessary gameplay concepts, so this feature does
+not introduce a second Box, item, capacity, or color system:
+
+- Box is the active container class.
+- Soda is the active item class.
+- Soda.SodaColor is the existing six-color enum used by spawning, matching,
+  transfer, and Tutorial recipes.
+- Box capacity is not a hardcoded number. It comes from the prefab's ordered
+  SodaPosition children.
+- Box.sodaPrefab and SpawnContoller.sodaPrefab are the existing item prefab
+  references.
+- SpawnContoller.boxPrefab is the default gameplay Box prefab.
+- Board.allBoxes, Board.boardBoxes, Node.isOccupied, and Box.MarkPlaced are the
+  existing authoritative runtime state.
+
+There is no active BoxType enum in this project. A prefab override represents a
+different Box type while preserving every serialized state already present on
+that prefab.
+
+Why the data is sparse
+----------------------
+Board stores a List<InitialBoardBoxData> named initialBoxes. It contains entries
+only for cells that start occupied. A playable coordinate with no entry starts
+empty. This is smaller than serializing one object for every cell, especially on
+large or irregular Boards.
+
+Each entry stores only:
+
+1. coordinate: the zero-based Board cell.
+2. boxPrefabOverride: optional; null reuses SpawnContoller.boxPrefab.
+3. startingSodas: an ordered List<Soda.SodaColor>.
+
+The list itself stores the item count. No separate count field is needed, so the
+count and item data can never disagree. List index 0 goes to SodaPosition0,
+index 1 goes to SodaPosition1, and so on.
+
+Per-level saving
+----------------
+initialBoxes is serialized on the Board component in the scene. Level1 and
+Level2 therefore keep independent setups even though both use Board.cs. Save the
+scene after editing. No PlayerPrefs or save-game data is involved; this is level
+design data, not player progress.
+
+Inspector workflow
+------------------
+1. Open the target level scene and select its Board GameObject.
+2. Configure Columns, Rows, and removed cells in the Shape grid first.
+3. Find the Initial Boxes grid below it.
+4. Read its symbols:
+   - E: active cell starts empty.
+   - B#: active cell starts with a Box and # is its Soda count.
+   - X: removed cell; it cannot contain a Box.
+5. Click an E cell and choose Add Starting Box.
+6. Optionally assign Box Prefab Override. Leave it empty to reuse the scene's
+   SpawnContoller Box Prefab.
+7. Confirm Real Prefab Capacity. This comes from the prefab's SodaPosition slots.
+8. Press Add Soda, choose its SodaColor, and repeat up to the real capacity.
+9. Use the up/down arrows to change slot order.
+10. Use Copy Box Settings, select another empty cell, and Paste Copied Box to
+    duplicate a recipe.
+11. Use Remove Starting Box for one cell or Clear All Initial Boxes for the level.
+12. Save the scene and enter Play Mode.
+
+Changing a playable cell into a removed cell deletes its initial Box entry. The
+Board OnValidate safety pass also removes entries that are outside the current
+dimensions, duplicated, or located on removed cells.
+
+Runtime creation sequence
+-------------------------
+Board.Start performs these steps:
+
+1. Allocate grid[,] and allBoxes[,] using this level's dimensions.
+2. Generate playable Nodes and runtime blocked-cell visuals.
+3. GenerateInitialBoxes iterates only the sparse occupied entries.
+4. Resolve the Box prefab override or reuse SpawnContoller.boxPrefab.
+5. Instantiate the Box at Board.GetPlacementWorldPosition.
+6. Read the real capacity discovered by Box.DiscoverSlots.
+7. Instantiate each Soda into its ordered SodaPosition and call Soda.SetColor.
+8. Refresh Box contents.
+9. Register the Box in allBoxes, boardBoxes, Node.isOccupied, and Box.MarkPlaced.
+
+Initial Boxes deliberately do not call TryPlaceBox or UpdateBoxPosition. Those
+methods represent a player's accepted drop and start matching/resolution events.
+Level construction must establish the starting state without pretending the
+player made a move. Once play begins, the existing transfer, matching, clearing,
+Hammer, Swap, loss, and Tutorial rules see normal registered Boxes.
+
+Capacity and invalid-data safety
+--------------------------------
+BoardEditor disables Add Soda when the real prefab capacity is reached. If a
+prefab later changes and a saved list becomes too long, the Inspector shows an
+error and runtime safely ignores overflow with a warning. Missing Box components,
+missing SodaPosition slots, and missing Soda prefabs also produce clear messages
+instead of corrupting Board arrays.
+
+Empty configured Boxes are allowed because Box supports zero Sodas. Remember
+that the existing resolver treats empty Boxes as terminal when a later placement
+resolution examines them; this feature intentionally preserves that rule.
+
+Memory characteristics
+----------------------
+- Empty cells allocate no InitialBoardBoxData.
+- Colors serialize as enum integers, not duplicated materials or ScriptableObjects.
+- Prefab references point to existing assets; prefab contents are not copied.
+- Runtime creates only the Boxes and Sodas that the level actually requests.
+- No lookup dictionary is kept for initial data after Board startup.
+
+Files changed
+-------------
+- Assets/Scripts/Main Scripts/Core Gameplay/Board.cs
+- Assets/Scripts/Main Scripts/Core Gameplay/Box.cs
+- Assets/Scripts/Main Scripts/Core Gameplay/Editor/BoardEditor.cs
+
+Verification checklist
+----------------------
+1. Configure one B2 cell with two Blue entries and save the scene.
+2. Configure another cell with Red, Yellow, Yellow in that exact order.
+3. Enter Play Mode and inspect the Initial Box children and their Soda colors.
+4. Confirm both Nodes are occupied and rail Boxes cannot drop on them.
+5. Confirm Hammer and Swap can select the starting Boxes.
+6. Place a compatible rail Box beside one and verify normal transfer/matching.
+7. Remove a Board cell that had an initial Box and confirm its setup disappears.
+8. Change a cell prefab and confirm the Inspector shows its real capacity.
+9. Open another level and confirm the first level's setup was not copied.
+10. Test Copy/Paste, per-cell Remove, and Clear All.
+
+Compilation evidence
+--------------------
+Assembly-CSharp and Assembly-CSharp-Editor both compiled with 0 errors after
+this phase was implemented.

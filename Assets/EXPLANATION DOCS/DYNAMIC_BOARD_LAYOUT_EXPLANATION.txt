@@ -1,0 +1,254 @@
+DYNAMIC BOARD SIZE AND SHAPE - PHASE 1
+======================================
+
+Purpose
+-------
+Every level scene can now define its own Board dimensions and shape in the Unity
+Inspector. No C# edit is required to make a 4-column by 5-row rectangle, a 5x5
+square, a smaller board, or a shape with missing cells.
+
+Important terminology
+---------------------
+The Inspector uses explicit labels to avoid the common "5x4" ambiguity:
+
+- Columns = horizontal X direction (`width` in Board.cs).
+- Rows = vertical-on-screen/world-Z direction (`height` in Board.cs).
+
+The original board is 4 Columns x 5 Rows. Some designers describe the same board
+as "5x4" because they say rows first.
+
+Where the configuration lives
+-----------------------------
+The layout is serialized on the Board component inside each scene. This means
+Level1, Level2, Level3, and every other level keep independent values even though
+they reuse the same Board.cs and Node prefab.
+
+The three layout values are:
+
+1. `width` / Columns
+2. `height` / Rows
+3. `removedCells`
+
+`removedCells` stores zero-based (column, row) coordinates. It is presented by
+BoardEditor.cs as a visual button grid:
+
+- Green O = a playable cell that will generate a Node.
+- Dark X = a removed cell; no Node will be generated there.
+- The top row is displayed first.
+- Restore All Cells returns the shape to a full rectangle.
+
+Scene-view Gizmo preview
+------------------------
+BoardEditor registers Board.DrawLayoutGizmos with Unity's DrawGizmo system. It
+draws the complete configured table in the Scene window and creates a Board
+toggle in the Scene Gizmos menu. It iterates every Column x Row coordinate, so it
+continues past the original 20-cell board and has no fixed cell-count limit.
+
+- Playable cells are translucent green cubes with green outlines.
+- Removed cells are solid brown cubes with a brown outline.
+- The preview is visible whenever the Scene window's Gizmos control is enabled.
+- `Draw Layout Gizmos` can disable only this Board's preview.
+- Gizmo Cell Fill, Gizmo Cell Height, and Gizmo Vertical Offset control preview
+  size/elevation without changing gameplay geometry.
+
+Generated blocked-cell GameObjects
+----------------------------------
+During Play Mode, GenerateBoard creates a visible child GameObject for every
+removed coordinate instead of leaving only an invisible null slot. Edit Mode
+uses Gizmos and never creates these GameObjects.
+
+- If Removed Cell Visual Prefab is empty, Board creates a Cube automatically.
+- The Cube is named `Blocked Cell (column, row)` in the runtime hierarchy.
+- Its footprint follows cellSpacing and Removed Cell Visual Fill.
+- Removed Cell Visual Height and Y Offset control its shape and elevation.
+- Removed Cell Visual Color defaults to brown.
+- A custom prefab and/or material can be assigned without changing code.
+- Every Collider on the generated visual is disabled and destroyed. The visual
+  cannot interfere with mouse raycasts or physics; Board.IsPlayableCell remains
+  the authoritative rule that forbids placement.
+
+The Scene view uses Gizmos before Play Mode. Real blocker GameObjects are generated
+when the Board starts in Play Mode, alongside the normal generated Nodes.
+
+Breakable blocked cells
+-----------------------
+The brown X cells are now initial blockers rather than permanent holes. They still
+start with no Node, so the old placement rule remains safe: a dragged Box cannot
+be accepted there. A blocker unlocks only when a directly adjacent Box becomes a
+packed match (a full Box whose sodas are all the same existing SodaColor).
+
+The four checked directions are up, right, down, and left. Diagonals are not
+checked. Unlocking a blocker never searches around that blocker, so it cannot
+start a chain reaction. If two packed Boxes touch the same blocker in one
+resolution, breakingBlockedCells ensures only one animation is started.
+
+Inspector setting
+-----------------
+`Blocked Cell Break Duration` appears under Breakable Blocked Cell Visual on Board. It is
+the duration, in seconds, of the scale-down break animation. Zero means unlock
+immediately. This value is serialized per scene, so each level can choose its own
+timing without editing C#.
+
+Exact runtime sequence
+----------------------
+1. RetireTerminalBoxes identifies a full, one-colour Box as packed.
+2. RetireBox calls BeginUnlockAdjacentBlockedCells before destroying that Box.
+   The Box coordinates are therefore still available.
+3. DirectOffsets produces exactly four candidate coordinates.
+4. Only coordinates currently present in removedCellLookup are accepted.
+5. BreakBlockedCellRoutine shrinks the stored brown visual for the configured
+   duration. The coordinate remains blocked throughout this animation.
+6. UnlockBlockedCell removes the coordinate from removedCellLookup and the
+   runtime removedCells list, then destroys its brown visual.
+7. CreatePlayableNode instantiates the existing Node prefab at that coordinate.
+   allBoxes is set to null there and Node.isOccupied is false.
+8. ResolvePlacement waits until breakingBlockedCells is empty before it refreshes
+   the UI, checks Board fill, enables input, and publishes completion.
+
+Why a new Node is created
+-------------------------
+GenerateBoard intentionally skips blocked coordinates, so grid[column,row] is
+null at level start. Merely deleting the brown cube would make the cell look free
+but it would still reject placement. CreatePlayableNode fixes the real gameplay
+state by filling that grid slot with the same Node prefab used everywhere else.
+
+This single state update refreshes the dependent systems without rebuilding the
+whole Board:
+
+- CanPlaceAt now sees a non-null, unoccupied Node.
+- GetDropTargetNode can return the new Node on the next drag frame.
+- Box hover highlighting uses CanPlaceAt and can highlight it.
+- GetAdjacentPositions and GetDirectNeighbours read removedCellLookup live, so
+  the coordinate immediately participates in later neighbour checks.
+- CheckBoardFill includes the unlocked Node because grid is no longer null.
+
+The serialized scene configuration is not permanently erased. Unity discards the
+runtime removedCells change when Play Mode ends, so the blocker returns whenever
+the level is started again.
+
+How to configure one level
+--------------------------
+1. Open only the target level scene, for example Level2.
+2. Select the GameObject containing the Board component.
+3. Under Per-Level Board Layout, set Columns and Rows.
+4. Click green cells to remove them or dark cells to restore them.
+5. Save that scene.
+6. Enter Play Mode and test placement, matching, boosters, and the lose condition.
+
+Changing Level2 does not modify Level1 because these are scene-serialized values.
+
+Safe examples
+-------------
+- Existing board: Columns 4, Rows 5.
+- Smaller board: Columns 4, Rows 3.
+- Square board: Columns 5, Rows 5.
+- Cut corners: choose dimensions, then click the desired corner cells to make X.
+
+The implementation deliberately did not invent new layouts for the production
+levels. TUTORIAL and Level1-Level5 retain their existing 4-column x 5-row shape
+with an empty removedCells list until a designer changes and saves each scene.
+
+Runtime behavior
+----------------
+Board.Awake calls RebuildLayoutCache. The serialized list becomes a HashSet for
+fast coordinate checks. Board.Start still creates the same Node[,] and Box[,]
+arrays sized by Columns and Rows.
+
+GenerateBoard now calls IsPlayableCell for each coordinate. Removed coordinates
+remain null inside grid[,] and do not instantiate the existing Node prefab.
+
+Scene preview versus runtime blocker
+------------------------------------
+These are intentionally two different systems:
+
+- In Edit Mode, BoardEditor registers DrawLayoutGizmos with Unity's [DrawGizmo]
+  attribute. This creates a Board entry in the Scene window's Gizmos menu and
+  draws every configured cell, even when the Board component is not selected.
+- Playable cells use a translucent green surface plus a green outline. Removed
+  cells use a solid brown surface and outline.
+- Gizmo Vertical Offset raises this preview above the physical board, so the
+  board mesh cannot hide it. Its default value is 0.17 local units.
+- Gizmos are editor drawings only: they are not GameObjects and do not exist in
+  a build.
+- The real brown `Blocked Cell (column, row)` cube is created by GenerateBoard
+  only while Application.isPlaying is true. No blocker GameObject is created in
+  Edit Mode.
+- Removed Cell Visual Y Offset raises that runtime cube above the board. Its
+  default value is 0.15 local units.
+
+If the preview is hidden, open the Gizmos dropdown in the Scene window, enable
+the master Gizmos switch, and make sure Board is checked.
+
+This preserves the current systems:
+
+- Box drop detection returns null over a removed cell.
+- CanPlaceAt rejects removed cells because no Node exists there.
+- Soda transfer still uses orthogonal neighbor coordinates.
+- GetAdjacentPositions excludes removed coordinates.
+- Tutorial highlighting uses Board.CanPlaceAt, so it cannot highlight a hole.
+- Hammer highlighting only visits cells containing a Box and Node.
+- Swap continues to work between real adjacent boxes.
+
+Board-full lose condition
+-------------------------
+The old CheckBoardFill inspected every rectangular array slot. A removed cell has
+no Box, so that old rule would make a custom-shaped board impossible to fill.
+
+The new rule skips grid entries whose Node is null. The player loses only when
+every real playable Node has a Box. It also refuses to declare a zero-cell board
+full. The Inspector and OnValidate both keep at least one cell playable.
+
+Clear-cylinder compatibility
+----------------------------
+GameManager previously spawned the cylinder at grid[0,0]. MoveCylinder previously
+used fixed cells [2,2], [0,4], and [3,4]. Those assumptions would throw an index or
+null-reference exception on a small/custom board.
+
+Board now exposes:
+
+- GetFirstPlayableNode()
+- GetPlayableNodesSerpentine()
+
+GameManager starts at the first real Node. MoveCylinder follows all real Nodes in
+a row-by-row serpentine route. This makes the clear presentation independent of
+board dimensions and removed cells.
+
+Tutorial warning
+----------------
+Tutorial stage coordinates such as referenceCell and initialTargetCell must remain
+playable in the TUTORIAL scene. The existing controller already verifies placement
+through Board.CanPlaceAt and cancels safely if a configured tutorial target is a
+removed cell. When editing the tutorial shape, test every stage from a clean save.
+
+Files changed
+-------------
+- Assets/Scripts/Main Scripts/Core Gameplay/Board.cs
+- Assets/Scripts/Main Scripts/Core Gameplay/Editor/BoardEditor.cs
+- Assets/Scripts/Main Scripts/Managers/GameManager.cs
+- Assets/Scripts/Main Scripts/UI/MoveCylinder.cs
+- Assets/Scenes/TUTORIAL.unity
+- Assets/Scenes/Level1.unity through Level5.unity
+
+Verification checklist
+----------------------
+1. Open Level1 and confirm its Board shows 4 Columns, 5 Rows, all green.
+2. In a test copy of a scene, change to 4 Columns and 3 Rows; expect 12 Nodes.
+3. Block two cells; expect 10 initial Nodes and rejected drops over both blockers.
+4. With Scene Gizmos and its Board entry enabled, expect the elevated full green
+   grid and two solid brown cells while not playing.
+5. Enter Play Mode and find two brown `Blocked Cell` children under Board.
+6. Fill every playable cell; expect the lose flow even though holes stay empty.
+7. Place matching boxes across a valid orthogonal edge; expect normal transfers.
+8. Confirm boxes on opposite sides of a still-locked cell are not neighbors.
+9. Run Hammer, Swap, and Clear on both rectangular and cut-out layouts.
+10. Run both tutorial stages after any TUTORIAL layout edit.
+11. Complete a packed match beside one blocker; expect only its orthogonal
+    blocker neighbours to shrink, disappear, and become empty playable Nodes.
+12. Put a blocker diagonally beside a packed match; expect it to remain locked.
+13. Put two blockers in a row; breaking the first must not chain-break the second.
+
+Compilation evidence
+--------------------
+The runtime Assembly-CSharp project compiled with 0 errors after Phase 1. Unity
+also regenerated both runtime and editor assemblies after BoardEditor was added,
+with no C# error recorded in the Editor log.

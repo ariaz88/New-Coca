@@ -5,7 +5,6 @@ using UnityEngine;
 public class MoveCylinder : MonoBehaviour
 {
 
-    private Transform[] pathWaypoints; // Define the slanted path using waypoints
     public float Maxspeed = 5f; // Speed of the ball movement along the path
     private GameObject removeTrigger;
 
@@ -20,30 +19,27 @@ public class MoveCylinder : MonoBehaviour
 
     void Start()
     {
-        pathWaypoints = new Transform[] { Board.instance.grid[2,2].transform, Board.instance.grid[0,4].transform,
-         Board.instance.grid[3,4].transform };
+        List<Node> pathNodes = Board.instance != null
+            ? Board.instance.GetPlayableNodesSerpentine()
+            : new List<Node>();
 
-        pathWaypointPositions = new Vector3[pathWaypoints.Length];
-        for (int i = 0; i < pathWaypoints.Length; i++)
+        pathWaypointPositions = new Vector3[pathNodes.Count];
+        for (int i = 0; i < pathNodes.Count; i++)
         {
-            // Copy the position and adjust the Y value
             pathWaypointPositions[i] = new Vector3(
-                pathWaypoints[i].position.x,
-                0.28f, // Set the desired Y position
-                pathWaypoints[i].position.z
+                pathNodes[i].transform.position.x,
+                0.28f,
+                pathNodes[i].transform.position.z
             );
         }
 
-
-        if (pathWaypointPositions.Length > 1)
+        if (pathWaypointPositions.Length == 0)
         {
-            // Calculate the parallel offset based on the ball's initial position
-
-
-            // Calculate initial offset direction for the first segment (perpendicular to the path)
-            Vector3 pathDirection = (pathWaypointPositions[1] - pathWaypointPositions[0]).normalized;
+            Debug.LogError("The clear cylinder cannot move because the Board has no playable cells.", this);
+            Destroy(gameObject);
+            return;
         }
-        //isFreezed = false;
+
         speed = Maxspeed;
         trailRenderer = gameObject.AddComponent<TrailRenderer>();
         ConfigureTrailRenderer();
@@ -51,40 +47,25 @@ public class MoveCylinder : MonoBehaviour
 
     void Update()
     {
-        if (pathWaypointPositions.Length == 0) return;
-
-        // Move the ball towards the next waypoint, keeping parallel
-        MoveBallAlongPath();
-
-
-        // Check if the ball has reached the current waypoint
-        if (Vector3.Distance(transform.position, pathWaypointPositions[currentWaypointIndex] )< 0.1f)
+        if (pathWaypointPositions == null || pathWaypointPositions.Length == 0)
         {
-            // Move to the next waypoint if reached
-            //currentWaypointIndex = (currentWaypointIndex + 1) % pathWaypoints.Length;
-            if (currentWaypointIndex <= pathWaypointPositions.Length - 2)
-            {
-                currentWaypointIndex++;
-                PhysicsMaterial ballMaterial = new PhysicsMaterial();
-                ballMaterial.bounciness = 0f;  // No bounce
-                ballMaterial.dynamicFriction = 1f;  // High friction to reduce sliding
-
-            }
-            else
-            {
-                //rigidbody.isKinematic = false;
-                //rigidbody.useGravity = true;
-                Destroy(gameObject);
-
-            }
-            if (currentWaypointIndex == 3)
-            {
-                //rigidbody.mass = 1;
-                //rigidbody.drag = 0;
-
-            }
+            return;
         }
 
+        if (Vector3.Distance(
+                transform.position,
+                pathWaypointPositions[currentWaypointIndex]) < 0.1f)
+        {
+            if (currentWaypointIndex >= pathWaypointPositions.Length - 1)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            currentWaypointIndex++;
+        }
+
+        MoveBallAlongPath();
     }
     private void ConfigureTrailRenderer()
     {
@@ -122,7 +103,11 @@ public class MoveCylinder : MonoBehaviour
         Vector3 direction = (targetPosition - transform.position).normalized;
         transform.position += direction * step;
 
-        transform.rotation = Quaternion.LookRotation(Quaternion.Euler(0,-45,0)*direction);
+        if (direction.sqrMagnitude > 0.0001f)
+        {
+            transform.rotation = Quaternion.LookRotation(
+                Quaternion.Euler(0, -45, 0) * direction);
+        }
 
         //transform.position = Vector3.MoveTowards(transform.position, targetPosition, step);
         //        RotateTowardsTarget(targetPosition);

@@ -33,7 +33,8 @@ internal static class VisualStyleRuntime
         }
 
         settings.ApplyToSodaMaterials();
-        CreateGlobalVolume();
+        // Keep Play Mode colors identical to the authored scene. The runtime
+        // Tonemapping volume was dimming the whole camera output.
     }
 
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -129,7 +130,7 @@ internal static class VisualStyleRuntime
                 continue;
 
             Component cameraData = camera.GetComponent(cameraDataType) ?? camera.gameObject.AddComponent(cameraDataType);
-            SetMember(cameraData, "renderPostProcessing", true);
+            SetMember(cameraData, "renderPostProcessing", false);
             SetMember(cameraData, "renderShadows", false);
             SetMember(cameraData, "dithering", true);
             SetMember(cameraData, "stopNaN", true);

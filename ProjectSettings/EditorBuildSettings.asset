@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/PersistanceScene.unity
+    guid: dcc97566ae2408443bc49d2368360151
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 15e29d77b4c65f24192d3e169b9926c9
+  - enabled: 1
     path: Assets/Scenes/TUTORIAL.unity
     guid: 7b1571b51a86dcb4dbea23e71aade530
   - enabled: 1
@@ -13,14 +19,21 @@ EditorBuildSettings:
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   - enabled: 1
     path: Assets/Scenes/Level2.unity
-    guid: 7d4e50c24efe9b24eb48b92602e13aa1
+    guid: 8a7bbfab973741e4fa0acc7b68c590ca
   - enabled: 1
-    path: Assets/Scenes/MainMenu.unity
-    guid: 15e29d77b4c65f24192d3e169b9926c9
+    path: Assets/Scenes/Level3.unity
+    guid: 6a0ac3dde95d78d4ab5cae348d3264b5
   - enabled: 1
-    path: Assets/Scenes/PersistanceScene.unity
-    guid: dcc97566ae2408443bc49d2368360151
+    path: Assets/Scenes/Level4.unity
+    guid: 6788f8289db3ce840996565a7ce8414e
+  - enabled: 1
+    path: Assets/Scenes/Level5.unity
+    guid: d23f73a92892c4d42a01b492d3e66aa2
+  - enabled: 1
+    path: Assets/Scenes/Level6.unity
+    guid: cba1304d10b44b84c93adcd3f7594ce3
   - enabled: 0
     path: Assets/Scenes/TitleScene.unity
     guid: 537d34b495ea3c742b34e2be666acf1a
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

@@ -82,8 +82,22 @@ public class GameManager : MonoBehaviour
     }
     public void CreateCylinder()
     {
-       GameObject cylinder = Instantiate(cylinderPref, Board.instance.grid[0,0].transform.position, Quaternion.identity);
-        cylinder.transform.position = new Vector3(cylinder.transform.position.x,0.28f, cylinder.transform.position.z);
+        if (cylinderPref == null || Board.instance == null)
+        {
+            Debug.LogError("Cannot create the clear cylinder: its prefab or the Board is missing.", this);
+            return;
+        }
+
+        Node startNode = Board.instance.GetFirstPlayableNode();
+        if (startNode == null)
+        {
+            Debug.LogError("Cannot create the clear cylinder: the Board has no playable cells.", this);
+            return;
+        }
+
+        Vector3 startPosition = startNode.transform.position;
+        startPosition.y = 0.28f;
+        Instantiate(cylinderPref, startPosition, Quaternion.identity);
     }
 
  

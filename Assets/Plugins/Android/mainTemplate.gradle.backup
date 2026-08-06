@@ -1,29 +1,14 @@
 apply plugin: 'com.android.library'
-apply from: '../shared/keepUnitySymbols.gradle'
 **APPLY_PLUGINS**
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 **DEPS**}
 
-// Unity IAP and older Android plugins can request different Kotlin standard
-// library versions. Keep every Kotlin artifact on one compatible version to
-// prevent duplicate-class failures during checkDebugDuplicateClasses.
-rootProject.allprojects {
-    configurations.configureEach {
-        resolutionStrategy {
-            force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
-            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-        }
-    }
-}
-
 android {
-    ndkVersion "**NDKVERSION**"
     namespace "com.unity3d.player"
     ndkPath "**NDKPATH**"
-    compileSdk **APIVERSION**
+    compileSdkVersion **APIVERSION**
     buildToolsVersion '**BUILDTOOLS**'
 
     compileOptions {
@@ -32,11 +17,9 @@ android {
     }
 
     defaultConfig {
-**DEFAULT_CONFIG_SETUP**
-        minSdk **MINSDK**
-        targetSdk **TARGETSDK**
+        minSdkVersion **MINSDKVERSION**
+        targetSdkVersion **TARGETSDKVERSION**
         ndk {
-            debugSymbolLevel **DEBUGSYMBOLLEVEL**
             abiFilters **ABIFILTERS**
         }
         versionCode **VERSIONCODE**
@@ -44,14 +27,14 @@ android {
         consumerProguardFiles 'proguard-unity.txt'**USER_PROGUARD**
     }
 
-    lint {
+    lintOptions {
         abortOnError false
     }
 
-    androidResources {
+    aaptOptions {
         noCompress = **BUILTIN_NOCOMPRESS** + unityStreamingAssets.tokenize(', ')
         ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~"
-    }**PACKAGING**
+    }**PACKAGING_OPTIONS**
 }
 **IL_CPP_BUILD_SETUP**
 **SOURCE_BUILD_SETUP**
