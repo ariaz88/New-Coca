@@ -387,12 +387,22 @@ public static class TransferAlgorithm
         public int Depth;
     }
 
+    // [ThreadStatic] so the headless level solver can run TrySelectMove on several
+    // threads at once without them stomping each other's diagnostics. A ThreadStatic
+    // field initializer only runs on the thread that first touches it, so the "none"
+    // default is applied in the getter instead of at the declaration.
+    [System.ThreadStatic] private static string lastSelectionSource;
+
     /// <summary>
-    /// Which branch produced the most recent Decision: "match-path", "greedy",
-    /// "unlock", or "none". Diagnostics only - nothing reads it to make a
-    /// gameplay choice.
+    /// Which branch produced the most recent Decision on the calling thread:
+    /// "match-path", "greedy", "unlock", or "none". Diagnostics only - nothing
+    /// reads it to make a gameplay choice.
     /// </summary>
-    public static string LastSelectionSource { get; private set; } = "none";
+    public static string LastSelectionSource
+    {
+        get => lastSelectionSource ?? "none";
+        private set => lastSelectionSource = value;
+    }
 
     /// <summary>
     /// Readable dump of a snapshot, used by the transfer trace log so a missed

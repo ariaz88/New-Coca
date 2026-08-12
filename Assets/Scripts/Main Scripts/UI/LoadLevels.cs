@@ -8,7 +8,14 @@ public class LoadLevels : MonoBehaviour
 {
    public void LoadLevel()
    {
-    SceneManager.LoadScene("Level1");
+    if (LevelNaming.TryResolveLoadableSceneName(1, out string sceneName))
+    {
+        SceneManager.LoadScene(sceneName);
+    }
+    else
+    {
+        Debug.LogWarning("Level 1 is not configured in Build Settings.");
+    }
    }
 
 }

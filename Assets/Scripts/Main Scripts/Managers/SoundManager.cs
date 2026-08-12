@@ -83,10 +83,7 @@ public class SoundManager : MonoBehaviour
     public void PlayLevelMusic()
     {
         string sceneName = SceneManager.GetActiveScene().name;
-        const string levelPrefix = "Level";
-        if (!sceneName.StartsWith(levelPrefix, StringComparison.OrdinalIgnoreCase) ||
-            !int.TryParse(sceneName.Substring(levelPrefix.Length), out int levelNumber) ||
-            levelNumber < 1)
+        if (!LevelNaming.TryGetLevelNumber(sceneName, out _))
         {
             return;
         }

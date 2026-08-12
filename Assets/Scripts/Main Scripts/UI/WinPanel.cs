@@ -36,7 +36,7 @@ public class WinPanel : MonoBehaviour
 
     int muliplier = 1;
     int levelNumer=1;
-    int desieredLevel=20;
+    int desieredLevel = LevelNaming.CampaignLevelCount;
     private bool completionClaimed;
     private bool rewardedAdRequestInProgress;
     private void Start()
@@ -216,13 +216,13 @@ public class WinPanel : MonoBehaviour
         GameManager.instance?.PrepareSceneTransition();
 
         string currentSceneName = SceneManager.GetActiveScene().name;
-        if (string.Equals(currentSceneName, "TUTORIAL", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(currentSceneName, LevelNaming.TutorialSceneName, StringComparison.OrdinalIgnoreCase))
         {
-            LoadConfiguredLevel("Level1", 1);
+            LoadConfiguredLevel(1);
             return;
         }
 
-        if (!TryGetLogicalLevel(currentSceneName, out int currentLogicalLevel))
+        if (!LevelNaming.TryGetLevelNumber(currentSceneName, out int currentLogicalLevel))
         {
             Debug.LogWarning(
                 $"Cannot determine the next level from scene '{currentSceneName}'. Returning to MainMenu.");
@@ -231,10 +231,9 @@ public class WinPanel : MonoBehaviour
         }
 
         int nextLogicalLevel = currentLogicalLevel + 1;
-        string nextSceneName = $"Level{nextLogicalLevel}";
-        if (Application.CanStreamedLevelBeLoaded(nextSceneName))
+        if (LevelNaming.TryResolveLoadableSceneName(nextLogicalLevel, out _))
         {
-            LoadConfiguredLevel(nextSceneName, nextLogicalLevel);
+            LoadConfiguredLevel(nextLogicalLevel);
             return;
         }
 
@@ -270,21 +269,12 @@ public class WinPanel : MonoBehaviour
         }
     }
 
-    private static bool TryGetLogicalLevel(string sceneName, out int logicalLevel)
+    private static void LoadConfiguredLevel(int logicalLevel)
     {
-        logicalLevel = 0;
-        const string prefix = "Level";
-        return !string.IsNullOrEmpty(sceneName) &&
-               sceneName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
-               int.TryParse(sceneName.Substring(prefix.Length), out logicalLevel) &&
-               logicalLevel >= 1;
-    }
-
-    private static void LoadConfiguredLevel(string sceneName, int logicalLevel)
-    {
-        if (!Application.CanStreamedLevelBeLoaded(sceneName))
+        if (!LevelNaming.TryResolveLoadableSceneName(logicalLevel, out string sceneName))
         {
-            Debug.LogWarning($"Scene '{sceneName}' is not configured in Build Profiles.");
+            Debug.LogWarning(
+                $"Level {logicalLevel} ('{LevelNaming.GetSceneName(logicalLevel)}') is not configured in Build Profiles.");
             LoadMainMenu();
             return;
         }
@@ -295,9 +285,9 @@ public class WinPanel : MonoBehaviour
 
     private static void LoadMainMenu()
     {
-        if (Application.CanStreamedLevelBeLoaded("MainMenu"))
+        if (Application.CanStreamedLevelBeLoaded(LevelNaming.MainMenuSceneName))
         {
-            SceneManager.LoadScene("MainMenu");
+            SceneManager.LoadScene(LevelNaming.MainMenuSceneName);
             return;
         }
 

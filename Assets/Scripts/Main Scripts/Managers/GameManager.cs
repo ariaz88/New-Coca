@@ -226,15 +226,7 @@ public class GameManager : MonoBehaviour
     private static int GetActiveLogicalLevel()
     {
         string sceneName = SceneManager.GetActiveScene().name;
-        const string prefix = "Level";
-        if (sceneName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
-            int.TryParse(sceneName.Substring(prefix.Length), out int logicalLevel) &&
-            logicalLevel >= 1)
-        {
-            return logicalLevel;
-        }
-
-        return 0;
+        return LevelNaming.TryGetLevelNumber(sceneName, out int logicalLevel) ? logicalLevel : 0;
     }
 
     private void OnDestroy()

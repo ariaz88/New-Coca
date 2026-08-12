@@ -190,7 +190,10 @@ public class ToolTipTutorial : MonoBehaviour
 
     public void GoToLevel1()
     {
-        LoadSceneOnce("Level1");
+        if (LevelNaming.TryResolveLoadableSceneName(1, out string sceneName))
+        {
+            LoadSceneOnce(sceneName);
+        }
     }
 
     public void ResetTutorial()
@@ -200,7 +203,7 @@ public class ToolTipTutorial : MonoBehaviour
             TutorialManager.Instance.ResetCompletion(tutorialIdToReset);
         }
 
-        LoadSceneOnce("TUTORIAL");
+        LoadSceneOnce(LevelNaming.TutorialSceneName);
     }
 
     // Compatibility wrappers for existing Inspector UnityEvents and older scripts.

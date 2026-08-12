@@ -66,8 +66,19 @@ public class LoadManager : MonoBehaviour
         view.ResetView();
 
         ITutorialCompletionStore tutorialStore = new PlayerPrefsTutorialCompletionStore();
+
+        // firstLevelSceneName is serialized in PersistanceScene and predates the
+        // Level1 -> Level01 rename, so a stale value is expected here. Fall back to
+        // whichever spelling of level 1 is actually in the build.
+        string firstLevel = firstLevelSceneName;
+        if (!Application.CanStreamedLevelBeLoaded(firstLevel) &&
+            LevelNaming.TryResolveLoadableSceneName(1, out string resolvedFirstLevel))
+        {
+            firstLevel = resolvedFirstLevel;
+        }
+
         string destination = tutorialStore.IsCompleted(initialTutorialId)
-            ? firstLevelSceneName
+            ? firstLevel
             : tutorialSceneName;
 
         StartCoroutine(LoadSceneRoutine(destination, screenRoot.gameObject));
