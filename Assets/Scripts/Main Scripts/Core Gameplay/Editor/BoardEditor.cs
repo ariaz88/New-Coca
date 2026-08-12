@@ -7,9 +7,24 @@ public sealed class BoardEditor : Editor
 {
     private const float CellButtonSize = 30f;
 
+    /// <summary>
+    /// Shape-grid painting mode. Cycle advances a cell through the four kinds on
+    /// each click; the rest paint one kind directly and support click-and-drag,
+    /// which is the difference between minutes and an hour when laying out 25
+    /// levels.
+    /// </summary>
+    private enum ShapeBrush
+    {
+        Cycle = 0,
+        Playable = 1,
+        Removed = 2,
+        Blocker = 3,
+        Frozen = 4
+    }
+
     private SerializedProperty widthProperty;
     private SerializedProperty heightProperty;
-    private SerializedProperty removedCellsProperty;
+    private SerializedProperty cellStatesProperty;
     private SerializedProperty initialBoxesProperty;
     private SerializedProperty levelOrdersProperty;
 
@@ -17,12 +32,13 @@ public sealed class BoardEditor : Editor
     private GameObject copiedBoxPrefab;
     private readonly List<Soda.SodaColor> copiedSodas = new List<Soda.SodaColor>();
     private bool hasCopiedInitialBox;
+    private ShapeBrush shapeBrush = ShapeBrush.Cycle;
 
     private void OnEnable()
     {
         widthProperty = serializedObject.FindProperty("width");
         heightProperty = serializedObject.FindProperty("height");
-        removedCellsProperty = serializedObject.FindProperty("removedCells");
+        cellStatesProperty = serializedObject.FindProperty("cellStates");
         initialBoxesProperty = serializedObject.FindProperty("initialBoxes");
         levelOrdersProperty = serializedObject.FindProperty("levelOrders");
     }
@@ -33,8 +49,11 @@ public sealed class BoardEditor : Editor
 
         EditorGUILayout.LabelField("Per-Level Board Layout", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
-            "Width, height, blocked cells, and starting boxes are saved only in this scene. " +
-            "Green cells are playable; dark cells begin blocked and can be broken by an adjacent packed match.",
+            "Width, height, cell layout, and starting boxes are saved only in this scene.\n\n" +
+            "O  Playable - an ordinary cell.\n" +
+            "-  Hole - permanently unusable. Shapes the board; never breaks.\n" +
+            "X  X Blocker - opens after ONE packed match in an orthogonally adjacent cell.\n" +
+            "*  Frozen - needs TWO adjacent packed matches: the first cracks it, the second opens it.",
             MessageType.Info);
 
         EditorGUILayout.PropertyField(widthProperty, new GUIContent("Columns"));
@@ -55,6 +74,7 @@ public sealed class BoardEditor : Editor
             "width",
             "height",
             "removedCells",
+            "cellStates",
             "initialBoxes",
             "levelOrders",
             "removedCellVisualPrefab");
@@ -77,12 +97,26 @@ public sealed class BoardEditor : Editor
     private void DrawShapeGrid()
     {
         EditorGUILayout.Space(3f);
-        EditorGUILayout.LabelField("Shape (top row first)", EditorStyles.miniBoldLabel);
+        EditorGUILayout.LabelField("Board Shape (top row first)", EditorStyles.miniBoldLabel);
+
+        shapeBrush = (ShapeBrush)GUILayout.Toolbar(
+            (int)shapeBrush,
+            new[] { "Cycle", "O Playable", "- Hole", "X Blocker", "* Frozen" });
+
+        EditorGUILayout.LabelField(
+            shapeBrush == ShapeBrush.Cycle
+                ? "Click cycles Playable -> Hole -> X -> Frozen. Shift+Click reverses, Alt+Click clears."
+                : "Click or drag to paint.",
+            EditorStyles.centeredGreyMiniLabel);
+
         DrawCoordinateGrid(false);
 
-        if (GUILayout.Button("Clear All Blocked Cells"))
+        using (new EditorGUI.DisabledScope(cellStatesProperty.arraySize == 0))
         {
-            removedCellsProperty.ClearArray();
+            if (GUILayout.Button("Clear All Blockers And Holes"))
+            {
+                cellStatesProperty.ClearArray();
+            }
         }
     }
 
@@ -430,31 +464,53 @@ public sealed class BoardEditor : Editor
             for (int column = 0; column < columns; column++)
             {
                 Vector2Int cell = new Vector2Int(column, row);
-                int removedIndex = FindRemovedCellIndex(cell);
-                bool isPlayable = removedIndex < 0;
+                BoardCellKind kind = GetCellKind(cell);
+                bool isPlayable = kind == BoardCellKind.Playable;
                 int initialIndex = FindInitialBoxIndex(cell);
 
                 Color previousColor = GUI.backgroundColor;
                 bool previousEnabled = GUI.enabled;
-                string label;
-                string tooltip;
 
                 if (!initialBoxMode)
                 {
-                    GUI.backgroundColor = isPlayable
-                        ? new Color(0.45f, 0.85f, 0.5f)
-                        : new Color(0.35f, 0.35f, 0.35f);
-                    label = isPlayable ? "O" : "X";
-                    tooltip = isPlayable
-                        ? $"Cell ({column}, {row}) is playable. Click to block it."
-                        : $"Cell ({column}, {row}) begins blocked. Click to restore it.";
+                    GUI.backgroundColor = BoardCellRules.GetEditorColor(kind);
+                    string tooltip =
+                        $"Cell ({column}, {row}): {BoardCellRules.GetDisplayName(kind)}.\n" +
+                        (BoardCellRules.IsBreakable(kind)
+                            ? $"Opens after {BoardCellRules.GetRequiredHits(kind)} adjacent packed match(es)."
+                            : isPlayable
+                                ? "A box can be placed here."
+                                : "Permanently unusable.");
+
+                    // Drawn as a Box rather than a Button so the same rect can serve
+                    // click AND drag; GUILayout.Button only reports discrete clicks.
+                    Rect rect = GUILayoutUtility.GetRect(
+                        CellButtonSize,
+                        CellButtonSize,
+                        GUILayout.Width(CellButtonSize),
+                        GUILayout.Height(CellButtonSize));
+                    GUI.Box(
+                        rect,
+                        new GUIContent(BoardCellRules.GetGlyph(kind), tooltip),
+                        GUI.skin.button);
+
+                    HandleShapeCellInput(rect, cell, kind);
+
+                    GUI.enabled = previousEnabled;
+                    GUI.backgroundColor = previousColor;
+                    continue;
                 }
-                else if (!isPlayable)
+
+                string label;
+                string boxTooltip;
+
+                if (!isPlayable)
                 {
                     GUI.enabled = false;
-                    GUI.backgroundColor = new Color(0.35f, 0.35f, 0.35f);
-                    label = "X";
-                    tooltip = $"Cell ({column}, {row}) begins blocked and cannot contain a starting Box.";
+                    GUI.backgroundColor = BoardCellRules.GetEditorColor(kind);
+                    label = BoardCellRules.GetGlyph(kind);
+                    boxTooltip =
+                        $"Cell ({column}, {row}) is a {BoardCellRules.GetDisplayName(kind)} and cannot hold a starting Box.";
                 }
                 else
                 {
@@ -468,24 +524,17 @@ public sealed class BoardEditor : Editor
                         ? GetStartingSodasProperty(initialIndex).arraySize
                         : 0;
                     label = initialIndex >= 0 ? $"B{sodaCount}" : "E";
-                    tooltip = initialIndex >= 0
+                    boxTooltip = initialIndex >= 0
                         ? $"Cell ({column}, {row}) starts with a Box containing {sodaCount} soda(s)."
                         : $"Cell ({column}, {row}) starts empty.";
                 }
 
                 if (GUILayout.Button(
-                        new GUIContent(label, tooltip),
+                        new GUIContent(label, boxTooltip),
                         GUILayout.Width(CellButtonSize),
                         GUILayout.Height(CellButtonSize)))
                 {
-                    if (initialBoxMode)
-                    {
-                        selectedInitialCell = cell;
-                    }
-                    else
-                    {
-                        ToggleCell(cell, removedIndex);
-                    }
+                    selectedInitialCell = cell;
                 }
 
                 GUI.enabled = previousEnabled;
@@ -510,7 +559,7 @@ public sealed class BoardEditor : Editor
     private void DrawSelectedCellSettings()
     {
         if (!IsInsideCurrentLayout(selectedInitialCell) ||
-            FindRemovedCellIndex(selectedInitialCell) >= 0)
+            GetCellKind(selectedInitialCell) != BoardCellKind.Playable)
         {
             EditorGUILayout.HelpBox("Select an active cell from the Initial Boxes grid.", MessageType.None);
             return;
@@ -648,17 +697,90 @@ public sealed class BoardEditor : Editor
         }
     }
 
-    private int FindRemovedCellIndex(Vector2Int cell)
+    /// <summary>
+    /// Routes a click or drag over one shape-grid cell to the right mutation.
+    /// Painting on drag is what makes a 25-level layout pass tolerable, and it is
+    /// why the cell is drawn as a Box rather than a Button.
+    /// </summary>
+    private void HandleShapeCellInput(Rect rect, Vector2Int cell, BoardCellKind currentKind)
     {
-        for (int index = 0; index < removedCellsProperty.arraySize; index++)
+        Event current = Event.current;
+        bool isPress = current.type == EventType.MouseDown;
+        bool isDrag = current.type == EventType.MouseDrag;
+
+        if ((!isPress && !isDrag) || current.button != 0 || !rect.Contains(current.mousePosition))
         {
-            if (removedCellsProperty.GetArrayElementAtIndex(index).vector2IntValue == cell)
+            return;
+        }
+
+        if (shapeBrush != ShapeBrush.Cycle)
+        {
+            BoardCellKind painted = BrushToKind(shapeBrush);
+            if (painted != currentKind)
+            {
+                SetCellKind(cell, painted);
+            }
+
+            current.Use();
+            return;
+        }
+
+        // Cycling on drag would race through all four kinds under one gesture, so
+        // the cycle brush only responds to a discrete press.
+        if (!isPress)
+        {
+            return;
+        }
+
+        BoardCellKind next = current.alt
+            ? BoardCellKind.Playable
+            : current.shift
+                ? BoardCellRules.Previous(currentKind)
+                : BoardCellRules.Next(currentKind);
+
+        SetCellKind(cell, next);
+        current.Use();
+    }
+
+    private static BoardCellKind BrushToKind(ShapeBrush brush)
+    {
+        switch (brush)
+        {
+            case ShapeBrush.Removed: return BoardCellKind.Removed;
+            case ShapeBrush.Blocker: return BoardCellKind.Blocker;
+            case ShapeBrush.Frozen: return BoardCellKind.Frozen;
+            default: return BoardCellKind.Playable;
+        }
+    }
+
+    private int FindCellStateIndex(Vector2Int cell)
+    {
+        for (int index = 0; index < cellStatesProperty.arraySize; index++)
+        {
+            SerializedProperty coordinate = cellStatesProperty
+                .GetArrayElementAtIndex(index)
+                .FindPropertyRelative("coordinate");
+            if (coordinate.vector2IntValue == cell)
             {
                 return index;
             }
         }
 
         return -1;
+    }
+
+    private BoardCellKind GetCellKind(Vector2Int cell)
+    {
+        int index = FindCellStateIndex(cell);
+        if (index < 0)
+        {
+            return BoardCellKind.Playable;
+        }
+
+        SerializedProperty kind = cellStatesProperty
+            .GetArrayElementAtIndex(index)
+            .FindPropertyRelative("kind");
+        return (BoardCellKind)kind.enumValueIndex;
     }
 
     private int FindInitialBoxIndex(Vector2Int cell)
@@ -684,33 +806,61 @@ public sealed class BoardEditor : Editor
             .FindPropertyRelative("startingSodas");
     }
 
-    private void ToggleCell(Vector2Int cell, int removedIndex)
+    private void SetCellKind(Vector2Int cell, BoardCellKind kind)
     {
-        if (removedIndex >= 0)
+        int existingIndex = FindCellStateIndex(cell);
+
+        if (kind == BoardCellKind.Playable)
         {
-            removedCellsProperty.DeleteArrayElementAtIndex(removedIndex);
+            if (existingIndex >= 0)
+            {
+                cellStatesProperty.DeleteArrayElementAtIndex(existingIndex);
+            }
+
             return;
         }
 
-        int totalCells = widthProperty.intValue * heightProperty.intValue;
-        if (removedCellsProperty.arraySize >= totalCells - 1)
+        // A board with nothing placeable cannot spawn or accept a box at all, so
+        // the last playable cell is protected. Only checked when adding a new
+        // non-playable cell; changing one blocker kind into another is always safe.
+        if (existingIndex < 0)
         {
-            EditorUtility.DisplayDialog(
-                "Board Layout",
-                "At least one Board cell must remain playable.",
-                "OK");
-            return;
+            int totalCells = widthProperty.intValue * heightProperty.intValue;
+            if (cellStatesProperty.arraySize >= totalCells - 1)
+            {
+                EditorUtility.DisplayDialog(
+                    "Board Layout",
+                    "At least one Board cell must remain playable.",
+                    "OK");
+                return;
+            }
         }
 
+        // A blocker occupies the cell, so any starting box authored there is gone.
         int initialIndex = FindInitialBoxIndex(cell);
         if (initialIndex >= 0)
         {
             initialBoxesProperty.DeleteArrayElementAtIndex(initialIndex);
+            if (selectedInitialCell == cell)
+            {
+                selectedInitialCell = new Vector2Int(-1, -1);
+            }
         }
 
-        int newIndex = removedCellsProperty.arraySize;
-        removedCellsProperty.InsertArrayElementAtIndex(newIndex);
-        removedCellsProperty.GetArrayElementAtIndex(newIndex).vector2IntValue = cell;
+        if (existingIndex < 0)
+        {
+            existingIndex = cellStatesProperty.arraySize;
+            cellStatesProperty.InsertArrayElementAtIndex(existingIndex);
+            cellStatesProperty
+                .GetArrayElementAtIndex(existingIndex)
+                .FindPropertyRelative("coordinate")
+                .vector2IntValue = cell;
+        }
+
+        cellStatesProperty
+            .GetArrayElementAtIndex(existingIndex)
+            .FindPropertyRelative("kind")
+            .enumValueIndex = (int)kind;
     }
 
     private int AddInitialBox(Vector2Int cell)

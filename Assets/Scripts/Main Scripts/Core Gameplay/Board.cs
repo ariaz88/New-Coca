@@ -93,8 +93,16 @@ public class Board : MonoBehaviour
     [SerializeField] private GameObject boxPref;
     [SerializeField, Min(1)] private int width = 4;
     [SerializeField, Min(1)] private int height = 5;
-    [SerializeField, Tooltip("Cells omitted from this scene's Board layout. Coordinates are zero-based.")]
+    // Legacy import channel. Every coordinate here used to mean "taped-X box that
+    // breaks on one adjacent packed match", so OnValidate drains this list into
+    // cellStates as Blocker exactly once. Kept under its original name, and NOT
+    // renamed or [FormerlySerializedAs]-ed, so serialization across the eight
+    // scenes that carry a Board is provably unchanged.
+    [SerializeField, HideInInspector]
     private List<Vector2Int> removedCells = new List<Vector2Int>();
+
+    [SerializeField, Tooltip("Sparse per-cell layout. A coordinate absent from this list is a plain playable cell. Authored through the Board Shape grid above.")]
+    private List<BoardCellEntry> cellStates = new List<BoardCellEntry>();
     [SerializeField] private Vector3 localOrigin = new Vector3(0.149f, 0.185f, 0.16f);
     [SerializeField] private Vector2 cellSpacing = new Vector2(0.279f, 0.279f);
     [SerializeField] private float placedBoxYOffset = 0.155f;
@@ -110,7 +118,12 @@ public class Board : MonoBehaviour
     [Header("Scene View Layout Preview")]
     [SerializeField] private bool drawLayoutGizmos = true;
     [SerializeField] private Color playableCellGizmoColor = new Color(0.2f, 0.9f, 0.35f, 0.9f);
-    [SerializeField] private Color removedCellGizmoColor = new Color(0.38f, 0.18f, 0.07f, 0.75f);
+    [SerializeField, Tooltip("Gizmo colour for X blockers.")]
+    private Color removedCellGizmoColor = new Color(0.38f, 0.18f, 0.07f, 0.75f);
+    [SerializeField, Tooltip("Gizmo colour for permanent holes.")]
+    private Color holeCellGizmoColor = new Color(0.13f, 0.13f, 0.15f, 0.85f);
+    [SerializeField, Tooltip("Gizmo colour for frozen blockers.")]
+    private Color frozenCellGizmoColor = new Color(0.42f, 0.78f, 0.92f, 0.8f);
     [SerializeField, Min(0.001f)] private float gizmoCellHeight = 0.025f;
     [SerializeField, Range(0.1f, 1f)] private float gizmoCellFill = 0.82f;
     [SerializeField, Min(0f), Tooltip("Raises the Scene-view preview above the physical board surface.")]
@@ -166,6 +179,20 @@ public class Board : MonoBehaviour
     [SerializeField, Min(0f), Tooltip("Jitters per second while the box breaks.")]
     private float blockedCellShakeSpeed = 38f;
 
+    [Header("Frozen Blocker")]
+    [SerializeField, Tooltip("Pale frost shell laid over a frozen blocker so it reads as different from a plain X blocker before it takes any damage.")]
+    private Color frozenCellFrostColor = new Color(0.66f, 0.9f, 1f, 0.72f);
+    [SerializeField, Range(0.02f, 0.4f), Tooltip("Frost shell thickness as a fraction of the box height.")]
+    private float frozenCellFrostThickness = 0.1f;
+    [SerializeField, Tooltip("Colour of the fracture lines drawn across a cracked frozen blocker.")]
+    private Color frozenCellCrackColor = new Color(0.13f, 0.32f, 0.45f, 1f);
+    [SerializeField, Min(0), Tooltip("Fracture lines drawn when a frozen blocker takes its first hit.")]
+    private int frozenCellCrackCount = 5;
+    [SerializeField, Min(0), Tooltip("Ice shards thrown when a frozen blocker cracks. 0 disables the burst.")]
+    private int frozenCellCrackShardCount = 12;
+    [SerializeField, Min(0f), Tooltip("Seconds for the punch that plays when a frozen blocker cracks.")]
+    private float frozenCellCrackPunchDuration = 0.32f;
+
     [Header("Rewards")]
     [SerializeField] private bool awardPackedBoxRewards = true;
     [SerializeField, Min(0)] private int coinsPerPackedBox = 10;
@@ -193,10 +220,38 @@ public class Board : MonoBehaviour
     private long placementSequence;
     private long packedMatchSequence;
     private int nextStableId = 1;
-    private readonly HashSet<Vector2Int> removedCellLookup = new HashSet<Vector2Int>();
+    /// <summary>
+    /// Mutable per-cell blocker state. Deliberately a plain class and deliberately
+    /// NOT serializable: the hit counter is play state, and the previous design
+    /// tracked it by deleting entries from the serialized removedCells list, which
+    /// dirtied the scene asset every time a blocker broke in Play Mode.
+    /// Rebuilt from scratch by RebuildLayoutCache, so a counter can never survive
+    /// back into the asset.
+    /// </summary>
+    private sealed class BlockerRuntime
+    {
+        public BoardCellKind Kind;
+        public int HitsRemaining;
+        public bool IsCracked;
+        public long LastDamageSequence = -1;
+        public GameObject Visual;
+        public Tween ActiveTween;
+    }
+
+    private readonly Dictionary<Vector2Int, BlockerRuntime> blockers =
+        new Dictionary<Vector2Int, BlockerRuntime>();
+
+    /// <summary>Mirrors blockers.Keys for the O(1) placement hot path.</summary>
+    private readonly HashSet<Vector2Int> blockedLookup = new HashSet<Vector2Int>();
+
+    /// <summary>
+    /// Cells whose break animation is in flight. ResolvePlacement blocks on this
+    /// being empty, so the invariant is load-bearing: a coordinate is only ever
+    /// added on the same branch that starts BreakBlockedCellRoutine, and that
+    /// routine's only exit path is UnlockBlockedCell, which removes it. The crack
+    /// path must never touch this set or resolution deadlocks.
+    /// </summary>
     private readonly HashSet<Vector2Int> breakingBlockedCells = new HashSet<Vector2Int>();
-    private readonly Dictionary<Vector2Int, GameObject> removedCellVisuals =
-        new Dictionary<Vector2Int, GameObject>();
     private Material generatedRemovedCellMaterial;
     private object placementConstraintOwner;
     private System.Func<Box, int, int, bool> placementConstraint;
@@ -209,7 +264,13 @@ public class Board : MonoBehaviour
 
     public int Height => height;
     public int Width => width;
-    public int PlayableCellCount => width * height - removedCellLookup.Count;
+    public int PlayableCellCount => width * height - blockedLookup.Count;
+
+    /// <summary>This scene's authored cell layout. Read by the level tooling.</summary>
+    public IReadOnlyList<BoardCellEntry> AuthoredCellStates => cellStates;
+
+    /// <summary>This scene's authored starting boxes. Read by the level tooling.</summary>
+    public IReadOnlyList<InitialBoardBoxData> InitialBoxes => initialBoxes;
     public bool IsResolving { get; private set; }
     public bool CanInteract => !IsResolving;
     public bool HasPlacementConstraint => placementConstraintOwner != null && placementConstraint != null;
@@ -307,7 +368,7 @@ public class Board : MonoBehaviour
     public bool IsPlayableCell(int column, int row)
     {
         return IsInside(column, row) &&
-               !removedCellLookup.Contains(new Vector2Int(column, row));
+               !blockedLookup.Contains(new Vector2Int(column, row));
     }
 
     public bool CanPlaceAt(int column, int row)
@@ -777,6 +838,16 @@ public class Board : MonoBehaviour
         placementSequence = 0;
         packedMatchSequence = 0;
         nextStableId = 1;
+
+        // Blockers deliberately survive: this is the clear powerup sweeping the
+        // boxes off the board, not a level restart (a restart reloads the scene).
+        // But packedMatchSequence just went back to 0, so a blocker still holding
+        // a damage id from before the sweep would wrongly ignore the next packed
+        // box that happens to reuse that id.
+        foreach (BlockerRuntime runtime in blockers.Values)
+        {
+            runtime.LastDamageSequence = -1;
+        }
     }
 
     public void HighLightHammerNode()
@@ -1004,8 +1075,14 @@ public class Board : MonoBehaviour
         if (packed)
         {
             SoundManager.instance?.PlayBoxComplete();
-            BeginUnlockAdjacentBlockedCells(box.column, box.row);
-            packedMatchSequence++;
+
+            // Sequence first, then damage. The counter identifies this specific
+            // packed box to the blocker damage guard, so incrementing it after the
+            // damage pass (as the original did) handed every packed box in a level
+            // the same identity and made the guard useless.
+            long damageSequence = ++packedMatchSequence;
+            ApplyPackedMatchDamage(box.column, box.row, damageSequence);
+
             Vector3 sourcePosition = box.transform.position;
 
             // Read the color before the box is destroyed, then report it to the
@@ -1270,9 +1347,19 @@ public class Board : MonoBehaviour
         {
             for (int row = 0; row < height; row++)
             {
-                if (!IsPlayableCell(column, row))
+                BoardCellKind kind = GetRuntimeCellKind(column, row);
+
+                // A Removed cell is a hole in the board, not an obstacle sitting on
+                // it, so it gets no Node and no visual at all. Only the breakable
+                // kinds put a physical box in the cell.
+                if (BoardCellRules.HasVisual(kind))
                 {
-                    GenerateRemovedCellVisual(column, row);
+                    GenerateBlockerVisual(column, row, kind);
+                    continue;
+                }
+
+                if (BoardCellRules.BlocksPlacement(kind))
+                {
                     continue;
                 }
 
@@ -1446,7 +1533,7 @@ public class Board : MonoBehaviour
         boardBoxes.Add(box);
     }
 
-    private void GenerateRemovedCellVisual(int column, int row)
+    private void GenerateBlockerVisual(int column, int row, BoardCellKind kind)
     {
         // Scene editing uses Gizmos only. Real blocker objects must exist only in Play Mode.
         if (!Application.isPlaying)
@@ -1478,8 +1565,11 @@ public class Board : MonoBehaviour
                 Mathf.Abs(cellSpacing.y) * removedCellVisualFill);
         }
 
-        visual.name = $"Blocked Cell ({column}, {row})";
-        removedCellVisuals[new Vector2Int(column, row)] = visual;
+        visual.name = $"{BoardCellRules.GetDisplayName(kind)} Cell ({column}, {row})";
+        if (blockers.TryGetValue(new Vector2Int(column, row), out BlockerRuntime runtime))
+        {
+            runtime.Visual = visual;
+        }
 
         foreach (Collider visualCollider in visual.GetComponentsInChildren<Collider>(true))
         {
@@ -1528,31 +1618,112 @@ public class Board : MonoBehaviour
                 blockedCellTapeWidth,
                 blockedCellTapeLength);
         }
+
+        // Added last so the frost sits over the tape. This is what separates a
+        // frozen blocker from an X blocker at a glance, before either has taken
+        // any damage - the player has to be able to plan around the two-hit cost.
+        if (kind == BoardCellKind.Frozen)
+        {
+            BlockedCellVisuals.AttachFrostOverlay(
+                visual,
+                frozenCellFrostColor,
+                frozenCellFrostThickness);
+        }
     }
 
     /// <summary>
-    /// Starts one non-chaining break for each blocked orthogonal neighbour of a
-    /// packed Box. The lookup remains blocked until its own animation completes.
+    /// Deals one hit to each breakable orthogonal neighbour of a packed Box.
+    ///
+    /// A Blocker opens on its single hit. A Frozen blocker cracks on the first and
+    /// opens on the second. Holes are immune. Breaking never chains: a cell opened
+    /// here does not damage its own neighbours.
+    ///
+    /// damageSequence identifies the packed box that caused this. One packed box
+    /// deals at most one hit to any given blocker, even though it is orthogonally
+    /// adjacent to that blocker only once - the guard exists because two packed
+    /// boxes retiring in the same resolution DO each get their own sequence, and a
+    /// frozen blocker between them is meant to take both hits and open.
     /// </summary>
-    private void BeginUnlockAdjacentBlockedCells(int column, int row)
+    private void ApplyPackedMatchDamage(int column, int row, long damageSequence)
     {
         foreach (Vector2Int offset in DirectOffsets)
         {
             Vector2Int coordinate = new Vector2Int(column + offset.x, row + offset.y);
             if (!IsInside(coordinate.x, coordinate.y) ||
-                !removedCellLookup.Contains(coordinate) ||
-                !breakingBlockedCells.Add(coordinate))
+                !blockers.TryGetValue(coordinate, out BlockerRuntime runtime) ||
+                !BoardCellRules.IsBreakable(runtime.Kind) ||
+                runtime.LastDamageSequence == damageSequence ||
+                breakingBlockedCells.Contains(coordinate))
             {
                 continue;
             }
 
-            StartCoroutine(BreakBlockedCellRoutine(coordinate));
+            runtime.LastDamageSequence = damageSequence;
+            runtime.HitsRemaining--;
+
+            if (runtime.HitsRemaining > 0)
+            {
+                CrackBlocker(coordinate, runtime);
+                continue;
+            }
+
+            if (breakingBlockedCells.Add(coordinate))
+            {
+                StartCoroutine(BreakBlockedCellRoutine(coordinate));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Damages a blocker without opening it. Deliberately synchronous and
+    /// deliberately does NOT touch breakingBlockedCells: that set gates
+    /// ResolvePlacement, and a crack is not something resolution should wait for.
+    /// </summary>
+    private void CrackBlocker(Vector2Int coordinate, BlockerRuntime runtime)
+    {
+        runtime.IsCracked = true;
+
+        if (runtime.Visual == null)
+        {
+            return;
+        }
+
+        // Seeded from the coordinate so a replayed level cracks identically. The
+        // level tooling diffs screenshots, and a random crack pattern would make
+        // every capture differ.
+        int seed = (coordinate.x * 73856093) ^ (coordinate.y * 19349663);
+        BlockedCellVisuals.ApplyCrackedLook(
+            runtime.Visual,
+            seed,
+            frozenCellCrackColor,
+            frozenCellCrackCount);
+
+        if (frozenCellCrackShardCount > 0)
+        {
+            BlockedCellVisuals.PlayCrackBurst(
+                runtime.Visual.transform.position,
+                Mathf.Abs(cellSpacing.x),
+                frozenCellFrostColor,
+                frozenCellCrackShardCount);
+        }
+
+        runtime.ActiveTween?.Kill(true);
+        if (frozenCellCrackPunchDuration > 0f)
+        {
+            runtime.ActiveTween = runtime.Visual.transform
+                .DOPunchScale(Vector3.one * 0.14f, frozenCellCrackPunchDuration, 8, 0.8f)
+                .SetLink(runtime.Visual);
         }
     }
 
     private IEnumerator BreakBlockedCellRoutine(Vector2Int coordinate)
     {
-        removedCellVisuals.TryGetValue(coordinate, out GameObject visual);
+        blockers.TryGetValue(coordinate, out BlockerRuntime runtime);
+        GameObject visual = runtime?.Visual;
+
+        // A frozen blocker that cracks and then breaks in the same resolution
+        // would otherwise have its crack punch fighting the shrink below.
+        runtime?.ActiveTween?.Kill(true);
 
         // Captured before the shrink starts, because the burst has to be spawned
         // at the cell even if the visual is destroyed mid-animation.
@@ -1611,9 +1782,12 @@ public class Board : MonoBehaviour
 
     private void UnlockBlockedCell(Vector2Int coordinate, GameObject visual)
     {
-        removedCellLookup.Remove(coordinate);
-        removedCells?.Remove(coordinate);
-        removedCellVisuals.Remove(coordinate);
+        // Note the absence of a "removedCells.Remove(coordinate)" here. The old
+        // implementation tracked the open/closed state by editing the serialized
+        // level layout, so every blocker broken in Play Mode dirtied the scene
+        // asset. Blocker state now lives only in the runtime table below.
+        blockedLookup.Remove(coordinate);
+        blockers.Remove(coordinate);
 
         if (visual != null)
         {
@@ -1621,7 +1795,7 @@ public class Board : MonoBehaviour
         }
 
         // Creating the real Node refreshes occupancy and drop/highlight lookup.
-        // All neighbour queries read grid/removedCellLookup live, so the new cell
+        // All neighbour queries read grid/blockedLookup live, so the new cell
         // participates immediately without rebuilding the whole Board.
         if (allBoxes != null)
         {
@@ -1682,22 +1856,136 @@ public class Board : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Rebuilds the blocker table from the authored layout.
+    ///
+    /// Reads BOTH the legacy removedCells list and cellStates without writing to
+    /// either, so a scene that has never been opened in the editor since the split
+    /// still plays correctly. Draining the legacy list is OnValidate's job alone -
+    /// doing it here would mean Play Mode mutates serialized level data, which is
+    /// the exact bug this refactor removes.
+    /// </summary>
     private void RebuildLayoutCache()
     {
-        removedCellLookup.Clear();
-        if (removedCells == null)
+        blockers.Clear();
+        blockedLookup.Clear();
+        breakingBlockedCells.Clear();
+
+        // Legacy entries first so an explicit cellStates entry for the same
+        // coordinate wins if a scene somehow carries both.
+        if (removedCells != null)
         {
-            removedCells = new List<Vector2Int>();
+            foreach (Vector2Int cell in removedCells)
+            {
+                RegisterAuthoredCell(cell, BoardCellKind.Blocker);
+            }
+        }
+
+        if (cellStates != null)
+        {
+            foreach (BoardCellEntry entry in cellStates)
+            {
+                RegisterAuthoredCell(entry.coordinate, entry.kind);
+            }
+        }
+    }
+
+    private void RegisterAuthoredCell(Vector2Int coordinate, BoardCellKind kind)
+    {
+        if (!IsInside(coordinate.x, coordinate.y) || kind == BoardCellKind.Playable)
+        {
             return;
+        }
+
+        blockers[coordinate] = new BlockerRuntime
+        {
+            Kind = kind,
+            HitsRemaining = BoardCellRules.GetRequiredHits(kind)
+        };
+        blockedLookup.Add(coordinate);
+    }
+
+    /// <summary>
+    /// The authored kind of a cell, ignoring any damage taken this session.
+    /// Safe to call outside Play Mode - reads the serialized lists directly.
+    /// </summary>
+    public BoardCellKind GetAuthoredCellKind(int column, int row)
+    {
+        Vector2Int coordinate = new Vector2Int(column, row);
+
+        if (cellStates != null)
+        {
+            for (int index = 0; index < cellStates.Count; index++)
+            {
+                if (cellStates[index].coordinate == coordinate)
+                {
+                    return cellStates[index].kind;
+                }
+            }
+        }
+
+        if (removedCells != null && removedCells.Contains(coordinate))
+        {
+            return BoardCellKind.Blocker;
+        }
+
+        return BoardCellKind.Playable;
+    }
+
+    /// <summary>The live kind of a cell, accounting for blockers already broken open.</summary>
+    public BoardCellKind GetRuntimeCellKind(int column, int row)
+    {
+        return blockers.TryGetValue(new Vector2Int(column, row), out BlockerRuntime runtime)
+            ? runtime.Kind
+            : BoardCellKind.Playable;
+    }
+
+    /// <summary>True when a frozen blocker at this cell has taken its first hit.</summary>
+    public bool IsBlockerCracked(int column, int row)
+    {
+        return blockers.TryGetValue(new Vector2Int(column, row), out BlockerRuntime runtime) &&
+               runtime.IsCracked;
+    }
+
+    /// <summary>
+    /// Drains the pre-split removedCells list into cellStates. Every legacy entry
+    /// meant "breakable taped-X box", so each becomes a Blocker.
+    ///
+    /// Only ever called from OnValidate, and only when there is something to drain,
+    /// so it is idempotent and cannot re-dirty a migrated scene.
+    /// </summary>
+    private bool TryMigrateLegacyRemovedCells()
+    {
+        if (removedCells == null || removedCells.Count == 0)
+        {
+            return false;
+        }
+
+        if (cellStates == null)
+        {
+            cellStates = new List<BoardCellEntry>();
         }
 
         foreach (Vector2Int cell in removedCells)
         {
-            if (IsInside(cell.x, cell.y))
+            bool alreadyPresent = false;
+            for (int index = 0; index < cellStates.Count; index++)
             {
-                removedCellLookup.Add(cell);
+                if (cellStates[index].coordinate == cell)
+                {
+                    alreadyPresent = true;
+                    break;
+                }
+            }
+
+            if (!alreadyPresent)
+            {
+                cellStates.Add(new BoardCellEntry(cell, BoardCellKind.Blocker));
             }
         }
+
+        removedCells.Clear();
+        return true;
     }
 
     private void OnValidate()
@@ -1711,20 +1999,38 @@ public class Board : MonoBehaviour
             removedCells = new List<Vector2Int>();
         }
 
-        HashSet<Vector2Int> validUniqueCells = new HashSet<Vector2Int>();
-        for (int index = removedCells.Count - 1; index >= 0; index--)
+        if (cellStates == null)
         {
-            Vector2Int cell = removedCells[index];
-            if (!IsInside(cell.x, cell.y) || !validUniqueCells.Add(cell))
+            cellStates = new List<BoardCellEntry>();
+        }
+
+        // The one sanctioned place to rewrite serialized level data.
+        TryMigrateLegacyRemovedCells();
+
+        HashSet<Vector2Int> validUniqueCells = new HashSet<Vector2Int>();
+        for (int index = cellStates.Count - 1; index >= 0; index--)
+        {
+            BoardCellEntry entry = cellStates[index];
+            if (!IsInside(entry.coordinate.x, entry.coordinate.y) ||
+                entry.kind == BoardCellKind.Playable ||
+                !validUniqueCells.Add(entry.coordinate))
             {
-                removedCells.RemoveAt(index);
+                cellStates.RemoveAt(index);
             }
         }
 
         // A Board with no playable cell cannot support spawning or placement.
         if (validUniqueCells.Count >= width * height)
         {
-            removedCells.Remove(new Vector2Int(0, 0));
+            for (int index = cellStates.Count - 1; index >= 0; index--)
+            {
+                if (cellStates[index].coordinate == Vector2Int.zero)
+                {
+                    cellStates.RemoveAt(index);
+                    validUniqueCells.Remove(Vector2Int.zero);
+                    break;
+                }
+            }
         }
 
         if (initialBoxes == null)
@@ -1737,7 +2043,7 @@ public class Board : MonoBehaviour
         {
             InitialBoardBoxData data = initialBoxes[index];
             if (data == null || !IsInside(data.coordinate.x, data.coordinate.y) ||
-                removedCells.Contains(data.coordinate) ||
+                validUniqueCells.Contains(data.coordinate) ||
                 !uniqueInitialCells.Add(data.coordinate))
             {
                 initialBoxes.RemoveAt(index);
@@ -1781,18 +2087,9 @@ public class Board : MonoBehaviour
                 Vector3 center = GetCellLocalPosition(column, row);
                 center.y += gizmoVerticalOffset + gizmoCellHeight * 0.5f;
 
-                if (IsConfiguredRemovedCell(column, row))
-                {
-                    Gizmos.color = removedCellGizmoColor;
-                    Gizmos.DrawCube(center, cellSize);
-                    Gizmos.color = new Color(
-                        removedCellGizmoColor.r,
-                        removedCellGizmoColor.g,
-                        removedCellGizmoColor.b,
-                        1f);
-                    Gizmos.DrawWireCube(center, cellSize);
-                }
-                else
+                BoardCellKind kind = GetAuthoredCellKind(column, row);
+
+                if (kind == BoardCellKind.Playable)
                 {
                     Gizmos.color = new Color(
                         playableCellGizmoColor.r,
@@ -1802,6 +2099,23 @@ public class Board : MonoBehaviour
                     Gizmos.DrawCube(center, cellSize);
                     Gizmos.color = playableCellGizmoColor;
                     Gizmos.DrawWireCube(center, cellSize);
+                    continue;
+                }
+
+                Color fill = GetGizmoColor(kind);
+                Gizmos.color = fill;
+                Gizmos.DrawCube(center, cellSize);
+                Gizmos.color = new Color(fill.r, fill.g, fill.b, 1f);
+                Gizmos.DrawWireCube(center, cellSize);
+
+                // A hole reads as "nothing is here", so it also gets a cross to
+                // separate it from a solid blocker at a glance in the Scene view.
+                if (kind == BoardCellKind.Removed)
+                {
+                    Vector3 halfX = new Vector3(cellSize.x * 0.5f, 0f, 0f);
+                    Vector3 halfZ = new Vector3(0f, 0f, cellSize.z * 0.5f);
+                    Gizmos.DrawLine(center - halfX - halfZ, center + halfX + halfZ);
+                    Gizmos.DrawLine(center - halfX + halfZ, center + halfX - halfZ);
                 }
             }
         }
@@ -1810,10 +2124,15 @@ public class Board : MonoBehaviour
         Gizmos.color = previousColor;
     }
 
-    private bool IsConfiguredRemovedCell(int column, int row)
+    private Color GetGizmoColor(BoardCellKind kind)
     {
-        return removedCells != null &&
-               removedCells.Contains(new Vector2Int(column, row));
+        switch (kind)
+        {
+            case BoardCellKind.Removed: return holeCellGizmoColor;
+            case BoardCellKind.Blocker: return removedCellGizmoColor;
+            case BoardCellKind.Frozen: return frozenCellGizmoColor;
+            default: return playableCellGizmoColor;
+        }
     }
 }
 

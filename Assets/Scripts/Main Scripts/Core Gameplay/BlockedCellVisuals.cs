@@ -17,6 +17,8 @@ using UnityEngine;
 public static class BlockedCellVisuals
 {
     private const string TapeRootName = "TapeCross";
+    private const string FrostRootName = "Frost";
+    private const string CrackRootName = "Cracks";
 
     /// <summary>
     /// Lays two crossed tape strips over the top face of a blocked box.
@@ -119,6 +121,226 @@ public static class BlockedCellVisuals
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
         }
+    }
+
+    /// <summary>
+    /// Wraps a blocker in a pale translucent frost shell.
+    ///
+    /// This is what tells the player a cell costs two adjacent matches instead of
+    /// one, and it has to read BEFORE any damage is dealt - a blocker whose extra
+    /// cost only becomes visible after the first wasted match is a trap, not a
+    /// mechanic. Sized from the box's own bounds, so it fits any box prefab.
+    /// </summary>
+    public static void AttachFrostOverlay(
+        GameObject boxVisual,
+        Color frostColor,
+        float thicknessFraction = 0.1f)
+    {
+        if (boxVisual == null)
+        {
+            return;
+        }
+
+        Transform existing = boxVisual.transform.Find(FrostRootName);
+        if (existing != null)
+        {
+            Object.Destroy(existing.gameObject);
+        }
+
+        if (!TryGetWorldBounds(boxVisual, out Bounds bounds, out _))
+        {
+            return;
+        }
+
+        GameObject root = new GameObject(FrostRootName);
+        root.transform.SetParent(boxVisual.transform, false);
+
+        GameObject shell = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        shell.name = "FrostShell";
+
+        Collider collider = shell.GetComponent<Collider>();
+        if (collider != null)
+        {
+            Object.Destroy(collider);
+        }
+
+        shell.transform.SetParent(root.transform, true);
+        shell.transform.position = bounds.center;
+        shell.transform.rotation = boxVisual.transform.rotation;
+
+        // Slightly larger than the box on every axis so the frost reads as a rime
+        // growing over the cardboard rather than as z-fighting with it.
+        float swell = 1f + Mathf.Clamp(thicknessFraction, 0.01f, 0.4f);
+        SetWorldScale(shell.transform, bounds.size * swell);
+
+        Renderer renderer = shell.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.sharedMaterial = CreateFrostMaterial(frostColor);
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+    }
+
+    /// <summary>
+    /// Marks a blocker as damaged but not yet open.
+    ///
+    /// The damaged state is carried on three independent channels, because a
+    /// single one is not reliably readable on a phone mid-animation:
+    /// fracture lines across the lid (geometry), a thinned frost shell (colour),
+    /// and a permanently reduced silhouette (shape). A player glancing at a still
+    /// frame has to be able to tell one-hit-left from untouched.
+    ///
+    /// The pattern is seeded from the caller, so a replayed level cracks
+    /// identically - the level tooling compares screenshots.
+    /// </summary>
+    public static void ApplyCrackedLook(
+        GameObject boxVisual,
+        int seed,
+        Color crackColor,
+        int crackCount = 5,
+        float widthFraction = 0.035f,
+        float surfaceLift = 0.006f)
+    {
+        if (boxVisual == null)
+        {
+            return;
+        }
+
+        Transform existing = boxVisual.transform.Find(CrackRootName);
+        if (existing != null)
+        {
+            Object.Destroy(existing.gameObject);
+        }
+
+        if (!TryGetWorldBounds(boxVisual, out Bounds bounds, out _))
+        {
+            return;
+        }
+
+        // Thin the frost so the box looks like it is losing its shell, and shrink
+        // the whole visual a touch so the damaged silhouette differs from intact.
+        Transform frost = boxVisual.transform.Find(FrostRootName);
+        if (frost != null)
+        {
+            foreach (Renderer frostRenderer in frost.GetComponentsInChildren<Renderer>(true))
+            {
+                Material material = frostRenderer.sharedMaterial;
+                if (material == null)
+                {
+                    continue;
+                }
+
+                if (material.HasProperty("_BaseColor"))
+                {
+                    Color faded = material.GetColor("_BaseColor");
+                    faded.a *= 0.45f;
+                    material.SetColor("_BaseColor", faded);
+                }
+
+                if (material.HasProperty("_Color"))
+                {
+                    Color faded = material.GetColor("_Color");
+                    faded.a *= 0.45f;
+                    material.SetColor("_Color", faded);
+                }
+            }
+        }
+
+        boxVisual.transform.localScale *= 0.94f;
+
+        if (crackCount <= 0)
+        {
+            return;
+        }
+
+        GameObject root = new GameObject(CrackRootName);
+        root.transform.SetParent(boxVisual.transform, false);
+
+        Material crackMaterial = CreateTapeMaterial(crackColor);
+
+        Vector3 top = new Vector3(bounds.center.x, bounds.max.y + surfaceLift, bounds.center.z);
+        float shortEdge = Mathf.Min(bounds.size.x, bounds.size.z);
+        float crackWidth = Mathf.Max(0.0006f, shortEdge * widthFraction);
+        float crackThickness = Mathf.Max(0.0004f, shortEdge * 0.012f);
+        float diagonal = new Vector2(bounds.size.x, bounds.size.z).magnitude;
+
+        System.Random random = new System.Random(seed);
+        for (int index = 0; index < crackCount; index++)
+        {
+            float yaw = (float)(random.NextDouble() * 180.0);
+            float length = diagonal * Mathf.Lerp(0.45f, 0.9f, (float)random.NextDouble());
+
+            // Offset off centre so the fractures form a shattered pane rather than
+            // a star radiating from one point.
+            float offsetX = (float)(random.NextDouble() - 0.5) * bounds.size.x * 0.45f;
+            float offsetZ = (float)(random.NextDouble() - 0.5) * bounds.size.z * 0.45f;
+            Vector3 centre = top + new Vector3(offsetX, 0f, offsetZ);
+
+            CreateStrip(root.transform, centre, length, crackThickness, crackWidth, yaw, crackMaterial);
+        }
+    }
+
+    /// <summary>
+    /// Small shard spray for a blocker that cracked without opening. Reuses the
+    /// confetti system with a single-colour palette and a lower count, so a crack
+    /// reads as a smaller event than a break.
+    /// </summary>
+    public static void PlayCrackBurst(
+        Vector3 worldPosition,
+        float cellSize,
+        Color shardColor,
+        int shardCount = 12)
+    {
+        if (shardCount <= 0)
+        {
+            return;
+        }
+
+        SpawnConfetti(worldPosition, cellSize, new[] { shardColor, Lighten(shardColor, 0.3f) }, shardCount);
+    }
+
+    private static Material CreateFrostMaterial(Color color)
+    {
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+        {
+            shader = Shader.Find("Standard");
+        }
+
+        Material material = new Material(shader) { name = "BlockedCellFrost" };
+
+        // URP/Lit defaults to opaque, and the surface-type switch is not a single
+        // property: the blend state, ZWrite, render queue and the _SURFACE_TYPE
+        // keyword all have to move together or the shell renders as a solid box.
+        if (material.HasProperty("_Surface"))
+        {
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetInt("_ZWrite", 0);
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+        }
+
+        if (material.HasProperty("_BaseColor"))
+        {
+            material.SetColor("_BaseColor", color);
+        }
+
+        if (material.HasProperty("_Color"))
+        {
+            material.SetColor("_Color", color);
+        }
+
+        if (material.HasProperty("_Smoothness"))
+        {
+            material.SetFloat("_Smoothness", 0.9f);
+        }
+
+        return material;
     }
 
     /// <summary>
