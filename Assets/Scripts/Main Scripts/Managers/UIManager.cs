@@ -35,8 +35,11 @@ public class UIManager : MonoBehaviour
     private void OnDisable()
     {
         // Unsubscribe to avoid memory leaks
-        GameManager.instance.OnLevelWon -= HandleLevelWon;
-        GameManager.instance.OnLevelLose -= Instance_OnLevelLose;
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.OnLevelWon -= HandleLevelWon;
+            GameManager.instance.OnLevelLose -= Instance_OnLevelLose;
+        }
 
     }
     private void Awake()
@@ -104,9 +107,11 @@ public class UIManager : MonoBehaviour
 
         // Activate the panel
         panel.gameObject.SetActive(true);
+        GameManager.instance?.PauseForEndPanel();
 
         // Animate the scale from 0 to its default scale (1, 1, 1)
         panel.transform.DOScale(Vector3.one, 0.5f)
+            .SetUpdate(true)
             .SetEase(Ease.OutBack).OnComplete(()=> {
 
                 Transform firstChild = panel.transform.GetChild(0);
@@ -138,7 +143,12 @@ public class UIManager : MonoBehaviour
         Debug.Log("You Lost");
 
     }
-    public void UpdateUI()
+    /// <summary>
+    /// Repaints the HUD. Pass includeCoins: false from gameplay paths that award
+    /// coins with a fly animation, so the counter is left to CoinManager and does
+    /// not jump ahead of the coins still travelling to it.
+    /// </summary>
+    public void UpdateUI(bool includeCoins = true)
     {
         //(int level, _, int gems) = GameDataManager.instance.LoadData();
         ////levelText.text = $"Level: {level}";
@@ -154,10 +164,12 @@ public class UIManager : MonoBehaviour
         {
             UpdateGems(gems);
         }
-        if (coinText!=null)
+        if (includeCoins && coinText!=null)
         {
-            //UpdateCoins(TotalCoins);
-            UpdateCoins(GameDataManager.instance.coin);
+            // Persisted total plus this level's pending coins. Showing the raw
+            // GameDataManager.coin made the HUD reset to 0 on every level load,
+            // while showing TotalCoins alone froze it until the level ended.
+            RefreshCoins();
 
         }
         if (levelText!=null)
@@ -180,11 +192,10 @@ public class UIManager : MonoBehaviour
 
     public void OnLevelComplete()
     {
-        // Level completion logic...
+        // Rewards only. WinPanel owns level progression so the saved level can
+        // never be incremented by two different completion paths.
         GameDataManager.instance.AddToTotalCoins();
         UIManager.instance.UpdateTotalCoins(GameDataManager.instance.TotalCoins);
-        // Increment level
-        GameDataManager.instance.IncrementLevel();
 
         // Optionally save additional data (e.g., coins, gems)
         GameDataManager.instance.SaveData(
@@ -242,7 +253,35 @@ public class UIManager : MonoBehaviour
     public void UpdateCoins(int coinCount)
     {
         coinText.text = $" { coinCount}";
-        
+
+    }
+
+    /// <summary>
+    /// Repaints the coin counter from current data. Call after anything that
+    /// awards coins mid-level, since UpdateUI only ran at level start and end.
+    /// </summary>
+    public void RefreshCoins()
+    {
+        if (coinText == null || GameDataManager.instance == null)
+        {
+            return;
+        }
+
+        UpdateCoins(GameDataManager.instance.DisplayCoins);
+    }
+
+    /// <summary>
+    /// Repaints the gem counter from saved data. Called as gems land so the
+    /// counter tracks the animation rather than jumping ahead of it.
+    /// </summary>
+    public void RefreshGems()
+    {
+        if (gemsText == null || GameDataManager.instance == null)
+        {
+            return;
+        }
+
+        UpdateGems(GameDataManager.instance.GetGems());
     }
     public void UpdateLevel(string leveltxt)
     {

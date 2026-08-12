@@ -21,6 +21,7 @@ public class LoseGame : MonoBehaviour
   
     int levelNumer = 2;
     int desieredLevel = 20;
+    private bool transitionStarted;
     private void Start()
     {
         revivePanel.SetActive(false);
@@ -30,14 +31,20 @@ public class LoseGame : MonoBehaviour
 
     IEnumerator ShowProgress()
     {
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSecondsRealtime(0.5f);
         progressBar.fillAmount = (float)(levelNumer - 1) / desieredLevel;
         barText.text = levelNumer-1 + "/" + desieredLevel;
     }
 
     public void PlayAgain()
     {
+        if (!TryBeginTransition())
+        {
+            return;
+        }
+
         losePanel.transform.DOScale(Vector3.zero, 0.8f)
+           .SetUpdate(true)
            .SetEase(Ease.OutBack).OnComplete(() =>
            {
                losePanel.gameObject.SetActive(false);
@@ -47,7 +54,9 @@ public class LoseGame : MonoBehaviour
                    color.a = 0f; // Set alpha to 0
                    BGImage.color = color;
                }
-        SceneManager.LoadScene("Level1");
+               string currentSceneName = SceneManager.GetActiveScene().name;
+               GameManager.instance?.PrepareSceneTransition();
+               SceneManager.LoadScene(currentSceneName);
 
            }
            );
@@ -56,7 +65,13 @@ public class LoseGame : MonoBehaviour
 
     public void MainMenu()
     {
+        if (!TryBeginTransition())
+        {
+            return;
+        }
+
         losePanel.transform.DOScale(Vector3.zero, 0.8f)
+           .SetUpdate(true)
            .SetEase(Ease.OutBack).OnComplete(() =>
            {
                losePanel.gameObject.SetActive(false);
@@ -66,11 +81,33 @@ public class LoseGame : MonoBehaviour
                    color.a = 0f; // Set alpha to 0
                    BGImage.color = color;
                }
+               GameManager.instance?.PrepareSceneTransition();
                SceneManager.LoadScene("MainMenu");
 
            }
            );
 
+    }
+
+    private bool TryBeginTransition()
+    {
+        if (transitionStarted)
+        {
+            return false;
+        }
+
+        transitionStarted = true;
+        if (playAgainButton != null)
+        {
+            playAgainButton.interactable = false;
+        }
+
+        if (mainMenuButton != null)
+        {
+            mainMenuButton.interactable = false;
+        }
+
+        return true;
     }
 
 

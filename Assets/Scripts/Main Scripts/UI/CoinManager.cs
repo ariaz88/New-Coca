@@ -42,7 +42,7 @@ public class CoinManager : MonoBehaviour
         }
     }
 
-    private void Animate(Vector3 collectedItemPosition, RectTransform targetUI, Queue<GameObject> itemQueue, int amount)
+    private void Animate(Vector3 collectedItemPosition, RectTransform targetUI, Queue<GameObject> itemQueue, int amount, System.Action onItemArrived = null)
     {
         GameObject canvas = GameObject.Find("Canvas");
         if (canvas == null) return;
@@ -67,13 +67,33 @@ public class CoinManager : MonoBehaviour
 
                 float duration = Random.Range(minAnimDuration, maxAnimDuration);
 
+                // Items are pooled, so a previous tween can still be alive on this
+                // transform when it is reused. Kill it first, or DOTween warns about
+                // overlapping tweens on the same target.
+                item.transform.DOKill();
+
                 // Tween Animation
                 item.transform.DOMove(targetUI.position, duration)
                 .SetEase(easeType)
+                // Reward panels run at timeScale 0, so a scaled tween would never
+                // progress and the item would never return to the pool.
+                .SetUpdate(true)
+                // Auto-kill if the item is destroyed by a scene change mid-flight,
+                // which is what produced the "target is null" DOTween errors.
+                .SetLink(item)
                 .OnComplete(() =>
                 {
+                    if (item == null)
+                    {
+                        return;
+                    }
+
                     item.SetActive(false);
                     itemQueue.Enqueue(item);
+
+                    // Counters are refreshed here, as each item lands, so the
+                    // displayed balance never runs ahead of the animation.
+                    onItemArrived?.Invoke();
                 });
             }
         }
@@ -100,11 +120,14 @@ public class CoinManager : MonoBehaviour
 
     public void AddCoins(Vector3 collectedCoinPosition, int amount)
     {
-        Animate(collectedCoinPosition, coinTargetUI, coinsQueue, amount);
+        Animate(collectedCoinPosition, coinTargetUI, coinsQueue, amount,
+            () => UIManager.instance?.RefreshCoins());
     }
 
     public void AddGems(Vector3 collectedGemPosition, int amount)
     {
-        Animate(collectedGemPosition, gemTargetUI, gemsQueue, amount); // Use gem target UI and gem queue
+        // Use gem target UI and gem queue
+        Animate(collectedGemPosition, gemTargetUI, gemsQueue, amount,
+            () => UIManager.instance?.RefreshGems());
     }
 }

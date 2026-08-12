@@ -4,7 +4,14 @@ apply from: '../shared/keepUnitySymbols.gradle'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-**DEPS**}
+**DEPS**
+    // Declared by GoogleMobileAdsDependencies.xml. Added explicitly because the
+    // googlemobileads-unity AAR ships ConstraintLayout-based native ad layouts;
+    // without these, AAPT fails to link layout_constraint* attributes.
+    implementation 'com.google.android.gms:play-services-ads:25.3.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.lifecycle:lifecycle-process:2.6.2'
+}
 
 // Unity IAP and older Android plugins can request different Kotlin standard
 // library versions. Keep every Kotlin artifact on one compatible version to

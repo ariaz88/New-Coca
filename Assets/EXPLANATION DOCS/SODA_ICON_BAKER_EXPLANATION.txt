@@ -1,0 +1,155 @@
+SODA ICON BAKER - ORDER SLOT ARTWORK FROM THE REAL MODEL (PHASE 4)
+==================================================================
+
+Purpose of this document
+------------------------
+The Orders panel had to show the project's own soda, not generic icon art. This
+tool renders Assets/Prefabs/Soda.prefab once per color into transparent PNG
+sprites, imports them, and writes them into a SodaVisualLibrary asset together
+with the tint each color's streak should use.
+
+Menu: Tools > Coca Sorting > Bake Soda Icons
+
+Why bake instead of rendering live
+----------------------------------
+Two ways to put the real model in a UI slot: keep a second camera rendering it
+into a RenderTexture every frame, or render it once in the editor and ship flat
+sprites.
+
+Baking wins for a mobile puzzle game. A live RenderTexture costs a camera, a
+render target, and a draw pass per slot, every frame, forever, to display
+something that never changes. A baked sprite costs one texture fetch. What is
+given up is runtime rotation or animation of the icon, and the reference footage
+does not do either.
+
+How the render works
+--------------------
+Rig
+    A single GameObject at Y -10000, marked HideAndDontSave, holding the model,
+    a camera, and two lights. HideAndDontSave means it never shows in the
+    hierarchy, is never saved into the open scene, and cannot be left behind if
+    something throws. The whole rig is destroyed in a finally block.
+
+    The far-off position is what keeps real level geometry out of the frame,
+    without needing a spare physics or rendering layer.
+
+Material
+    Assigned directly from the Soda component's sodaMaterials array rather than
+    by calling Soda.SetColor. SetColor writes through a serialized private
+    renderer field that is not guaranteed to be wired on the prefab, and it
+    assigns to renderer.material, which would leak a material instance every
+    bake. The array index equals the enum value, which is exactly what SetColor's
+    own switch does, so the result is identical.
+
+Framing
+    The camera is orthographic. Its size and distance are derived from the
+    model's combined renderer bounds, so a different or resized soda prefab
+    frames correctly with no retuning. The Padding slider adds margin;
+    Camera Angle turns and tilts the can.
+
+Background
+    Clear color is fully transparent black, not transparent white. A transparent
+    white background leaves a pale fringe on the anti-aliased edge once the
+    sprite is blended over the panel.
+
+Render pipeline
+    This project uses URP, and URP does not support a plain Camera.Render call
+    for offscreen rendering. The baker submits a StandardRequest through
+    RenderPipeline when the active pipeline accepts one, and falls back to
+    Camera.Render for the built-in pipeline. Getting this wrong produces blank
+    or black icons rather than an error, which is why it is handled explicitly.
+
+Effect tints
+    With "Write Effect Tints" on, each material's _BaseColor (or _Color) is read
+    and stored as that order's streak tint. This is what guarantees a green soda
+    sends a green trail without anyone hand-entering six colors.
+
+    The sampled color is pushed through a saturation clamp and a minimum value.
+    The streak reads as emitted light, so a dark or desaturated base color would
+    produce a trail that is nearly invisible against the board. Clamping keeps
+    the hue that identifies the drink while ensuring every trail is legible.
+
+Import settings applied to each PNG
+-----------------------------------
+    textureType         Sprite
+    alphaIsTransparency true      correct edge blending
+    mipmapEnabled       false     UI is drawn at a fixed size
+    wrapMode            Clamp     no edge bleed
+    compression         none      six small icons; artefacts on a logo are worse
+                                  than the few hundred KB saved
+
+Batching
+    All six renders happen inside StartAssetEditing/StopAssetEditing, so the
+    editor performs one import pass instead of six. Importer settings and the
+    library wiring run after the refresh, because the sprites do not exist as
+    assets until then.
+
+Failure behavior
+----------------
+RenderColor returns null with a reason instead of throwing: missing prefab,
+missing Soda component, missing material for a color, no renderer. Each failed
+color is listed in the result panel and the rest still bake. A broken prefab
+therefore produces a readable message, not an editor exception with a rig left
+behind in the scene.
+
+Window options
+--------------
+Soda Prefab        defaults to Assets/Prefabs/Soda.prefab
+Visual Library     defaults to the first SodaVisualLibrary in the project;
+                   created at Assets/GameAssets/UI when none exists
+PNG Folder         defaults to Assets/GameAssets/UI/OrderIcons, created if needed
+Icon Size          square, 32 to 1024, default 256
+Camera Angle       Y turns the can, X tilts it
+Padding            margin around the model
+Overwrite Existing off preserves sprites already assigned in the library
+Write Effect Tints off leaves hand-authored streak colors alone
+
+"Preview First Color" renders Red only and draws it on a checkerboard, so the
+angle can be judged before committing six files.
+
+After baking - and the silent failure it now prevents
+-----------------------------------------------------
+The library has to reach two components:
+
+    OrderPanelUI.visualLibrary      supplies the slot sprites
+    OrderVfxDirector.visualLibrary  supplies the streak tint
+
+Forgetting that step failed silently: the icons baked correctly, the library
+asset was fully populated, and the panel still rendered empty slots, with no
+error anywhere. Three independent guards now close that gap.
+
+1. The bake wires the open scenes
+   WireLibraryIntoOpenScenes writes the reference into every OrderPanelUI and
+   OrderVfxDirector in the open scenes and marks those scenes dirty. It uses
+   Resources.FindObjectsOfTypeAll so a panel under a Canvas that is disabled
+   until gameplay is still found, and it skips prefab assets and objects with no
+   valid scene so only real scene instances are touched.
+
+   This is the guard that matters for a player build, because it produces a real
+   serialized reference rather than a runtime lookup.
+
+2. The panel builder wires new panels
+   Creating a panel after the icons exist picks the library up automatically.
+
+3. Runtime auto-resolve
+   SodaVisualLibrary.Resolve is used by both components when their reference is
+   null: a session cache first, then Resources/SodaVisualLibrary, then, in the
+   editor only, the first SodaVisualLibrary in the project.
+
+   The editor branch means development never blocks on asset wiring. The
+   Resources branch is the only one that works in a build, so it is a
+   convenience, not a substitute for guard 1.
+
+Without any library at all the feature still runs: slots draw no icon and the
+streak falls back to SodaVisualLibrary.DefaultColorFor.
+
+Validation performed
+--------------------
+- Assembly-CSharp-Editor compiles.
+- The rig is created and destroyed inside try/finally, and RenderTexture.active
+  is restored, so a failed bake cannot corrupt editor rendering state.
+- Temporary render textures are obtained and released through
+  RenderTexture.GetTemporary / ReleaseTemporary.
+- Material assignment uses sharedMaterial, so no material instance is leaked.
+- Requires the Unity Editor to confirm the framing and transparency of the
+  produced PNGs.

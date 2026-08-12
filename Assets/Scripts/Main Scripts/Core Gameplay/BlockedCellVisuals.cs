@@ -1,0 +1,490 @@
+using UnityEngine;
+
+/// <summary>
+/// Builds the two things a blocked Board cell needs beyond its box model:
+/// the packing-tape cross taped across its lid, and the dust-and-confetti burst
+/// that plays when a packed match breaks it open.
+///
+/// Both are generated in code rather than authored as assets. The tape has to
+/// sit exactly on top of whatever box prefab a level uses and match that box's
+/// own color, which a fixed prefab cannot do; and the burst is two particle
+/// systems whose entire configuration is a handful of numbers. Keeping them here
+/// means a level designer only assigns a box prefab and everything else follows.
+///
+/// Nothing in this file touches Board state. It creates GameObjects, plays them,
+/// and cleans them up.
+/// </summary>
+public static class BlockedCellVisuals
+{
+    private const string TapeRootName = "TapeCross";
+
+    /// <summary>
+    /// Lays two crossed tape strips over the top face of a blocked box.
+    ///
+    /// The strips are sized and placed from the box's own renderer bounds, so
+    /// this works for any box prefab without per-prefab tuning. Their color is
+    /// derived from the box's material rather than fixed, which is what keeps
+    /// the cross reading as tape on cardboard instead of as a painted decal.
+    /// </summary>
+    /// <param name="boxVisual">The instantiated blocked-cell box.</param>
+    /// <param name="tapeColor">Explicit strip color, or null to derive a lighter shade of the box.</param>
+    /// <param name="lighten">Used only when <paramref name="tapeColor"/> is null.</param>
+    /// <param name="widthFraction">Strip width as a fraction of the box's smaller top edge.</param>
+    /// <param name="lengthFactor">Strip length as a fraction of the lid's diagonal.</param>
+    /// <param name="surfaceLift">Extra height above the lid, to avoid z-fighting.</param>
+    public static void AttachTapeCross(
+        GameObject boxVisual,
+        Color? tapeColor = null,
+        float lighten = 0.22f,
+        float widthFraction = 0.12f,
+        float lengthFactor = 0.75f,
+        float surfaceLift = 0.004f)
+    {
+        if (boxVisual == null)
+        {
+            return;
+        }
+
+        // Removing a previous cross first makes this safe to call twice, which
+        // matters because a level can regenerate its blockers.
+        Transform existing = boxVisual.transform.Find(TapeRootName);
+        if (existing != null)
+        {
+            Object.Destroy(existing.gameObject);
+        }
+
+        if (!TryGetWorldBounds(boxVisual, out Bounds bounds, out Color boxColor))
+        {
+            return;
+        }
+
+        // An explicit color is the reliable path. Deriving one from the box's
+        // material only works when the box is actually colored by its material;
+        // if the color arrives through a MaterialPropertyBlock, as the blocked
+        // cell tint used to, the sampled value is the material's untinted white
+        // and the tape comes out white instead of cream.
+        Material tapeMaterial = CreateTapeMaterial(tapeColor ?? Lighten(boxColor, lighten));
+
+        GameObject root = new GameObject(TapeRootName);
+        root.transform.SetParent(boxVisual.transform, false);
+
+        // Placed in world space from the bounds, then re-parented, because the
+        // box prefab may have arbitrary local scale or a pivot that is not at
+        // its centre. Working from bounds sidesteps both.
+        Vector3 top = new Vector3(bounds.center.x, bounds.max.y + surfaceLift, bounds.center.z);
+
+        float shortEdge = Mathf.Min(bounds.size.x, bounds.size.z);
+        float stripWidth = Mathf.Max(0.001f, shortEdge * widthFraction);
+        float stripThickness = Mathf.Max(0.0005f, shortEdge * 0.015f);
+
+        // Measured against the lid's diagonal, because the strips run at 45
+        // degrees. A full-diagonal strip reaches corner to corner and, once its
+        // own width is added, spills past them; three quarters keeps the ends
+        // inside the box the way taped cardboard looks.
+        float stripLength = new Vector2(bounds.size.x, bounds.size.z).magnitude * lengthFactor;
+
+        CreateStrip(root.transform, top, stripLength, stripThickness, stripWidth, 45f, tapeMaterial);
+        CreateStrip(root.transform, top, stripLength, stripThickness, stripWidth, -45f, tapeMaterial);
+    }
+
+    private static void CreateStrip(
+        Transform parent,
+        Vector3 worldCentre,
+        float length,
+        float thickness,
+        float width,
+        float yawDegrees,
+        Material material)
+    {
+        GameObject strip = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        strip.name = $"Tape {yawDegrees:0}";
+
+        // The cube primitive ships with a collider. A decorative blocker must
+        // never intercept a drop raycast, so it is removed immediately.
+        Collider collider = strip.GetComponent<Collider>();
+        if (collider != null)
+        {
+            Object.Destroy(collider);
+        }
+
+        strip.transform.SetParent(parent, true);
+        strip.transform.position = worldCentre;
+        strip.transform.rotation = parent.rotation * Quaternion.Euler(0f, yawDegrees, 0f);
+        SetWorldScale(strip.transform, new Vector3(length, thickness, width));
+
+        Renderer renderer = strip.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+    }
+
+    /// <summary>
+    /// Plays the break burst at a cell: a low puff of dust plus a spray of
+    /// colored paper. Both systems destroy themselves when they finish.
+    /// </summary>
+    /// <param name="worldPosition">Centre of the cell that is opening.</param>
+    /// <param name="cellSize">Board cell size, used to scale the burst.</param>
+    /// <param name="dustColor">Tint of the dust puff.</param>
+    /// <param name="confettiColors">Palette the paper picks from.</param>
+    /// <param name="dustCount">Dust particles emitted.</param>
+    /// <param name="confettiCount">Paper pieces emitted.</param>
+    public static void PlayBreakBurst(
+        Vector3 worldPosition,
+        float cellSize,
+        Color dustColor,
+        Color[] confettiColors,
+        int dustCount = 18,
+        int confettiCount = 26)
+    {
+        if (dustCount > 0)
+        {
+            SpawnDust(worldPosition, cellSize, dustColor, dustCount);
+        }
+
+        if (confettiCount > 0 && confettiColors != null && confettiColors.Length > 0)
+        {
+            SpawnConfetti(worldPosition, cellSize, confettiColors, confettiCount);
+        }
+    }
+
+    private static void SpawnDust(Vector3 worldPosition, float cellSize, Color color, int count)
+    {
+        GameObject host = new GameObject("BlockedCellDust");
+        host.transform.position = worldPosition;
+
+        ParticleSystem system = host.AddComponent<ParticleSystem>();
+        system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        ParticleSystem.MainModule main = system.main;
+        main.duration = 0.6f;
+        main.loop = false;
+        main.startLifetime = new ParticleSystem.MinMaxCurve(0.35f, 0.6f);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(cellSize * 0.6f, cellSize * 1.5f);
+        main.startSize = new ParticleSystem.MinMaxCurve(cellSize * 0.35f, cellSize * 0.75f);
+        main.startColor = color;
+        main.gravityModifier = -0.05f;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.stopAction = ParticleSystemStopAction.Destroy;
+        main.playOnAwake = false;
+
+        ParticleSystem.EmissionModule emission = system.emission;
+        emission.rateOverTime = 0f;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
+
+        // A flat hemisphere: dust from a box breaking should spread sideways
+        // along the board, not shoot upward like a fountain.
+        ParticleSystem.ShapeModule shape = system.shape;
+        shape.enabled = true;
+        shape.shapeType = ParticleSystemShapeType.Hemisphere;
+        shape.radius = cellSize * 0.28f;
+        shape.rotation = new Vector3(-90f, 0f, 0f);
+
+        ParticleSystem.SizeOverLifetimeModule size = system.sizeOverLifetime;
+        size.enabled = true;
+        size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.55f, 1f, 1.4f));
+
+        // Dust should billow then thin out, so opacity holds briefly and then
+        // falls away rather than fading linearly from the first frame.
+        ParticleSystem.ColorOverLifetimeModule fade = system.colorOverLifetime;
+        fade.enabled = true;
+        fade.color = new ParticleSystem.MinMaxGradient(BuildFadeGradient(Color.white, 0.85f, 0.25f));
+
+        ParticleSystem.RotationOverLifetimeModule spin = system.rotationOverLifetime;
+        spin.enabled = true;
+        spin.z = new ParticleSystem.MinMaxCurve(-90f, 90f);
+
+        ConfigureRenderer(system, OrderVfxTextures.Sparkle.texture, false);
+        system.Play();
+    }
+
+    private static void SpawnConfetti(Vector3 worldPosition, float cellSize, Color[] palette, int count)
+    {
+        GameObject host = new GameObject("BlockedCellConfetti");
+        host.transform.position = worldPosition;
+
+        ParticleSystem system = host.AddComponent<ParticleSystem>();
+        system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        ParticleSystem.MainModule main = system.main;
+        main.duration = 0.8f;
+        main.loop = false;
+        main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1.1f);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(cellSize * 1.2f, cellSize * 2.6f);
+        main.startSize = new ParticleSystem.MinMaxCurve(cellSize * 0.10f, cellSize * 0.20f);
+        main.startRotation3D = true;
+        main.startRotationX = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+        main.startRotationY = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+        main.startRotationZ = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+        main.gravityModifier = 0.55f;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.stopAction = ParticleSystemStopAction.Destroy;
+        main.playOnAwake = false;
+
+        // Random between a set of colors, so every piece of paper is one solid
+        // color from the palette instead of a blend of two.
+        main.startColor = BuildPaletteGradient(palette);
+
+        ParticleSystem.EmissionModule emission = system.emission;
+        emission.rateOverTime = 0f;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
+
+        ParticleSystem.ShapeModule shape = system.shape;
+        shape.enabled = true;
+        shape.shapeType = ParticleSystemShapeType.Cone;
+        shape.angle = 55f;
+        shape.radius = cellSize * 0.16f;
+        shape.rotation = new Vector3(-90f, 0f, 0f);
+
+        // Tumbling is what separates paper from sparks. Without it the pieces
+        // read as glowing dots.
+        ParticleSystem.RotationOverLifetimeModule spin = system.rotationOverLifetime;
+        spin.enabled = true;
+        spin.separateAxes = true;
+        spin.x = new ParticleSystem.MinMaxCurve(-540f, 540f);
+        spin.y = new ParticleSystem.MinMaxCurve(-540f, 540f);
+        spin.z = new ParticleSystem.MinMaxCurve(-540f, 540f);
+
+        ParticleSystem.ColorOverLifetimeModule fade = system.colorOverLifetime;
+        fade.enabled = true;
+        fade.color = new ParticleSystem.MinMaxGradient(BuildFadeGradient(Color.white, 1f, 0.7f));
+
+        // Rectangular strips rather than billboards: a stretched quad mesh gives
+        // paper its shape, and the tumbling above then shows both faces.
+        ParticleSystemRenderer renderer = ConfigureRenderer(system, null, true);
+        renderer.renderMode = ParticleSystemRenderMode.Mesh;
+        renderer.mesh = GetConfettiMesh();
+        renderer.alignment = ParticleSystemRenderSpace.World;
+
+        system.Play();
+    }
+
+    private static ParticleSystemRenderer ConfigureRenderer(
+        ParticleSystem system,
+        Texture texture,
+        bool opaqueTint)
+    {
+        ParticleSystemRenderer renderer = system.GetComponent<ParticleSystemRenderer>();
+        renderer.renderMode = ParticleSystemRenderMode.Billboard;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+
+        Material material = new Material(GetParticleShader());
+        if (texture != null)
+        {
+            material.mainTexture = texture;
+        }
+
+        if (opaqueTint)
+        {
+            material.color = Color.white;
+        }
+
+        renderer.material = material;
+        return renderer;
+    }
+
+    /// <summary>
+    /// Finds a shader that works for particles under the active pipeline.
+    /// Sprites/Default is the reliable fallback: it is always present and
+    /// renders vertex-colored transparent quads correctly under URP too.
+    /// </summary>
+    private static Shader GetParticleShader()
+    {
+        Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        if (shader == null)
+        {
+            shader = Shader.Find("Particles/Standard Unlit");
+        }
+
+        return shader != null ? shader : Shader.Find("Sprites/Default");
+    }
+
+    private static Mesh confettiMesh;
+
+    private static Mesh GetConfettiMesh()
+    {
+        if (confettiMesh != null)
+        {
+            return confettiMesh;
+        }
+
+        // A single quad, wider than it is tall, so a piece looks like a strip of
+        // paper. Built once and reused by every burst.
+        confettiMesh = new Mesh
+        {
+            name = "ConfettiQuad",
+            hideFlags = HideFlags.HideAndDontSave,
+            vertices = new[]
+            {
+                new Vector3(-0.5f, -0.28f, 0f),
+                new Vector3(0.5f, -0.28f, 0f),
+                new Vector3(0.5f, 0.28f, 0f),
+                new Vector3(-0.5f, 0.28f, 0f)
+            },
+            uv = new[]
+            {
+                new Vector2(0f, 0f),
+                new Vector2(1f, 0f),
+                new Vector2(1f, 1f),
+                new Vector2(0f, 1f)
+            },
+            triangles = new[] { 0, 2, 1, 0, 3, 2 }
+        };
+
+        confettiMesh.RecalculateNormals();
+        confettiMesh.RecalculateBounds();
+        return confettiMesh;
+    }
+
+    private static Gradient BuildFadeGradient(Color color, float holdAlpha, float holdUntil)
+    {
+        Gradient gradient = new Gradient();
+        gradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(color, 0f),
+                new GradientColorKey(color, 1f)
+            },
+            new[]
+            {
+                new GradientAlphaKey(holdAlpha, 0f),
+                new GradientAlphaKey(holdAlpha, holdUntil),
+                new GradientAlphaKey(0f, 1f)
+            });
+
+        return gradient;
+    }
+
+    private static ParticleSystem.MinMaxGradient BuildPaletteGradient(Color[] palette)
+    {
+        if (palette.Length == 1)
+        {
+            return new ParticleSystem.MinMaxGradient(palette[0]);
+        }
+
+        // Two hard-stepped gradients used as a random range. Hard stops mean a
+        // particle picks one palette entry outright rather than an interpolated
+        // in-between color.
+        Gradient low = BuildSteppedGradient(palette, false);
+        Gradient high = BuildSteppedGradient(palette, true);
+        return new ParticleSystem.MinMaxGradient(low, high);
+    }
+
+    private static Gradient BuildSteppedGradient(Color[] palette, bool reversed)
+    {
+        int count = Mathf.Min(8, palette.Length);
+        GradientColorKey[] colorKeys = new GradientColorKey[count];
+
+        for (int index = 0; index < count; index++)
+        {
+            Color color = palette[reversed ? count - 1 - index : index];
+            colorKeys[index] = new GradientColorKey(color, count == 1 ? 0f : index / (float)(count - 1));
+        }
+
+        Gradient gradient = new Gradient { mode = GradientMode.Fixed };
+        gradient.SetKeys(
+            colorKeys,
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+
+        return gradient;
+    }
+
+    private static bool TryGetWorldBounds(GameObject target, out Bounds bounds, out Color dominantColor)
+    {
+        bounds = default;
+        dominantColor = new Color(0.72f, 0.55f, 0.35f, 1f);
+
+        Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0)
+        {
+            return false;
+        }
+
+        bounds = renderers[0].bounds;
+        for (int index = 1; index < renderers.Length; index++)
+        {
+            bounds.Encapsulate(renderers[index].bounds);
+        }
+
+        // Sampled from the box's own material so the tape always relates to the
+        // cardboard it is stuck to, including when a level overrides the color.
+        Material material = renderers[0].sharedMaterial;
+        if (material != null)
+        {
+            if (material.HasProperty("_BaseColor"))
+            {
+                dominantColor = material.GetColor("_BaseColor");
+            }
+            else if (material.HasProperty("_Color"))
+            {
+                dominantColor = material.GetColor("_Color");
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Moves a color toward white while pulling a little saturation out, which
+    /// is how masking tape reads against cardboard. A plain Lerp to white also
+    /// washes out the hue and made the cross look grey.
+    /// </summary>
+    public static Color Lighten(Color color, float amount)
+    {
+        Color.RGBToHSV(color, out float h, out float s, out float v);
+        s = Mathf.Clamp01(s * (1f - amount * 0.55f));
+        v = Mathf.Clamp01(v + (1f - v) * amount + 0.05f);
+
+        Color result = Color.HSVToRGB(h, s, v);
+        result.a = color.a;
+        return result;
+    }
+
+    private static Material CreateTapeMaterial(Color color)
+    {
+        // Lit so the tape shades with the board's lighting like the box does.
+        // An unlit strip would sit on the lid as a flat sticker.
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+        {
+            shader = Shader.Find("Standard");
+        }
+
+        Material material = new Material(shader) { name = "BlockedCellTape" };
+        if (material.HasProperty("_BaseColor"))
+        {
+            material.SetColor("_BaseColor", color);
+        }
+
+        if (material.HasProperty("_Color"))
+        {
+            material.SetColor("_Color", color);
+        }
+
+        if (material.HasProperty("_Smoothness"))
+        {
+            material.SetFloat("_Smoothness", 0.1f);
+        }
+
+        return material;
+    }
+
+    private static void SetWorldScale(Transform target, Vector3 worldScale)
+    {
+        Transform parent = target.parent;
+        if (parent == null)
+        {
+            target.localScale = worldScale;
+            return;
+        }
+
+        Vector3 parentScale = parent.lossyScale;
+        target.localScale = new Vector3(
+            parentScale.x != 0f ? worldScale.x / parentScale.x : worldScale.x,
+            parentScale.y != 0f ? worldScale.y / parentScale.y : worldScale.y,
+            parentScale.z != 0f ? worldScale.z / parentScale.z : worldScale.z);
+    }
+}

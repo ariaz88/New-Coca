@@ -103,6 +103,10 @@ public class Board : MonoBehaviour
     [SerializeField, Tooltip("Sparse list: only cells that start with a box are stored.")]
     private List<InitialBoardBoxData> initialBoxes = new List<InitialBoardBoxData>();
 
+    [Header("Per-Level Orders")]
+    [SerializeField, Tooltip("Designer-authored order list for this level. Edited through the Orders section of the Board inspector.")]
+    private List<LevelOrderData> levelOrders = new List<LevelOrderData>();
+
     [Header("Scene View Layout Preview")]
     [SerializeField] private bool drawLayoutGizmos = true;
     [SerializeField] private Color playableCellGizmoColor = new Color(0.2f, 0.9f, 0.35f, 0.9f);
@@ -125,9 +129,50 @@ public class Board : MonoBehaviour
     [SerializeField, Min(0f), Tooltip("Seconds used to shrink and break an adjacent brown cell after a packed match.")]
     private float blockedCellBreakDuration = 0.25f;
 
+    [Header("Blocked Cell Tape Cross")]
+    [SerializeField, Tooltip("Tapes a cross over the top of each blocked box, as in the reference art.")]
+    private bool drawBlockedCellTape = true;
+    [SerializeField, Tooltip("Tape color. A warm cream reads as packing tape on cardboard; pure white reads as paint.")]
+    private Color blockedCellTapeColor = new Color(0.88f, 0.79f, 0.62f, 1f);
+    [SerializeField, Tooltip("Ignores the color above and derives a lighter shade of the box's own material instead.")]
+    private bool blockedCellTapeFromBoxColor;
+    [SerializeField, Range(0f, 1f), Tooltip("Used only when the tape color is derived from the box.")]
+    private float blockedCellTapeLighten = 0.22f;
+    [SerializeField, Range(0.03f, 0.35f), Tooltip("Tape width as a fraction of the box's shorter top edge.")]
+    private float blockedCellTapeWidth = 0.12f;
+    [SerializeField, Range(0.3f, 1f), Tooltip("Tape length as a fraction of the lid's diagonal. 0.75 keeps the ends inside the box.")]
+    private float blockedCellTapeLength = 0.75f;
+
+    [Header("Blocked Cell Break Effect")]
+    [SerializeField, Tooltip("Plays a dust and confetti burst the moment a blocked cell opens.")]
+    private bool playBlockedCellBreakEffect = true;
+    [SerializeField, Min(0), Tooltip("Dust particles emitted. 0 disables the dust.")]
+    private int blockedCellDustCount = 18;
+    [SerializeField, Min(0), Tooltip("Paper pieces emitted. 0 disables the confetti.")]
+    private int blockedCellConfettiCount = 26;
+    [SerializeField, Tooltip("Tint of the dust puff.")]
+    private Color blockedCellDustColor = new Color(0.86f, 0.83f, 0.78f, 1f);
+    [SerializeField, Tooltip("Palette the confetti picks from.")]
+    private Color[] blockedCellConfettiColors =
+    {
+        new Color(1f, 0.55f, 0.12f),
+        new Color(0.62f, 0.35f, 0.9f),
+        new Color(0.95f, 0.85f, 0.2f),
+        new Color(0.3f, 0.75f, 0.95f),
+        new Color(0.95f, 0.35f, 0.45f)
+    };
+    [SerializeField, Min(0f), Tooltip("How far the box jitters while breaking, as a fraction of a cell.")]
+    private float blockedCellShakeAmount = 0.06f;
+    [SerializeField, Min(0f), Tooltip("Jitters per second while the box breaks.")]
+    private float blockedCellShakeSpeed = 38f;
+
     [Header("Rewards")]
     [SerializeField] private bool awardPackedBoxRewards = true;
-    [SerializeField, Min(0)] private int coinsPerPackedBox = 100;
+    [SerializeField, Min(0)] private int coinsPerPackedBox = 10;
+    [Tooltip("Seconds for two boxes to trade places when the swap powerup is used.")]
+    [SerializeField, Min(0f)] private float swapAnimationDuration = 0.35f;
+    [SerializeField, Min(0f), Tooltip("Delay before the coin burst when an order claimed the packed box, so it does not compete with the order effect. 0 restores the old immediate behaviour.")]
+    private float packedCoinVisualDelay = 0.95f;
 
     [Header("Packed Box Animation")]
     [SerializeField, Min(0.01f)] private float packedBoxMoveDuration = 0.37f;
@@ -168,6 +213,43 @@ public class Board : MonoBehaviour
     public bool IsResolving { get; private set; }
     public bool CanInteract => !IsResolving;
     public bool HasPlacementConstraint => placementConstraintOwner != null && placementConstraint != null;
+
+    /// <summary>
+    /// This scene's designer-authored order list. OrderManager reads it once at
+    /// level start; nothing mutates it at runtime so a retry always restarts
+    /// from the authored values.
+    /// </summary>
+    public IReadOnlyList<LevelOrderData> LevelOrders => levelOrders;
+
+    /// <summary>
+    /// Counts how many sodas of one color this level places on the board before
+    /// the player touches anything. The Board inspector uses it to warn a
+    /// designer when an order asks for more of a color than the level starts
+    /// with, which usually means the level cannot be finished from initial
+    /// state alone.
+    /// </summary>
+    public int CountInitialSodasOfColor(Soda.SodaColor color)
+    {
+        int total = 0;
+        for (int index = 0; index < initialBoxes.Count; index++)
+        {
+            InitialBoardBoxData data = initialBoxes[index];
+            if (data == null || data.startingSodas == null)
+            {
+                continue;
+            }
+
+            for (int slot = 0; slot < data.startingSodas.Count; slot++)
+            {
+                if (data.startingSodas[slot] == color)
+                {
+                    total++;
+                }
+            }
+        }
+
+        return total;
+    }
 
     private void Awake()
     {
@@ -586,32 +668,46 @@ public class Board : MonoBehaviour
         return boardBoxes.Count == 0;
     }
 
+    /// <summary>
+    /// Exchanges the board positions of two boxes. Any two boxes on the board can
+    /// be swapped; they do not need to be neighbours, which is what the swap
+    /// powerup expects.
+    /// </summary>
     public void DOSWAP(Box box1, Box box2)
     {
-        if (!AreAdjacent(box1, box2) || allBoxes == null)
+        if (box1 == null || box2 == null || box1 == box2 || allBoxes == null)
         {
             return;
         }
-
-        Vector3 tempPosition = box1.transform.position;
-        box1.transform.position = box2.transform.position;
-        box2.transform.position = tempPosition;
 
         int firstColumn = box1.column;
         int firstRow = box1.row;
         int secondColumn = box2.column;
         int secondRow = box2.row;
 
+        Vector3 firstPosition = box1.transform.position;
+        Vector3 secondPosition = box2.transform.position;
+
+        // Grid state is updated immediately so the board is never left describing
+        // a layout the boxes are only part-way through animating into.
         box1.SetBoardCoordinates(secondColumn, secondRow);
         box2.SetBoardCoordinates(firstColumn, firstRow);
 
         allBoxes[firstColumn, firstRow] = box2;
         allBoxes[secondColumn, secondRow] = box1;
 
-        if (!IsResolving)
-        {
-            StartCoroutine(ResolvePlacement(box1));
-        }
+        box1.transform.DOKill();
+        box2.transform.DOKill();
+
+        box1.transform.DOMove(secondPosition, swapAnimationDuration).SetEase(Ease.InOutQuad);
+        box2.transform.DOMove(firstPosition, swapAnimationDuration).SetEase(Ease.InOutQuad)
+            .OnComplete(() =>
+            {
+                if (!IsResolving)
+                {
+                    StartCoroutine(ResolvePlacement(box1));
+                }
+            });
     }
 
     public void RemoveEmptyBoxes()
@@ -879,7 +975,11 @@ public class Board : MonoBehaviour
 
         CleanupBoardList();
         CheckBoardFill();
-        UIManager.instance?.UpdateUI();
+
+        // Coins are excluded here: the coins for this placement are still flying
+        // to the counter (and are delayed further for order-consumed boxes), so
+        // CoinManager repaints that number as they land.
+        UIManager.instance?.UpdateUI(false);
         IsResolving = false;
 
         int packedMatches = (int)System.Math.Max(0L, packedMatchSequence - packedMatchesBeforeResolution);
@@ -903,10 +1003,17 @@ public class Board : MonoBehaviour
 
         if (packed)
         {
+            SoundManager.instance?.PlayBoxComplete();
             BeginUnlockAdjacentBlockedCells(box.column, box.row);
             packedMatchSequence++;
             Vector3 sourcePosition = box.transform.position;
-            AwardPackedBox(box);
+
+            // Read the color before the box is destroyed, then report it to the
+            // Orders system. A packed color that no order asks for is ignored by
+            // OrderManager, so nothing is shown for it.
+            bool consumedByOrder = ReportPackedBoxToOrders(box, sourcePosition);
+
+            AwardPackedBox(box, consumedByOrder);
             MovePackedCopyToTruck(sourcePosition);
 
             box.gameObject.SetActive(false);
@@ -964,7 +1071,30 @@ public class Board : MonoBehaviour
         boardBoxes.RemoveAll(box => box == null || box.IsRetired || !box.IsOnBoard);
     }
 
-    private void AwardPackedBox(Box box)
+    /// <summary>
+    /// Hands a packed box's single color to the Orders system.
+    ///
+    /// Called from RetireBox while the Box is still alive, because its sodas are
+    /// destroyed moments later. A packed box is single-colored by definition, so
+    /// the first distinct color is the box's color; if that is somehow not true
+    /// the report is skipped rather than guessing.
+    /// </summary>
+    private bool ReportPackedBoxToOrders(Box box, Vector3 sourcePosition)
+    {
+        if (box == null || OrderManager.instance == null)
+        {
+            return false;
+        }
+
+        foreach (Soda.SodaColor color in box.GetDistinctColors())
+        {
+            return OrderManager.instance.TryConsumePackedBox(color, sourcePosition);
+        }
+
+        return false;
+    }
+
+    private void AwardPackedBox(Box box, bool consumedByOrder)
     {
         if (!awardPackedBoxRewards)
         {
@@ -980,16 +1110,44 @@ public class Board : MonoBehaviour
         if (UIManager.instance != null)
         {
             UIManager.instance.UpdateGameplayCoins(coinsPerPackedBox);
+
+            // The coin counter is deliberately NOT refreshed here. CoinManager
+            // repaints it as each coin lands, so the number rises with the
+            // animation instead of jumping the moment the box is packed.
         }
 
         if (CoinManager.instance != null)
         {
-            CoinManager.instance.AddCoins(box.transform.position, coinsPerPackedBox);
+            // Two reward animations starting on the same frame compete for the
+            // player's eye, and the order effect is the one that explains why
+            // the level is progressing. When an order claimed this box, the coin
+            // burst is pushed back until the streak has landed.
+            Vector3 coinPosition = box.transform.position;
+            if (consumedByOrder && packedCoinVisualDelay > 0f)
+            {
+                StartCoroutine(AwardCoinsDelayed(coinPosition, coinsPerPackedBox));
+            }
+            else
+            {
+                CoinManager.instance.AddCoins(coinPosition, coinsPerPackedBox);
+            }
         }
 
         if (GameManager.instance != null)
         {
             GameManager.instance.CheckWinCondition();
+        }
+    }
+
+    private IEnumerator AwardCoinsDelayed(Vector3 position, int amount)
+    {
+        // Unscaled, to match the order effect, which also runs unscaled so it can
+        // finish even after an end panel freezes gameplay.
+        yield return new WaitForSecondsRealtime(packedCoinVisualDelay);
+
+        if (CoinManager.instance != null)
+        {
+            CoinManager.instance.AddCoins(position, amount);
         }
     }
 
@@ -1318,23 +1476,46 @@ public class Board : MonoBehaviour
             Destroy(visualCollider);
         }
 
-        MaterialPropertyBlock properties = new MaterialPropertyBlock();
-        properties.SetColor(BaseColorProperty, removedCellVisualColor);
-        properties.SetColor(ColorProperty, removedCellVisualColor);
-        foreach (Renderer visualRenderer in visual.GetComponentsInChildren<Renderer>(true))
+        // The fallback cube is a bare primitive with no art of its own, so it
+        // still needs the brown tint to look like anything. A real box prefab
+        // already carries the game's cardboard material, and tinting it made
+        // blocked boxes a different, darker brown than every other box on the
+        // board. Its own materials are now left alone.
+        bool applyTint = createdFallbackCube || removedCellVisualMaterial != null;
+
+        if (applyTint)
         {
-            Material visualMaterial = removedCellVisualMaterial;
-            if (visualMaterial == null && createdFallbackCube)
-            {
-                visualMaterial = GetOrCreateRemovedCellMaterial();
-            }
+            MaterialPropertyBlock properties = new MaterialPropertyBlock();
+            properties.SetColor(BaseColorProperty, removedCellVisualColor);
+            properties.SetColor(ColorProperty, removedCellVisualColor);
 
-            if (visualMaterial != null)
+            foreach (Renderer visualRenderer in visual.GetComponentsInChildren<Renderer>(true))
             {
-                visualRenderer.sharedMaterial = visualMaterial;
-            }
+                Material visualMaterial = removedCellVisualMaterial;
+                if (visualMaterial == null && createdFallbackCube)
+                {
+                    visualMaterial = GetOrCreateRemovedCellMaterial();
+                }
 
-            visualRenderer.SetPropertyBlock(properties);
+                if (visualMaterial != null)
+                {
+                    visualRenderer.sharedMaterial = visualMaterial;
+                }
+
+                visualRenderer.SetPropertyBlock(properties);
+            }
+        }
+
+        // Added after the material pass so the cross keeps its own lighter
+        // color instead of being overwritten by the blocked-cell tint.
+        if (drawBlockedCellTape)
+        {
+            BlockedCellVisuals.AttachTapeCross(
+                visual,
+                blockedCellTapeFromBoxColor ? (Color?)null : blockedCellTapeColor,
+                blockedCellTapeLighten,
+                blockedCellTapeWidth,
+                blockedCellTapeLength);
         }
     }
 
@@ -1361,10 +1542,20 @@ public class Board : MonoBehaviour
     private IEnumerator BreakBlockedCellRoutine(Vector2Int coordinate)
     {
         removedCellVisuals.TryGetValue(coordinate, out GameObject visual);
+
+        // Captured before the shrink starts, because the burst has to be spawned
+        // at the cell even if the visual is destroyed mid-animation.
+        Vector3 burstPosition = visual != null
+            ? visual.transform.position
+            : transform.TransformPoint(GetCellLocalPosition(coordinate.x, coordinate.y));
+
         if (visual != null && blockedCellBreakDuration > 0f)
         {
             Transform visualTransform = visual.transform;
             Vector3 startingScale = visualTransform.localScale;
+            Vector3 startingPosition = visualTransform.localPosition;
+
+            float shakeDistance = Mathf.Abs(cellSpacing.x) * blockedCellShakeAmount;
             float elapsed = 0f;
 
             while (visual != null && elapsed < blockedCellBreakDuration)
@@ -1373,8 +1564,35 @@ public class Board : MonoBehaviour
                 float progress = Mathf.Clamp01(elapsed / blockedCellBreakDuration);
                 float breakScale = 1f - Mathf.SmoothStep(0f, 1f, progress);
                 visualTransform.localScale = startingScale * breakScale;
+
+                // The jitter fades out with the box. A constant-amplitude shake
+                // would look like the last frames are vibrating in place, rather
+                // than like the box is coming apart.
+                if (shakeDistance > 0f)
+                {
+                    float phase = elapsed * blockedCellShakeSpeed;
+                    float damping = 1f - progress;
+                    visualTransform.localPosition = startingPosition + new Vector3(
+                        Mathf.Sin(phase) * shakeDistance * damping,
+                        0f,
+                        Mathf.Cos(phase * 1.37f) * shakeDistance * damping);
+                }
+
                 yield return null;
             }
+        }
+
+        // Fired at the end of the shrink, so the paper and dust appear to burst
+        // out of the box rather than out of a box that is still standing there.
+        if (playBlockedCellBreakEffect)
+        {
+            BlockedCellVisuals.PlayBreakBurst(
+                burstPosition,
+                Mathf.Abs(cellSpacing.x),
+                blockedCellDustColor,
+                blockedCellConfettiColors,
+                blockedCellDustCount,
+                blockedCellConfettiCount);
         }
 
         UnlockBlockedCell(coordinate, visual);

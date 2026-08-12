@@ -1,0 +1,57 @@
+LIFT TRUCK QUEUE AND MOVEMENT SAFETY
+====================================
+
+Related scripts
+---------------
+- Assets/Scripts/Main Scripts/Core Gameplay/LiftTruck.cs
+- Assets/Scripts/Main Scripts/Managers/LiftTruckManager.cs
+
+Problem that was fixed
+----------------------
+The old manager stored the truck that was leaving in one shared variable named
+currentlyWasActiveTruck. If the next truck became full before the previous
+truck returned, that shared reference was overwritten.
+
+This could enqueue the wrong truck, add the same truck to the queue more than
+once, or start a queue-position movement while the truck was still following
+its unload route. Two coroutines would then write to the same Transform and the
+truck could stop, jitter, or remain at a waypoint.
+
+New movement ownership
+----------------------
+LiftTruckManager now runs one complete trip for the exact truck passed into
+MoveActiveTruck:
+
+1. Mark that truck as in transit.
+2. Remove that exact truck from the playable queue.
+3. Activate the next queued truck.
+4. Follow the outgoing waypoints.
+5. Unload the boxes.
+6. Follow the return waypoints.
+7. Add that exact truck once to the back of the queue.
+
+The HashSet named trucksInTransit is a lock. It prevents two full events in the
+same frame from starting two route coroutines for one truck.
+
+Queue movement safety in LiftTruck
+----------------------------------
+queueMovementCoroutine stores the optional coroutine that moves a waiting
+truck between queue positions. Starting a new queue movement cancels the old
+one. Starting a waypoint route also cancels queue movement first. Therefore
+only one movement routine controls a truck Transform at a time.
+
+Additional guards
+-----------------
+- Duplicate AddBox callbacks for the same GameObject are ignored.
+- A truck cannot appear twice in the queue.
+- Null waypoints are skipped safely.
+- Movement uses a small positive minimum speed, preventing an accidental zero
+  Inspector speed from producing an endless movement loop.
+- The truck snaps exactly to each final target after entering its tolerance.
+- Every truck in the waiting queue is restored to its original parked
+  orientation facing world +X after a route.
+
+What was not changed
+--------------------
+Truck speed values, waypoint positions, capacity, box appearance, scoring,
+matching, and box-transfer rules were not changed.

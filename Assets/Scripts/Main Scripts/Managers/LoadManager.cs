@@ -1,18 +1,34 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
+/// <summary>
+/// Boots the game from the persistence scene: decides whether the player goes to the
+/// tutorial or straight to the first level, then drives the loading screen while the
+/// destination scene streams in.
+///
+/// All presentation lives in <see cref="LoadingScreenUI"/>; this class only produces a
+/// 0..1 progress value and owns the hand-off to the loaded scene.
+/// </summary>
 public class LoadManager : MonoBehaviour
 {
     public static LoadManager instance;
-    public GameObject loadScreen;
-    public Slider bar;
+
+    [Header("View")]
+    [SerializeField] private GameObject loadScreen;
+    [SerializeField] private LoadingScreenUI view;
 
     [Header("Initial Route")]
     [SerializeField] private string initialTutorialId = "sorting.initial";
     [SerializeField] private string tutorialSceneName = "TUTORIAL";
     [SerializeField] private string firstLevelSceneName = "Level1";
+
+    [Header("Timing")]
+    [Tooltip("Floor on how long the loading screen stays up, so a fast load still reads as a load rather than a flicker.")]
+    [SerializeField] private float minimumDuration = 8f;
+    [Tooltip("Beat held on a full bar before the screen fades, so completion registers.")]
+    [SerializeField] private float completionHold = 0.35f;
+    [SerializeField] private float fadeOutDuration = 0.4f;
 
     private void Awake()
     {
@@ -30,9 +46,9 @@ public class LoadManager : MonoBehaviour
 
     private void Start()
     {
-        if (loadScreen == null || bar == null)
+        if (loadScreen == null || view == null)
         {
-            Debug.LogError("LoadScreen or Bar is not assigned.");
+            Debug.LogError("LoadManager: loadScreen or view is not assigned.");
             return;
         }
 
@@ -41,137 +57,55 @@ public class LoadManager : MonoBehaviour
 
     public void LoadGame()
     {
+        // The loading screen is a separate root object, so it has to survive the scene swap
+        // itself - otherwise it is destroyed mid-fade and the player sees a hard cut.
+        Transform screenRoot = loadScreen.transform.root;
+        DontDestroyOnLoad(screenRoot.gameObject);
+
         loadScreen.SetActive(true);
+        view.ResetView();
+
         ITutorialCompletionStore tutorialStore = new PlayerPrefsTutorialCompletionStore();
         string destination = tutorialStore.IsCompleted(initialTutorialId)
             ? firstLevelSceneName
             : tutorialSceneName;
-        StartCoroutine(LoadSceneWithMinimumDuration(destination, 8f));
+
+        StartCoroutine(LoadSceneRoutine(destination, screenRoot.gameObject));
     }
 
-    IEnumerator LoadSceneWithMinimumDuration(string sceneName, float minDuration)
+    private IEnumerator LoadSceneRoutine(string sceneName, GameObject screenRoot)
     {
-        float elapsedTime = 0f; // Time spent loading
-        float progress = 0f;   // Loading bar progress
-
-        // Start loading the scene asynchronously
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-        asyncLoad.allowSceneActivation = false; // Prevent scene activation until loading is complete
+        asyncLoad.allowSceneActivation = false;
 
-        // Simulate the loading bar over a fixed duration
-        while (progress < 1f || elapsedTime < minDuration)
+        float elapsed = 0f;
+
+        // Gate on whichever is slower: the real load, or the minimum on-screen duration.
+        // Both terms only ever increase, so the reported progress never walks backwards.
+        while (elapsed < minimumDuration || asyncLoad.progress < 0.9f)
         {
-            elapsedTime += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
 
-            // Calculate progress based on both scene loading and time elapsed
-            progress = Mathf.Min(elapsedTime / minDuration, asyncLoad.progress / 0.9f); // Normalize async progress (0 to 0.9)
-            bar.value = Mathf.Clamp01(progress);
+            float byTime = minimumDuration > 0f ? elapsed / minimumDuration : 1f;
+            float byLoad = asyncLoad.progress / 0.9f; // Unity stalls async progress at 0.9 until activation.
+            view.SetProgress(Mathf.Min(byTime, byLoad));
 
             yield return null;
         }
 
-        // Wait a short pause for smooth transition, if needed
-        yield return new WaitForSeconds(0.5f);
+        view.SetProgress(1f);
 
-        // Activate the scene
+        // Let the eased fill actually reach the end before we tear the screen down.
+        while (view.DisplayedProgress < 0.999f)
+            yield return null;
+
+        yield return new WaitForSecondsRealtime(completionHold);
+        yield return view.FadeOut(fadeOutDuration);
+
         asyncLoad.allowSceneActivation = true;
+        while (!asyncLoad.isDone)
+            yield return null;
 
-        // Hide the loading screen
-        loadScreen.SetActive(false);
+        Destroy(screenRoot);
     }
 }
-
-
-
-#region old version
-
-//public class LoadManager2 : MonoBehaviour
-//{
-//    public static LoadManager2 instance;
-//    public GameObject loadScreen;
-//    public Slider bar;
-//    private List<AsyncOperation> sceneLoading = new List<AsyncOperation>();
-//    private float simulatedLoadProgress = 0f;
-
-//    private void Awake()
-//    {
-//        if (instance == null)
-//        {
-//            instance = this;
-//            DontDestroyOnLoad(gameObject); // Persist across scenes
-//        }
-//        else
-//        {
-//            Destroy(gameObject); // Prevent duplicate managers
-//            return;
-//        }
-//    }
-//    private void OnDestroy()
-//    {
-//        StopAllCoroutines(); // Ensure all coroutines are stopped when this object is destroyed
-//    }
-
-//    private void Start()
-//    {
-//        if (loadScreen == null || bar == null)
-//        {
-//            //Debug.LogError("LoadScreen or Bar is not assigned.");
-//            return;
-//        }
-
-//        LoadGame();
-//    }
-
-//    public void LoadGame1()
-//    {
-//        loadScreen.SetActive(true);
-//        sceneLoading.Add(SceneManager.LoadSceneAsync((int)SceneIndexces.LEVEL1, LoadSceneMode.Additive));
-//        StartCoroutine(GetSceneLoadProgress());
-//    }
-
-//    public void LoadGame()
-//    {
-//        loadScreen.SetActive(true);
-//        sceneLoading.Add(SceneManager.LoadSceneAsync((int)SceneIndexces.LEVEL1, LoadSceneMode.Single));
-//        StartCoroutine(GetSceneLoadProgress());
-//    }
-
-//    IEnumerator GetSceneLoadProgress()
-//    {
-//        float totalSceneProgress = 0f;
-
-//        // Gradually increase progress for a smooth animation
-//        while (simulatedLoadProgress < 1f || !AllScenesLoaded())
-//        {
-//            totalSceneProgress = 0;
-
-//            foreach (AsyncOperation operation in sceneLoading)
-//            {
-//                totalSceneProgress += operation.progress; // Unity's actual loading progress (0 to 0.9)
-//            }
-
-//            totalSceneProgress = Mathf.Clamp01(totalSceneProgress / sceneLoading.Count); // Normalize to 0-1
-
-//            // Simulate slower progress for a smooth bar fill
-//            simulatedLoadProgress = Mathf.MoveTowards(simulatedLoadProgress, totalSceneProgress, Time.deltaTime * 0.8f);
-
-//            bar.value = simulatedLoadProgress;
-
-//            yield return null;
-//        }
-
-//        yield return new WaitForSeconds(0.8f); // Brief pause after loading is complete
-//        loadScreen.SetActive(false); // Hide the loading screen
-//    }
-
-//    private bool AllScenesLoaded()
-//    {
-//        foreach (AsyncOperation operation in sceneLoading)
-//        {
-//            if (!operation.isDone) return false;
-//        }
-//        return true;
-//    }
-//}
-
-#endregion

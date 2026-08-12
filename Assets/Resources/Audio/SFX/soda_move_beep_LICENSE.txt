@@ -1,0 +1,19 @@
+Soda move beep source
+=====================
+
+File in this project:
+Assets/Resources/Audio/SFX/soda_move_beep.wav
+
+Source:
+OpenGameArt - Beep Tone Sound SFX
+https://opengameart.org/content/beep-tone-sound-sfx
+
+Author:
+qubodup
+
+License:
+Creative Commons CC0
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Downloaded:
+2026-08-08

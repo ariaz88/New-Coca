@@ -17,7 +17,13 @@ public class UniversalSodaTransferSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float delayBetweenMoves = 0.08f;
     [SerializeField] private bool logDecisions;
 
+    // Writes the whole snapshot and every chosen move to the console so a
+    // missed match can be reproduced from the editor log. On by default while
+    // the match priority work is being verified.
+    [SerializeField] private bool traceTransfers = true;
+
     private bool isTransferInProgress;
+    private int traceStep;
 
     public bool IsTransferInProgress => isTransferInProgress;
 
@@ -39,6 +45,7 @@ public class UniversalSodaTransferSystem : MonoBehaviour
         }
 
         isTransferInProgress = true;
+        traceStep = 0;
         int triggerId = trigger.StableId;
         List<Box> component = board.GetConnectedComponent(trigger);
         HashSet<string> visitedStates = new HashSet<string>();
@@ -66,6 +73,14 @@ public class UniversalSodaTransferSystem : MonoBehaviour
             List<TransferAlgorithm.Edge> edges = BuildDirectEdges(board, component);
             string signature = TransferAlgorithm.BuildSignature(states);
 
+            if (traceTransfers)
+            {
+                Debug.Log(
+                    $"[TransferTrace] step {++traceStep} trigger #{triggerId} :: " +
+                    TransferAlgorithm.DescribeStates(states, edges),
+                    board);
+            }
+
             if (!visitedStates.Add(signature))
             {
                 Debug.LogError(
@@ -81,7 +96,19 @@ public class UniversalSodaTransferSystem : MonoBehaviour
                     visitedStates,
                     out TransferAlgorithm.Decision decision))
             {
+                if (traceTransfers)
+                {
+                    Debug.Log("[TransferTrace] no move available, resolution ends.", board);
+                }
+
                 break;
+            }
+
+            if (traceTransfers)
+            {
+                Debug.Log(
+                    $"[TransferTrace] chose {decision} via {TransferAlgorithm.LastSelectionSource}",
+                    board);
             }
 
             Box source = component.FirstOrDefault(box => box.StableId == decision.SourceId);
@@ -235,6 +262,27 @@ public class UniversalSodaTransferSystem : MonoBehaviour
 /// </summary>
 public static class TransferAlgorithm
 {
+    // The search is transient and bounded so a large custom board cannot create
+    // an unbounded allocation on mobile. Normal three/four-box patterns visit
+    // only a small fraction of this limit.
+    private const int PackedMatchSearchStateLimit = 4096;
+
+    // Real levels regularly connect ten or eleven Boxes, and those are exactly
+    // the groups where a missed match hurts most, so the planner has to reach
+    // them. Past this size the greedy scorer keeps its original behaviour.
+    private const int PackedMatchSearchBoxLimit = 14;
+
+    // Up to this size the group is searched as deep as it needs. Past it the
+    // search is capped shallow instead of being skipped: it still catches the
+    // multi step paths greedy scoring misses, without a combinatorial blow up
+    // on a phone.
+    private const int FullDepthSearchBoxCount = 5;
+    private const int ShallowSearchDepth = 4;
+
+    // Keeps the two halves of a concentration score from ever colliding. The
+    // trailing half tops out far below this even on the largest searched group.
+    private const int ConcentrationRankStride = 100000;
+
     public sealed class BoxState
     {
         public int Id;
@@ -332,6 +380,45 @@ public static class TransferAlgorithm
         public Candidate FollowUp;
     }
 
+    private sealed class MatchSearchNode
+    {
+        public List<BoxState> States;
+        public Decision FirstDecision;
+        public int Depth;
+    }
+
+    /// <summary>
+    /// Which branch produced the most recent Decision: "match-path", "greedy",
+    /// "unlock", or "none". Diagnostics only - nothing reads it to make a
+    /// gameplay choice.
+    /// </summary>
+    public static string LastSelectionSource { get; private set; } = "none";
+
+    /// <summary>
+    /// Readable dump of a snapshot, used by the transfer trace log so a missed
+    /// match can be reproduced exactly from the editor log.
+    /// </summary>
+    public static string DescribeStates(IReadOnlyList<BoxState> states, IReadOnlyList<Edge> edges)
+    {
+        if (states == null)
+        {
+            return "<null>";
+        }
+
+        string boxes = string.Join(" | ", states.OrderBy(state => state.Id).Select(state =>
+            $"#{state.Id}@c{state.Column}r{state.Row} cap{state.Capacity} " +
+            "{" + string.Join(",", state.Colors
+                .Where(pair => pair.Value > 0)
+                .OrderBy(pair => pair.Key)
+                .Select(pair => $"{pair.Key}x{pair.Value}")) + "}"));
+
+        string links = edges == null
+            ? string.Empty
+            : string.Join(",", edges.Select(edge => $"{edge.FirstId}-{edge.SecondId}"));
+
+        return $"{boxes}  edges[{links}]";
+    }
+
     public static bool TrySelectMove(
         IReadOnlyList<BoxState> states,
         IReadOnlyList<Edge> edges,
@@ -340,23 +427,35 @@ public static class TransferAlgorithm
         out Decision decision)
     {
         decision = default;
+        LastSelectionSource = "none";
         if (states == null || edges == null || states.Count == 0)
         {
             return false;
         }
 
+        // Greedy scoring can empty a bridge Box and disconnect two matching
+        // groups. Plan against the whole connected component first. Orthogonal
+        // graph edges make this work for rows, columns, L shapes, and other
+        // connected layouts without special cases.
+        if (TrySelectMatchPlanMove(states, edges, triggerId, visitedStates, out decision))
+        {
+            LastSelectionSource = "match-path";
+            return true;
+        }
+
         Dictionary<int, BoxState> byId = states.ToDictionary(state => state.Id);
         List<Candidate> progress = GenerateProgressCandidates(byId, edges, triggerId, visitedStates);
+        List<Candidate> unlocks = GenerateUnlockCandidates(byId, edges, triggerId, visitedStates);
 
         if (progress.Count > 0)
         {
             decision = progress.OrderBy(candidate => candidate, CandidateComparer.Instance)
                                .First()
                                .Decision;
+            LastSelectionSource = "greedy";
             return true;
         }
 
-        List<Candidate> unlocks = GenerateUnlockCandidates(byId, edges, triggerId, visitedStates);
         if (unlocks.Count == 0)
         {
             return false;
@@ -365,7 +464,370 @@ public static class TransferAlgorithm
         decision = unlocks.OrderBy(candidate => candidate, UnlockComparer.Instance)
                           .First()
                           .Decision;
+        LastSelectionSource = "unlock";
         return true;
+    }
+
+    /// <summary>
+    /// Plans the next transfer by looking at where the group can end up rather
+    /// than at how good the transfer looks on its own. It searches for the best
+    /// reachable concentration of one colour in one Box and returns the first
+    /// move of the path that gets there, so a bridge Box is never emptied while
+    /// it is still the only route between two halves of a colour.
+    /// </summary>
+    private static bool TrySelectMatchPlanMove(
+        IReadOnlyList<BoxState> states,
+        IReadOnlyList<Edge> edges,
+        int triggerId,
+        ISet<string> visitedStates,
+        out Decision decision)
+    {
+        decision = default;
+
+        if (states.Count < 2 ||
+            states.Count > PackedMatchSearchBoxLimit ||
+            !CouldAnyColorConcentrate(states))
+        {
+            return false;
+        }
+
+        Dictionary<int, BoxState> rootById = states.ToDictionary(state => state.Id);
+        List<Decision> rootMoves = GenerateLegalMoves(rootById, edges);
+        if (rootMoves.Count == 0)
+        {
+            return false;
+        }
+
+        // Several first moves can open an equally good path. Rank them with the
+        // greedy comparer so the planner only overrides the old behaviour when
+        // it has to, and stays deterministic when it does.
+        List<Decision> orderedRootMoves = rootMoves
+            .Select(move => CreateCandidate(
+                rootById[move.SourceId],
+                rootById[move.TargetId],
+                move.Color,
+                move.Amount,
+                false,
+                rootById,
+                triggerId))
+            .OrderBy(candidate => candidate, CandidateComparer.Instance)
+            .Select(candidate => candidate.Decision)
+            .ToList();
+
+        int bestValue = GetConcentrationScore(states);
+        bool found = false;
+
+        HashSet<string> discovered = new HashSet<string> { BuildSignature(states) };
+        Queue<MatchSearchNode> queue = new Queue<MatchSearchNode>();
+        int discoveredCount = 0;
+        int maxDepth = states.Count <= FullDepthSearchBoxCount
+            ? Math.Max(3, states.Count * 2)
+            : ShallowSearchDepth;
+
+        foreach (Decision move in orderedRootMoves)
+        {
+            List<BoxState> nextStates = ApplyForSimulation(states, move);
+            string signature = BuildSignature(nextStates);
+
+            // Only the first move is actually executed, so only it has to avoid
+            // the states this resolution already passed through.
+            if (IsVisited(signature, visitedStates) || !discovered.Add(signature))
+            {
+                continue;
+            }
+
+            discoveredCount++;
+
+            if (ContainsPackedBox(nextStates))
+            {
+                decision = move;
+                return true;
+            }
+
+            int value = GetConcentrationScore(nextStates);
+            if (value > bestValue)
+            {
+                bestValue = value;
+                decision = move;
+                found = true;
+            }
+
+            queue.Enqueue(new MatchSearchNode
+            {
+                States = nextStates,
+                FirstDecision = move,
+                Depth = 1
+            });
+        }
+
+        while (queue.Count > 0 && discoveredCount < PackedMatchSearchStateLimit)
+        {
+            MatchSearchNode node = queue.Dequeue();
+            if (node.Depth >= maxDepth)
+            {
+                continue;
+            }
+
+            Dictionary<int, BoxState> byId = node.States.ToDictionary(state => state.Id);
+
+            foreach (Decision move in GenerateLegalMoves(byId, edges))
+            {
+                if (discoveredCount >= PackedMatchSearchStateLimit)
+                {
+                    break;
+                }
+
+                List<BoxState> nextStates = ApplyForSimulation(node.States, move);
+                if (!discovered.Add(BuildSignature(nextStates)))
+                {
+                    continue;
+                }
+
+                discoveredCount++;
+
+                // A packed Box is the ceiling, so nothing deeper can beat it and
+                // the search stops the moment one is reachable.
+                if (ContainsPackedBox(nextStates))
+                {
+                    decision = node.FirstDecision;
+                    return true;
+                }
+
+                int value = GetConcentrationScore(nextStates);
+                if (value > bestValue)
+                {
+                    bestValue = value;
+                    decision = node.FirstDecision;
+                    found = true;
+                }
+
+                queue.Enqueue(new MatchSearchNode
+                {
+                    States = nextStates,
+                    FirstDecision = node.FirstDecision,
+                    Depth = node.Depth + 1
+                });
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// The largest number of one colour gathered in a single Box that can still
+    /// be completed. A Box already full with mixed colours contributes nothing,
+    /// because those sodas can never become a match and rewarding them would let
+    /// the planner poison the board.
+    /// </summary>
+    public static int GetConcentrationValue(IReadOnlyList<BoxState> states)
+    {
+        int best = 0;
+
+        foreach (BoxState state in states)
+        {
+            foreach (KeyValuePair<Soda.SodaColor, int> pair in state.Colors)
+            {
+                if (pair.Value > best && IsLivePile(state, pair.Value))
+                {
+                    best = pair.Value;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// Ranks a whole snapshot on two levels packed into one number.
+    ///
+    /// The leading term is the largest live pile anywhere in the group, which is
+    /// the goal itself: gather one colour into one Box, and a pile that reaches
+    /// capacity is a match.
+    ///
+    /// The trailing term totals the square of every colour's own largest live
+    /// pile. Squaring rewards gathering over spreading, and giving each colour
+    /// its own entry stops a colour that is already well gathered from hiding
+    /// progress made by another one. The plus one inside it is the tie break
+    /// players expect: given two ways to gather the same sodas, gather them
+    /// into the Box that is already a single colour rather than into one
+    /// carrying a passenger.
+    /// </summary>
+    private static int GetConcentrationScore(IReadOnlyList<BoxState> states)
+    {
+        Dictionary<Soda.SodaColor, int> perColour = new Dictionary<Soda.SodaColor, int>();
+        int largestPile = 0;
+
+        foreach (BoxState state in states)
+        {
+            foreach (KeyValuePair<Soda.SodaColor, int> pair in state.Colors)
+            {
+                if (!IsLivePile(state, pair.Value))
+                {
+                    continue;
+                }
+
+                if (pair.Value > largestPile)
+                {
+                    largestPile = pair.Value;
+                }
+
+                int scored = pair.Value * pair.Value * 2 +
+                             (state.DistinctColorCount == 1 ? 1 : 0);
+
+                perColour.TryGetValue(pair.Key, out int running);
+                if (scored > running)
+                {
+                    perColour[pair.Key] = scored;
+                }
+            }
+        }
+
+        return largestPile * ConcentrationRankStride + perColour.Values.Sum();
+    }
+
+    /// <summary>
+    /// A pile is live while its Box still has room to reach capacity in that
+    /// colour. Three orange beside one blue in a four slot Box is dead weight:
+    /// those sodas can never become a match, and scoring them would let the
+    /// planner walk the board into exactly the state it exists to avoid.
+    /// </summary>
+    private static bool IsLivePile(BoxState state, int count)
+    {
+        return count + state.FreeSlots >= state.Capacity;
+    }
+
+    /// <summary>
+    /// Exhaustive walk of everything the group can reach, used by the editor
+    /// diagnostics. It shares GenerateLegalMoves with the planner, so an outcome
+    /// it reports is one the planner is genuinely expected to reach.
+    /// </summary>
+    public static (bool packedReachable, int bestConcentration) ExploreReachableOutcomes(
+        IReadOnlyList<BoxState> states,
+        IReadOnlyList<Edge> edges)
+    {
+        if (states == null || edges == null || states.Count == 0)
+        {
+            return (false, 0);
+        }
+
+        int bestConcentration = GetConcentrationValue(states);
+        if (ContainsPackedBox(states))
+        {
+            return (true, bestConcentration);
+        }
+
+        HashSet<string> discovered = new HashSet<string> { BuildSignature(states) };
+        Queue<List<BoxState>> queue = new Queue<List<BoxState>>();
+        queue.Enqueue(states.Select(state => state.Clone()).ToList());
+
+        while (queue.Count > 0 && discovered.Count < PackedMatchSearchStateLimit)
+        {
+            List<BoxState> current = queue.Dequeue();
+            Dictionary<int, BoxState> byId = current.ToDictionary(state => state.Id);
+
+            foreach (Decision move in GenerateLegalMoves(byId, edges))
+            {
+                List<BoxState> nextStates = ApplyForSimulation(current, move);
+                if (!discovered.Add(BuildSignature(nextStates)))
+                {
+                    continue;
+                }
+
+                if (ContainsPackedBox(nextStates))
+                {
+                    return (true, nextStates.Max(state => state.Capacity));
+                }
+
+                bestConcentration = Math.Max(bestConcentration, GetConcentrationValue(nextStates));
+                queue.Enqueue(nextStates);
+            }
+        }
+
+        return (false, bestConcentration);
+    }
+
+    /// <summary>
+    /// Every legal transfer in the component, including the partial amounts the
+    /// greedy scorer never proposes. Filling a target to the brim can lock a
+    /// mixed Box and cut the group in two, so a one soda move is sometimes the
+    /// only route to a packed Box.
+    /// </summary>
+    private static List<Decision> GenerateLegalMoves(
+        Dictionary<int, BoxState> byId,
+        IReadOnlyList<Edge> edges)
+    {
+        List<Decision> moves = new List<Decision>();
+
+        foreach (Edge edge in edges)
+        {
+            if (!byId.TryGetValue(edge.FirstId, out BoxState first) ||
+                !byId.TryGetValue(edge.SecondId, out BoxState second))
+            {
+                continue;
+            }
+
+            AddLegalMoves(first, second, moves);
+            AddLegalMoves(second, first, moves);
+        }
+
+        return moves;
+    }
+
+    private static void AddLegalMoves(BoxState source, BoxState target, List<Decision> moves)
+    {
+        if (source.TotalCount <= 0 || source.IsPacked || target.IsPacked || target.FreeSlots <= 0)
+        {
+            return;
+        }
+
+        foreach (KeyValuePair<Soda.SodaColor, int> pair in source.Colors.OrderBy(pair => pair.Key))
+        {
+            // Sodas only ever join a Box that already shows their colour. The
+            // search keeps that rule so every path it plans is one the executor
+            // can actually run.
+            if (pair.Value <= 0 || target.GetCount(pair.Key) <= 0)
+            {
+                continue;
+            }
+
+            int largest = Math.Min(pair.Value, target.FreeSlots);
+            for (int amount = largest; amount >= 1; amount--)
+            {
+                moves.Add(new Decision(source.Id, target.Id, pair.Key, amount, false));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Nothing can be gathered unless some colour appears at least twice in the
+    /// group. Checking that first keeps the planner off the frame budget for the
+    /// many placements that have nothing to plan.
+    /// </summary>
+    private static bool CouldAnyColorConcentrate(IReadOnlyList<BoxState> states)
+    {
+        Dictionary<Soda.SodaColor, int> totals = new Dictionary<Soda.SodaColor, int>();
+
+        foreach (BoxState state in states)
+        {
+            foreach (KeyValuePair<Soda.SodaColor, int> pair in state.Colors)
+            {
+                totals.TryGetValue(pair.Key, out int running);
+                int total = running + pair.Value;
+                if (total >= 2)
+                {
+                    return true;
+                }
+
+                totals[pair.Key] = total;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsPackedBox(IEnumerable<BoxState> states)
+    {
+        return states != null && states.Any(state => state != null && state.IsPacked);
     }
 
     public static string BuildSignature(IReadOnlyList<BoxState> states)
@@ -971,7 +1433,21 @@ public class UniversalSodaTransferSystem_OldVersion : MonoBehaviour
         }
         
         // Add coins
-        GameDataManager.instance.AddCoins(transferred * 10);
+        if (transferred > 0)
+        {
+            GameDataManager.instance.AddCoins(transferred * 10);
+
+            // Fly the coins from the box that received the sodas. The counter is
+            // refreshed as they land, so it never runs ahead of the animation.
+            if (CoinManager.instance != null && transfer.TargetBox != null)
+            {
+                CoinManager.instance.AddCoins(transfer.TargetBox.transform.position, transferred);
+            }
+            else
+            {
+                UIManager.instance?.RefreshCoins();
+            }
+        }
     }
     
     private IEnumerator MoveSodaWithAnimation(Soda soda, Box targetBox)

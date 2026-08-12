@@ -1,0 +1,14 @@
+Box complete and box spawn pop sounds
+======================================
+
+Files in this project:
+- box_complete_pop.wav (pop1.wav)
+- box_spawn_pop.wav (pop3.wav)
+
+Source:
+OpenGameArt - Pop sounds
+https://opengameart.org/content/pop-sounds-0
+
+Author: EZduzziteh
+License: Creative Commons CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/

@@ -1,0 +1,190 @@
+ORDERS - RUNTIME STATE AND ON-SCREEN PANEL (PHASE 2)
+====================================================
+
+Purpose of this document
+------------------------
+Phase 1 added the authored order data and the Board inspector that produces it.
+This phase makes it live: a manager that tracks what is still needed, a panel
+that shows it, and the one Board hook that connects packing a box to an order
+ticking down.
+
+The travelling light streak does not exist yet. The seam it will plug into does,
+and this document explains where it is and why it was designed that way.
+
+The timing problem this phase solves
+------------------------------------
+Packing a box and seeing its order tick down are separated in time, because in
+the reference game a light streak flies from the board up to the panel first,
+and the number only changes when it lands.
+
+That gap is dangerous. If the win panel is shown the instant the last box is
+packed, it appears on top of an order that still visually reads "1". If instead
+the count is only decremented when the effect lands, two boxes packed in the
+same frame can both believe they claimed the last unit of an order.
+
+The system therefore splits the moment in two:
+
+  1. Decide immediately. Board packs a box, OrderManager.TryConsumePackedBox
+     decrements the logical counter and raises OrderConsumed. This is the
+     authoritative decision and it cannot be claimed twice.
+  2. Display later. The presentation plays whatever effect it wants and calls
+     NotifyImpactApplied at the frame the slot should change. AllOrdersFulfilled
+     is only raised once every order reads zero AND no impact is still in
+     flight.
+
+OrderManager.cs (new)
+---------------------
+A scene singleton, following the same instance pattern already used by
+GameManager, UIManager, and SoundManager.
+
+Initialize()
+    Copies Board.LevelOrders into OrderRuntimeState objects. The authored list is
+    never mutated, so retrying a level always restarts from the inspector values.
+    Safe to call repeatedly, which is what a revive or restart needs. A duplicate
+    color surviving the inspector validation is dropped with a warning rather
+    than creating a second unreachable slot.
+
+TryConsumePackedBox(color, worldPosition)
+    Returns false and does nothing when the color has no order, or its order is
+    already complete. This is the explicit requirement that packing an unordered
+    color produces no label, no streak, and no glow. Otherwise it decrements,
+    increments pendingImpacts, and raises OrderConsumed.
+
+NotifyImpactApplied()
+    Reported by the presentation once the slot has been updated. Decrements
+    pendingImpacts and re-checks completion.
+
+AllOrdersLogicallyFulfilled
+    Every order reads zero, ignoring effects still travelling. Used internally;
+    the public completion signal is the AllOrdersFulfilled event.
+
+OrderRuntimeState
+    Index, Color, RequiredCount, Remaining. Remaining has a private setter and an
+    internal Consume(), so only the manager can change a count.
+
+OrderConsumedEvent
+    Carries OrderIndex, Color, RemainingAfter, CompletesOrder, and the packed
+    box's world position. It is a complete snapshot so neither the panel nor the
+    VFX has to query the manager back and risk reading a newer value.
+
+OrderSlotUI.cs (new)
+--------------------
+One slot: soda icon, remaining count, and the green tick that replaces the count
+when the order is filled.
+
+The slot never decides anything. It is told what to display, which is what keeps
+the visual delay of the streak from ever changing game state.
+
+Bind(index, color, icon, remaining)
+    Called once per slot at level start. A null icon disables the Image rather
+    than drawing a white box, so an unbaked SodaVisualLibrary is visible as a
+    gap instead of as broken art.
+
+SetRemaining(remaining, animated)
+    Swaps between the number and the tick. animated is false at level start so a
+    level does not open with a row of tick animations.
+
+PlayImpact()
+    The arrival: a warm halo fades in fast and out slowly behind the icon, while
+    the icon hops up and settles. Both are DOTween sequences with SetUpdate(true)
+    so they still run if an end panel has already set timeScale to zero.
+
+    The rest position and scale of the icon are captured once and restored before
+    every replay. Without that, two impacts landing close together would stack
+    their offsets and walk the icon off the card.
+
+    The halo color is deliberately a serialized warm yellow, not the soda color.
+    In the reference footage the streak is tinted per drink but the impact flash
+    is the same warm gold for every color.
+
+ImpactWorldPosition
+    The icon's world position, not the slot root's. The streak should land on the
+    drink, not on empty card.
+
+OrderPanelUI.cs (new)
+---------------------
+Builds one slot per order at level start, subscribes to OrderManager, and routes
+each OrderConsumed to the right slot.
+
+IOrderImpactPresenter
+    The seam for the next phase. One method: play an effect, then call onImpact
+    when the slot should tick. OrderPanelUI resolves an implementation from its
+    own hierarchy in Awake, and falls back to updating immediately when none is
+    present. That fallback is what makes this phase testable on its own.
+
+ApplyImpact
+    The single place where a slot's number actually changes. Both the direct path
+    and the VFX callback funnel through it, so the two can never drift apart, and
+    NotifyImpactApplied is guaranteed to be called exactly once per consumed box.
+
+    If an order somehow has no visible slot, ApplyImpact is skipped but
+    NotifyImpactApplied still runs. Otherwise a missing slot would leave
+    pendingImpacts above zero forever and the level could never complete.
+
+Templates instead of prefab assets
+    The slot and separator templates are inactive children of the panel rather
+    than prefab assets. That keeps the whole setup inside the scene and avoids
+    asking the tool user to pick a folder. SetCardVisible explicitly skips both
+    templates, otherwise hiding and re-showing an empty card would activate the
+    placeholder slot.
+
+OrderPanelBuilder.cs (new, editor only)
+---------------------------------------
+Menu item: Tools > Coca Sorting > Create Orders Panel.
+
+Building this card by hand means about a dozen nested RectTransforms with exact
+anchors plus six serialized references wired without a mistake. The tool
+generates the whole hierarchy using Unity's own built-in UISprite, so the feature
+can be played and tested before any final artwork exists. Artists then replace
+the sprites in place and no script changes.
+
+It resolves the Canvas from the current selection, falling back to the first
+Canvas in the scene. It refuses to create a second panel: if one already exists
+it selects it and stops. It also adds an OrderManager when the scene has none,
+because the panel renders nothing without one and that omission is easy to miss.
+
+The generated palette is sampled from the reference footage: red border, cream
+fill, red "Orders" tab, brown separators, dark count text, green tick.
+
+Board.cs change
+---------------
+ReportPackedBoxToOrders(box, sourcePosition) is called from RetireBox on the
+packed branch only, before the Box is destroyed.
+
+It is on the packed branch specifically because that is the same branch that
+already plays the completion sound, unlocks adjacent blocked cells, and awards
+coins. Removal paths such as the Hammer, and empty transfer sources, retire with
+packed=false and must not count toward an order.
+
+It reads the first distinct color from the still-alive Box. A packed box is
+single-colored by definition, so the first distinct color is the box's color; if
+that is somehow not true the report is skipped rather than guessing.
+
+It null-checks OrderManager.instance, so a scene without the Orders system
+behaves exactly as before.
+
+What is deliberately still unchanged
+------------------------------------
+- The win condition is still GameDataManager.boxNum >= 10 in GameManager.
+  AllOrdersFulfilled is raised but nothing subscribes to it yet.
+- No streak, sparkles, or "+1" label exist.
+- SodaVisualLibrary has no baked icons, so slots currently show no drink art.
+
+Scene setup required to see it
+------------------------------
+1. Open a level scene.
+2. Add orders in the Board inspector's Orders section.
+3. Run Tools > Coca Sorting > Create Orders Panel.
+4. Play. Packing a box of an ordered color decreases that slot immediately and
+   plays the halo and hop; packing an unordered color does nothing at all.
+
+Validation performed
+--------------------
+- Assembly-CSharp and Assembly-CSharp-Editor both compile against the Unity
+  editor's own reference set.
+- ApplyImpact is the only caller of SetRemaining during play, and it always
+  calls NotifyImpactApplied, including on the missing-slot path.
+- TryConsumePackedBox returns before raising any event for unordered colors.
+- The panel rebuilds from OrdersInitialized, so calling OrderManager.Initialize
+  again after a revive regenerates the slots.
+- Requires the Unity Editor to confirm the generated panel's layout on-screen.

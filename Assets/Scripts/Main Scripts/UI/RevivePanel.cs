@@ -17,10 +17,36 @@ public class RevivePanel : MonoBehaviour
     [SerializeField] Image BGImage;
     [SerializeField] Image progressBar;
     [SerializeField] TextMeshProUGUI barText;
-    int gemCount = 5;
+    [Tooltip("Gem cost for each successive revive within one level. The last entry repeats once the player runs past the end of the list.")]
+    [SerializeField] int[] reviveCosts = { 5, 7, 10, 15, 20 };
+    [Tooltip("Optional label showing the current revive price. Safe to leave empty.")]
+    [SerializeField] TextMeshProUGUI costText;
+
     public bool isReviveButtonPressed;
     public bool isReviveActive;
     public float countdownDuration = 9f;
+
+    // Counts revives used in this level only. RevivePanel lives in the scene, so
+    // this resets naturally whenever a new level loads.
+    private int reviveUseCount;
+    private Coroutine countdownRoutine;
+
+    /// <summary>
+    /// Price of the next revive. Escalates through reviveCosts and then stays at
+    /// the final entry so the cost never stops rising unexpectedly.
+    /// </summary>
+    public int CurrentReviveCost
+    {
+        get
+        {
+            if (reviveCosts == null || reviveCosts.Length == 0)
+            {
+                return 5;
+            }
+
+            return reviveCosts[Mathf.Min(reviveUseCount, reviveCosts.Length - 1)];
+        }
+    }
     private void Awake()
     {
         if (instance == null)
@@ -40,8 +66,23 @@ public class RevivePanel : MonoBehaviour
         {
             Debug.Log(" Revive is active");
 
+            UpdateCostLabel();
+
             //revivePanel.gameObject.SetActive(true);
-            StartCoroutine(StartCountdown());
+            if (countdownRoutine != null)
+            {
+                StopCoroutine(countdownRoutine);
+            }
+
+            countdownRoutine = StartCoroutine(StartCountdown());
+        }
+    }
+
+    private void UpdateCostLabel()
+    {
+        if (costText != null)
+        {
+            costText.text = CurrentReviveCost.ToString();
         }
     }
     private IEnumerator StartCountdown()
@@ -62,7 +103,7 @@ public class RevivePanel : MonoBehaviour
             yield return null;
 
             // Update elapsed and remaining time
-            elapsedTime += Time.deltaTime;
+            elapsedTime += Time.unscaledDeltaTime;
             remainingTime = countdownDuration - elapsedTime;
         }
 
@@ -74,8 +115,9 @@ public class RevivePanel : MonoBehaviour
         {
             Debug.Log("Inside The  Start Coroutine In Revive Class");
 
-            yield return  new WaitForSeconds(1f);
+            yield return new WaitForSecondsRealtime(1f);
             revivePanel.transform.DOScale(Vector3.zero, 0.7f)
+              .SetUpdate(true)
               .SetEase(Ease.OutBack).OnComplete(() =>
               {
                   revivePanel.gameObject.SetActive(false);
@@ -109,6 +151,7 @@ public class RevivePanel : MonoBehaviour
 
         // Animate the scale from 0 to its default scale (1, 1, 1)
         losePanel.transform.DOScale(Vector3.one, 0.5f)
+            .SetUpdate(true)
             .SetEase(Ease.OutBack).OnComplete(()=> {
                 //Transform firstChild = losePanel.transform.GetChild(0);
                 //if (firstChild != null)
@@ -125,19 +168,59 @@ public class RevivePanel : MonoBehaviour
 
             });
     }
-    private void RemoveGem()
+    /// <summary>
+    /// Charges the current revive price. Returns false when the player cannot
+    /// afford it, in which case nothing is spent and the revive must be aborted.
+    /// </summary>
+    private bool TryPayForRevive()
     {
-        GameDataManager.instance.AddGems(-5 );
-        WatchAD.instance.CurrentState = WatchAD.ClearState.OnActive;
-        
+        if (GameDataManager.instance == null)
+        {
+            return false;
+        }
+
+        if (!GameDataManager.instance.TrySpendGems(CurrentReviveCost))
+        {
+            return false;
+        }
+
+        reviveUseCount++;
+        UpdateCostLabel();
+
+        if (WatchAD.instance != null)
+        {
+            WatchAD.instance.CurrentState = WatchAD.ClearState.OnActive;
+        }
+
+        return true;
     }
 
     public void ReviveLevel()
     {
+        if (isReviveButtonPressed)
+        {
+            return;
+        }
+
+        // Charge first: if the player cannot afford it, leave the panel and its
+        // countdown running so they can still fall through to the lose flow.
+        if (!TryPayForRevive())
+        {
+            Debug.Log($"Not enough gems to revive. Needs {CurrentReviveCost}, has {GameDataManager.instance?.GetGems() ?? 0}.");
+            return;
+        }
+
         isReviveButtonPressed = true;
         isReviveActive = false;
-        RemoveGem();
+
+        if (countdownRoutine != null)
+        {
+            StopCoroutine(countdownRoutine);
+            countdownRoutine = null;
+        }
+
         revivePanel.transform.DOScale(Vector3.zero, 0.7f)
+           .SetUpdate(true)
            .SetEase(Ease.OutBack).OnComplete(() =>
            {
                revivePanel.gameObject.SetActive(false);
@@ -148,9 +231,11 @@ public class RevivePanel : MonoBehaviour
                    BGImage.color = color;
                }
                //StartCoroutine(ShowAnimation(3));
-               WatchAD.instance.ActivateAd();
-               GameManager.instance.gameEnded = false;
-               BoxSpawner.instance.stopSpawn = false;
+               WatchAD.instance?.ActivateAd();
+               GameManager.instance?.ResumeAfterRevive();
+
+               // Allow another revive later in this same level, now at a higher price.
+               isReviveButtonPressed = false;
 
            }
            );
@@ -160,7 +245,15 @@ public class RevivePanel : MonoBehaviour
     {
       
         Debug.Log("Inside The  No Thanks Button");
+
+        if (countdownRoutine != null)
+        {
+            StopCoroutine(countdownRoutine);
+            countdownRoutine = null;
+        }
+
         revivePanel.transform.DOScale(Vector3.zero, 0.7f)
+             .SetUpdate(true)
              .SetEase(Ease.OutBack).OnComplete(() =>
              {
                  revivePanel.gameObject.SetActive(false);

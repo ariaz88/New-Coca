@@ -13,6 +13,7 @@ public class LiftTruck : MonoBehaviour
     public float speed = 5f;        
     private int boxCount = 0;        // Number of boxes on the truck
     public bool IsActive = false;   // Whether this truck is currently active
+    private Coroutine queueMovementCoroutine;
 
     public void SetActive(bool active)
     {
@@ -21,17 +22,22 @@ public class LiftTruck : MonoBehaviour
 
     public bool IsFull()
     {
-        return boxCount >= boxPositions.Length; // Full when both positions are filled
+        return boxPositions == null || boxCount >= boxPositions.Length;
     }
 
     public void AddBox(GameObject box)
     {
-        if (box != null  && !loadedBoxes.Contains(box))
+        if (box == null)
+            return;
+
+        if (boxPositions != null && boxCount < boxPositions.Length)
         {
+            // Ignore duplicate completion callbacks for the same box.
+            if (loadedBoxes.Contains(box))
+                return;
+
             loadedBoxes.Add(box);
-        }
-        if (boxCount < boxPositions.Length)
-        {
+
             // Place the box in the truck
             box.transform.position = boxPositions[boxCount].position;
             box.transform.parent = transform; // Attach to the truck
@@ -68,19 +74,32 @@ public class LiftTruck : MonoBehaviour
 
     public IEnumerator MoveToWaypoints(Transform[] waypoints)
     {
+        CancelQueueMovement();
+
+        if (waypoints == null)
+            yield break;
+
         foreach (var waypoint in waypoints)
         {
+            if (waypoint == null)
+                continue;
+
             while (Vector3.Distance(transform.position, waypoint.position) > 0.02f)
             {
                 Vector3 direction = (waypoint.position - transform.position).normalized;
 
-                transform.position = Vector3.MoveTowards(transform.position, waypoint.position, speed * Time.deltaTime);
+                transform.position = Vector3.MoveTowards(
+                    transform.position,
+                    waypoint.position,
+                    Mathf.Max(0.01f, speed) * Time.deltaTime);
                 //transform.rotation = Quaternion.LookRotation(direction);
                 Quaternion targetRotation = Quaternion.LookRotation(direction);
                 transform.rotation = targetRotation * Quaternion.Euler(0, -90, 0);
 
                 yield return null;
             }
+
+            transform.position = waypoint.position;
             yield return new WaitForSeconds(0.5f); // Optional pause at each waypoint
         }
     }
@@ -134,7 +153,8 @@ public class LiftTruck : MonoBehaviour
 
     public void MoveToNextInQueue(Vector3 targetPosition, float delay)
     {
-        StartCoroutine(MoveAfterDelay(targetPosition, delay));
+        CancelQueueMovement();
+        queueMovementCoroutine = StartCoroutine(MoveAfterDelay(targetPosition, delay));
     }
 
     public IEnumerator MoveAfterDelay(Vector3 targetPosition, float delay)
@@ -142,9 +162,24 @@ public class LiftTruck : MonoBehaviour
         yield return new WaitForSeconds(delay);
         while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(
+                transform.position,
+                targetPosition,
+                Mathf.Max(0.01f, speed) * Time.deltaTime);
             yield return null;
         }
+
+        transform.position = targetPosition;
+        queueMovementCoroutine = null;
+    }
+
+    private void CancelQueueMovement()
+    {
+        if (queueMovementCoroutine == null)
+            return;
+
+        StopCoroutine(queueMovementCoroutine);
+        queueMovementCoroutine = null;
     }
     //public Vector3 GetNextAvailablePosition()
     //{

@@ -33,81 +33,90 @@ Read in this order because each lesson introduces concepts used by later lessons
 
 1. GameDataManager_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Managers/GameDataManager.cs
-   Learn PlayerPrefs, destructive reset safety, and development-only settings.
+   Learn PlayerPrefs, destructive reset safety, per-level runtime counters, and
+   repairing saved level state from the active scene.
 
-2. TutorialCompletionStore_EXPLANATION.txt
+2. LEVEL_END_FLOW_EXPLANATION.txt
+   Sources: GameManager.cs, GameDataManager.cs, Board.cs, UIManager.cs,
+   WinPanel.cs, RevivePanel.cs, LoseGame.cs, and LiftTruck.cs.
+   For the safe truck queue and its complete unload/return lifecycle, read
+   LIFT_TRUCK_QUEUE_EXPLANATION.txt.
+   Learn exactly-once Win/Lose gates, correct post-match loss timing, pausing
+   gameplay while unscaled UI continues, and safe scene-name progression.
+
+3. TutorialCompletionStore_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Tutorial/TutorialCompletionStore.cs
    Learn interfaces, persistence abstraction, stable IDs, and scoped resets.
 
-3. LoadManager_EXPLANATION.txt
+4. LoadManager_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Managers/LoadManager.cs
    Learn startup routing and how completion chooses TUTORIAL or Level1.
 
-4. TutorialControllerBase_EXPLANATION.txt
+5. TutorialControllerBase_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Tutorial/TutorialControllerBase.cs
    Learn inheritance, lifecycle states, registration metadata, and contracts.
 
-5. TutorialManager_EXPLANATION.txt
+6. TutorialManager_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Tutorial/TutorialManager.cs
    Learn singleton lifecycle, one-active-tutorial coordination, ownership, and
    scene-change cleanup.
 
-6. SpawnContoller_EXPLANATION.txt
+7. SpawnContoller_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Core Gameplay/SpawnContoller.cs
    Learn deterministic spawning, coroutines, stable results, and live rail state.
 
-7. Box_EXPLANATION.txt
+8. Box_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Core Gameplay/Box.cs
    Learn mouse input, drag lifecycle, events, owner-scoped authorization, and why
    blocked Stage 2 Boxes cannot move even one frame.
 
-8. Board_EXPLANATION.txt
+9. Board_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Core Gameplay/Board.cs
    Learn authoritative placement, event payloads, correlation tokens, resolution,
    optional placement constraints, and exactly-once progress.
 
-9. DYNAMIC_BOARD_LAYOUT_EXPLANATION.txt
+10. DYNAMIC_BOARD_LAYOUT_EXPLANATION.txt
    Sources: Board.cs, BoardEditor.cs, GameManager.cs, MoveCylinder.cs, and the
    production level scenes.
    Learn per-scene dimensions, visual custom-shape masks, playable-cell rules,
    shape-aware loss detection, and removal of fixed-grid tool assumptions.
 
-10. INITIAL_BOX_LEVEL_SETUP_EXPLANATION.txt
+11. INITIAL_BOX_LEVEL_SETUP_EXPLANATION.txt
     Sources: Board.cs, Box.cs, BoardEditor.cs, SpawnContoller.cs, and Soda.cs.
     Learn sparse per-level starting-state data, prefab-derived capacity, ordered
     Soda colors, editor tooling, and safe runtime registration without fake moves.
 
-11. Node_EXPLANATION.txt
+12. Node_EXPLANATION.txt
    Source: Assets/Scripts/Main Scripts/Core Gameplay/Node.cs
    Learn how valid-cell logic and the visible highlight child are kept separate.
 
-12. ADJACENT_CELL_HIGHLIGHT_EXPLANATION.txt
+13. ADJACENT_CELL_HIGHLIGHT_EXPLANATION.txt
     Sources: Board.cs, Box.cs, Node.cs, SortingTutorialController.cs, Node.prefab,
     and Highlight.prefab.
     Learn the complete adjacency rule, historical evidence, geometry diagnosis,
     implementation contract, and normal-level compatibility.
 
-13. HandAnimation_EXPLANATION.txt
+14. HandAnimation_EXPLANATION.txt
     Source: Assets/Scripts/Main Scripts/Tutorial/HandAnimation.cs
     Learn DOTween sequences, world/screen/UI coordinate conversion, RectTransform
     pivots, sprite fingertip compensation, and serialized-value pitfalls.
 
-14. ToolTipTutorial_EXPLANATION.txt
+15. ToolTipTutorial_EXPLANATION.txt
     Source: Assets/Scripts/Main Scripts/Tutorial/ToolTipTutorial.cs
     Learn presentation-only UI, button listener cleanup, and why animation timing
     must not control gameplay progress.
 
-15. SortingTutorialController_EXPLANATION.txt
+16. SortingTutorialController_EXPLANATION.txt
     Source: Assets/Scripts/Main Scripts/Tutorial/SortingTutorialController.cs
     Learn the full state machine that connects spawning, input, placement,
     resolution, highlighting, left-to-right Stage 2 order, and completion.
 
-16. TUTORIAL_SCENE_SETUP_EXPLANATION.txt
+17. TUTORIAL_SCENE_SETUP_EXPLANATION.txt
     Source: Assets/Scenes/TUTORIAL.unity and all serialized references above.
     Learn how code architecture is assembled in the Unity Inspector and how to run
     the complete manual validation sequence.
 
-17. ANDROID_BUILD_AND_RESPONSIVE_UI_EXPLANATION.txt
+18. ANDROID_BUILD_AND_RESPONSIVE_UI_EXPLANATION.txt
     Sources: AndroidBuildAutomation.cs, the production Canvas Scalers,
     ProjectSettings.asset, and mainTemplate.gradle.
     Learn reference resolution versus device resolution, balanced Canvas scaling,

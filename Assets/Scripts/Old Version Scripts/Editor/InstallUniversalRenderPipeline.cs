@@ -9,7 +9,6 @@ using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-[InitializeOnLoad]
 internal static class InstallUniversalRenderPipeline
 {
     private const string PackageId = "com.unity.render-pipelines.universal@17.0.4";
@@ -21,7 +20,8 @@ internal static class InstallUniversalRenderPipeline
 
     private static AddRequest request;
 
-    static InstallUniversalRenderPipeline()
+    [MenuItem("Tools/Coca Sorting/Legacy/Run URP Installer Manually")]
+    private static void RunManually()
     {
         EditorApplication.delayCall += BeginInstallOrConfigure;
     }

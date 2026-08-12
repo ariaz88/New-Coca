@@ -1,0 +1,312 @@
+SODA TRANSFER AND MATCH SYSTEM
+==============================
+
+Scripts covered:
+- Assets/Scripts/Main Scripts/Core Gameplay/UniversalSodaTransferSystem.cs
+- Assets/Scripts/Main Scripts/Editor/TransferAlgorithmDiagnostics.cs
+
+Related:
+- Assets/Scripts/Main Scripts/Core Gameplay/Board.cs
+- Assets/Scripts/Main Scripts/Core Gameplay/Box.cs
+
+
+1. WHAT THIS SYSTEM DOES
+========================
+
+When the player drops a Box onto the board, the sodas inside the neighbouring
+Boxes are allowed to move around so that same coloured sodas gather together.
+When one Box ends up full of a single colour, that Box is "packed": it counts as
+a match, it is removed from the board, and the player is rewarded.
+
+The system is split into two halves on purpose:
+
+UniversalSodaTransferSystem (MonoBehaviour)
+    Owns timing, animation, and the safety of the actual soda objects.
+    It never decides *what* should move.
+
+TransferAlgorithm (plain static class, no Unity references)
+    Owns the decision making. Given a snapshot of the Boxes, it answers one
+    question: "what is the single next transfer?"
+
+The split exists so the decision logic can be replayed and tested in the editor
+without a scene, a prefab, or a frame of animation.
+
+
+2. THE RESOLVE LOOP
+===================
+
+Board.ResolvePlacement starts UniversalSodaTransferSystem.Resolve for the Box
+the player just dropped. Resolve then repeats this cycle:
+
+1. Retire terminal Boxes.
+   Any Box in the group that is now packed or now empty leaves the board first.
+
+2. Snapshot the group.
+   BuildStates turns every live Box into a BoxState: id, column, row, capacity,
+   placement order, and a colour to count dictionary.
+   BuildDirectEdges records which of those Boxes touch orthogonally.
+
+3. Guard against loops.
+   BuildSignature makes a short text fingerprint of the whole group. If the same
+   fingerprint appears twice, the group is ping-ponging and the loop stops.
+
+4. Ask TransferAlgorithm.TrySelectMove for one Decision.
+
+5. Execute that Decision as a transaction.
+   For each soda: reserve a slot in the target, remove from the source, accept
+   into the target, animate, commit. Any failed step rolls back. That is what
+   stops two sodas from landing in the same slot.
+
+6. Repeat until no Decision is available.
+
+The important property is that only ONE transfer is ever in flight. Everything
+else in this system exists to choose that one transfer well.
+
+
+3. THE TRANSFER RULE
+====================
+
+A soda may move from Box S to Box T only when all of these hold:
+
+- S and T are directly adjacent (up, down, left, right, never diagonal).
+- T already contains at least one soda of that colour.
+- T has a free slot.
+- S is not itself already packed.
+
+The second rule is the one that shapes the whole puzzle: a colour can only
+spread into Boxes that already show it. It is why a Box that fills up with two
+different colours becomes a dead weight, and why the order of transfers matters
+so much.
+
+
+4. WHY A GREEDY CHOICE WAS NOT ENOUGH
+=====================================
+
+The original planner scored each possible next transfer on its own merits:
+does it complete a Box, does it empty its source, does it concentrate a colour,
+and so on. The best scoring transfer won.
+
+That works until a Box becomes a bridge.
+
+Consider three Boxes in a row, capacity 4, and the middle one is the Box the
+player just dropped:
+
+    left: 2 orange      middle: 1 orange      right: 1 orange + 1 blue
+
+Four orange sodas exist in the group, so a four match is available. But every
+route to it has to pass THROUGH the middle Box, because left and right do not
+touch each other.
+
+Greedy scoring rated "middle gives its orange to left" and "left gives its two
+orange to middle" almost identically, and then broke the tie in favour of the
+Box that was just placed. That emptied the bridge. With the middle Box empty,
+the right Box had no orange neighbour left, the group fell apart, and the match
+the player was aiming for never happened.
+
+This is exactly the bug the player reported: "the middle soda goes into the left
+or the right Box and the four match does not happen."
+
+
+5. THE PLANNER
+==============
+
+TrySelectMove now runs TrySelectMatchPlanMove BEFORE the greedy scorer.
+
+The rule it enforces is wider than "always take the four match":
+
+    Gather one colour into one Box as far as the group allows.
+    If that reaches a full Box, it is a match.
+    If it does not, the sodas still end up together instead of scattered.
+
+The second half matters as much as the first. Three sodas of a colour with no
+fourth on the board are still worth gathering, because the next Box off the rail
+may carry that fourth. Scattering them, or emptying the Box that bridges them,
+strands that colour permanently.
+
+TrySelectMatchPlanMove does a breadth first search over the group:
+
+- Cheap reject first. CouldAnyColorConcentrate checks whether any colour even
+  appears twice in the group. If not there is nothing to gather, and the search
+  returns before allocating anything. Most placements exit here, which is what
+  keeps the cost off the frame budget.
+
+- GenerateLegalMoves lists EVERY legal transfer, in every direction, for every
+  colour, and for every amount from the largest down to one.
+
+- Each move is applied to a copy of the snapshot, fingerprinted, and queued.
+
+- Every reached state is scored by GetConcentrationScore. The search keeps the
+  first move of the path that reaches the best score it can find.
+
+- A packed Box is the ceiling, so the moment one appears the search stops
+  immediately and returns the first move of the path that got there.
+
+Because the search walks breadth first, the path it finds is the shortest one.
+Because it works on the adjacency graph rather than on coordinates, it behaves
+identically for a row, a column, an elbow, or any other connected shape. There
+is no special case for L shapes anywhere in the code.
+
+If no move improves on where the group already stands, the old greedy scorer
+runs unchanged. Nothing about the previous behaviour was thrown away; it simply
+lost its right of first refusal.
+
+
+5b. HOW A STATE IS SCORED
+=========================
+
+A pile is "live" while its Box still has room to reach capacity in that colour.
+Three orange plus one blue in a four slot Box is NOT live: those sodas can never
+become a match. Dead piles score nothing at all, so the planner is never tempted
+to walk the board into the very state it exists to avoid.
+
+GetConcentrationScore then ranks a snapshot on two levels, packed into one int:
+
+Leading term - the largest live pile anywhere in the group.
+    This is the goal itself. Gather one colour into one Box, and a pile that
+    reaches capacity is a match. Nothing outranks it.
+
+Trailing term - the sum, over each colour separately, of the square of that
+colour's own largest live pile, plus one when the Box holding it is a single
+clean colour.
+    Squaring rewards gathering over spreading: four greens together beat four
+    greens one per Box by a wide margin.
+    Giving every colour its own entry is what stops a colour that is already
+    well gathered from hiding progress elsewhere. Without it, a Box sitting on
+    three purple would set the bar at three, and gathering three greens from
+    scratch would not register as an improvement at all.
+    The plus one is the tie break players expect: given two ways to gather the
+    same sodas, gather them into the Box that is already one clean colour rather
+    than into one carrying a passenger.
+
+Why this fixes the bridge bug: emptying the bridge Box scores badly, because
+once the bridge is gone the two halves of the colour can never reach each other
+and no deeper state in that branch can score well either. The planner sees that
+before it commits, which is precisely what per move scoring could not do.
+
+
+6. WHY EVERY AMOUNT, NOT JUST THE LARGEST
+=========================================
+
+The greedy scorer always proposed the largest transfer it could make. That is
+usually right, and it is occasionally fatal:
+
+    left: 2 orange    middle: 1 orange + 1 blue    right: 1 orange
+
+Moving both of left's orange sodas into the middle fills the middle Box to 3
+orange plus 1 blue. It is now full, mixed, and permanently stuck, and the group
+is dead even though four orange sodas were sitting right there.
+
+The route that works is smaller and runs the other way:
+
+    right gives its 1 orange to middle    -> middle holds 2 orange + 1 blue
+    middle gives its 2 orange to left     -> left holds 4 orange, packed
+
+The search can only find that route if partial amounts are on the table, so
+GenerateLegalMoves emits them. They are listed largest first, which keeps the
+shortest and most natural paths at the front of the queue.
+
+
+7. HOW THE FIRST MOVE IS CHOSEN WHEN SEVERAL PATHS TIE
+======================================================
+
+Different opening moves can lead to equally short match paths. The search ranks
+its opening moves with the same CandidateComparer the greedy scorer uses, so
+when the look-ahead has a free choice it makes the same choice the old system
+would have made. The look-ahead only overrides the old behaviour when the old
+behaviour would have missed the match.
+
+This keeps the game feeling the same everywhere except in the situations the
+player complained about.
+
+
+8. BOUNDS
+=========
+
+The search is deliberately fenced in so a large custom board cannot stall a
+phone:
+
+PackedMatchSearchBoxLimit (14)
+    Groups larger than this skip the search entirely. The limit is deliberately
+    generous: real levels routinely connect ten or eleven Boxes, and those are
+    exactly the groups where a missed match hurts most. An earlier limit of
+    eight was silently turning the planner off in ordinary play.
+
+FullDepthSearchBoxCount (5) and ShallowSearchDepth (4)
+    Up to five Boxes the group is searched as deep as it needs. Past that the
+    depth is capped at four instead of the search being skipped, so the planner
+    still catches the multi step paths greedy scoring misses without a
+    combinatorial blow up.
+
+PackedMatchSearchStateLimit (4096)
+    The search stops after this many distinct states and falls back to greedy.
+
+Every state visited is fingerprinted, so the same arrangement is never explored
+twice no matter how many different move orders reach it.
+
+
+8b. THE TRANSFER TRACE
+======================
+
+UniversalSodaTransferSystem has a traceTransfers toggle in the Inspector. With
+it on, every resolution writes its full snapshot and each chosen move to the
+console, tagged with which branch decided it:
+
+    [TransferTrace] step 1 trigger #24 :: #13@c3r1 cap4 {Purplex2} | ...
+    [TransferTrace] chose 13->24: 2 Purple via match-path
+
+The "via" tag is the useful part. "match-path" means the planner chose the move;
+"greedy" means the planner found no improvement and the old scorer decided. A
+missed match showing "via greedy" points at the planner being skipped - which is
+how the eight Box limit above was found. Leave the toggle off for normal play.
+
+
+9. THE EDITOR TESTS
+===================
+
+TransferAlgorithmDiagnostics replays the resolver loop with no scene attached.
+
+It runs automatically after every recompile, and it can be run by hand from:
+
+    Tools > Coca Sorting > Tests > Run Active Transfer Tests
+
+Those named scenarios cover four layouts - horizontal, vertical, and both elbow
+orientations - against eight soda arrangements each. Five of them require a four
+match, including the bridge case and the partial amount trap described above.
+The other three have NO four match available and require the colour to end up
+gathered anyway; those three are the ones that reproduce the second report from
+the levels, where a lone soda on the bridge was handed to a neighbour and three
+sodas of a colour were stranded for good.
+
+A second menu item:
+
+    Tools > Coca Sorting > Tests > Sweep Every Three Box Layout
+
+walks EVERY three Box arrangement the board can produce with two colours - 6912
+of them across the four layouts. For each one it asks
+TransferAlgorithm.ExploreReachableOutcomes what is genuinely achievable, then
+requires the resolver to achieve it: the four match when one exists, and the
+best gathering when one does not. Any layout that falls short is printed with
+its exact contents, so a regression names itself.
+
+The sweep runs once per editor session and can be re-run from the menu at any
+time. Bump the suffix on SweepSessionKey after changing the planner so the next
+recompile re-runs it rather than trusting a result from the old algorithm.
+
+
+10. THINGS TO BE CAREFUL WITH
+=============================
+
+- Do not add a second soda colour system. Everything here keys off
+  Soda.SodaColor and Box.GetSodaColorCounts.
+
+- Do not let the planner touch scene objects. If TransferAlgorithm ever needs a
+  Transform, the editor tests stop working and the logic stops being replayable.
+
+- Box capacity is discovered from the SodaPosition children of the prefab, not
+  hardcoded to 4. The algorithm reads BoxState.Capacity, so a Box with a
+  different slot count already works.
+
+- If a level ever connects more Boxes than PackedMatchSearchBoxLimit allows, the
+  planner goes quiet and the old greedy behaviour returns without any warning.
+  Turn on traceTransfers and look for moves decided "via greedy" before assuming
+  the planner is at fault for a missed match.

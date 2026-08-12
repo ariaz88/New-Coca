@@ -34,8 +34,24 @@ TutorialManager writes sorting.initial completion through PlayerPrefs. Without
 this gate, the completion store would appear broken because GameDataManager would
 delete it on the next scene start.
 
-Normal save behavior
---------------------
-SaveData, LoadData, currency methods, tool counters, and level progression were not
-otherwise changed.
+Per-level runtime reset
+-----------------------
+GameDataManager survives scene changes, so runtime counters must not be treated as
+permanent save data. BeginLevel now resets boxNum and coin whenever a gameplay
+scene starts. Without this reset, reaching the win target once would leave boxNum
+at or above the target in every later scene.
 
+BeginLevel optionally receives the logical number parsed from the active scene
+name. For example, Level6 passes 6. SetLevel then repairs the PlayerPrefs Level
+value to 6. This prevents an earlier double click or failed scene load from leaving
+saved progress at an impossible Level7 or Level8 while Level6 is active.
+
+SetLevel versus IncrementLevel
+------------------------------
+IncrementLevel remains available for compatibility, but the authoritative
+WinPanel flow no longer increments blindly. It calculates the next scene first,
+checks that Unity can load it, and calls SetLevel only for a real configured
+Level scene. The final level therefore cannot save an invalid future number.
+
+Persistent values such as gems, TotalCoins, tools, and Tutorial completion are not
+cleared by BeginLevel.

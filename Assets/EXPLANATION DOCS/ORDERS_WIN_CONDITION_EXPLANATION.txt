@@ -1,0 +1,120 @@
+ORDERS WIN CONDITION AND ICON/LABEL CORRECTIONS (PHASE 5)
+=========================================================
+
+Purpose of this document
+------------------------
+Three things, all reported from a play test:
+
+  1. The level goal was still the old flat counter, not the order list.
+  2. Baked icons rendered as small rectangles in the slots.
+  3. The "+1" label had no drink icon beside it, unlike the reference.
+
+1. Win condition
+----------------
+Before: GameManager.CheckWinCondition ended the level at
+GameDataManager.boxNum >= 10, regardless of soda color.
+
+Now: a scene that has an OrderManager with a non-empty order list is won when
+OrderManager raises AllOrdersFulfilled. Scenes without one keep the old counter,
+so the Tutorial and any level not yet converted still finish normally. That is
+what UsesOrderWinCondition decides.
+
+Why CheckWinCondition returns early instead of also checking orders
+    AllOrdersFulfilled deliberately fires late. OrderManager waits until every
+    travelling effect has landed, so the last slot has visibly ticked to its
+    green check before the win panel appears. If CheckWinCondition also ended
+    the level on the packed-box count, a level whose orders total ten boxes
+    would end at the moment of packing and cover a slot still showing a number.
+    Returning early is what guarantees the panel follows the animation.
+
+BeginWinSequence
+    Both goal types now funnel through one method, so the end-sequence guard,
+    the spawn stop, and the music stop cannot diverge between them.
+
+Subscription timing
+    Subscribed in GameManager.Start, not Awake. OrderManager builds its runtime
+    list in its own Start, so an Awake subscription would see an empty manager
+    and HasOrders would read false. The handler is removed in OnDestroy.
+
+2. Icons rendering as small rectangles
+--------------------------------------
+Two separate causes, both fixed.
+
+Cause A: the sprite was being stretched
+    The slot's Image had preserveAspect off. A soda is much taller than it is
+    wide, so a square slot stretched the sprite horizontally into a rectangle.
+
+    OrderSlotUI.Bind now sets preserveAspect and Image.Type.Simple at runtime,
+    not only in the builder, so panels created before this fix are corrected
+    without being rebuilt. The builder also sets it, and the icon is larger.
+
+Cause B: the drink occupied a small part of its own texture
+    The camera framed the model using the bounding sphere radius. For a tall,
+    narrow can that radius is far larger than the camera needs, so the can was
+    rendered small inside a mostly empty square, and the UI then scaled the
+    whole square, empty margin included.
+
+    Two changes:
+
+    Bounding-box framing
+        The eight corners of the model's bounds are transformed into camera
+        space and the orthographic size is taken from the largest half-extent
+        actually seen. That fits the can rather than the sphere around it.
+
+    Margin trimming
+        After rendering, the image is cropped to the pixels that are actually
+        drawn, then re-squared with a small even margin. This is the change that
+        guarantees the result regardless of framing or camera angle, and it also
+        makes every color produce identically proportioned icons no matter how
+        wide or narrow its silhouette is.
+
+    Alpha is tested against a small threshold, not against zero, so anti-aliased
+    edge pixels are kept.
+
+Supersampling
+    The bake now renders at up to 4x the icon size and downsamples with a
+    bilinear filter. The extra resolution removes the stair-stepping on the
+    can's curved silhouette, which was clearly visible at 256 px. Texture2D has
+    no resize, and a nearest-neighbour copy would have reintroduced exactly the
+    aliasing the larger render removed, hence the manual bilinear pass.
+
+New window options
+    Supersample  1 to 4, default 3
+    Trim Margin  on by default
+
+3. Icon beside the "+1"
+-----------------------
+PlayPlusOneLabel now also rents an Image, assigns the drink's baked sprite, and
+moves it beside the text.
+
+They are two separate pooled objects driven by the same offset each frame rather
+than a parented pair. The pools stay flat, and the icon is optional: when the
+library has no sprite for that color, only the text plays and nothing has to be
+rebuilt or re-parented.
+
+The pair is centred on the origin, so adding an icon does not shift the "+1"
+away from where the box actually was.
+
+Pool reset, and the bug it prevents
+    The same pooled Image now serves three roles: comet, sparkle, and "+1" icon.
+    Only the icon wants preserveAspect on. Left set, the next comet would be
+    squashed to its sprite's ratio instead of filling its rectangle. ReturnImage
+    therefore clears preserveAspect and the sprite reference on return, rather
+    than each caller having to remember to reset it.
+
+Steps to apply
+--------------
+1. Rebake the icons: Tools > Coca Sorting > Bake Soda Icons > Bake All Colors.
+   The new framing, trimming, and supersampling only apply to a fresh bake.
+2. Save the scene.
+3. Play. The level should now end when the last order gets its green check,
+   after the final effect lands.
+
+Validation performed
+--------------------
+- Assembly-CSharp and Assembly-CSharp-Editor both compile.
+- Scenes with no OrderManager, and scenes with an empty order list, still use
+  the packed-box counter, so the Tutorial is unaffected.
+- Both win paths run through BeginWinSequence and its single guard.
+- The order subscription is removed in OnDestroy.
+- Requires the Unity Editor to confirm icon framing and the label layout.

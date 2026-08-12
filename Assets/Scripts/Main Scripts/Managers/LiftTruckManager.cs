@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 public class LiftTruckManager : MonoBehaviour
 {
     public static LiftTruckManager instance;
@@ -16,8 +15,8 @@ public class LiftTruckManager : MonoBehaviour
     public Transform position2; // Position 2
     public Transform position3; // Position 3 (last truck)
     private Queue<LiftTruck> truckQueue = new Queue<LiftTruck>(); // Queue for truck order
+    private readonly HashSet<LiftTruck> trucksInTransit = new HashSet<LiftTruck>();
     private LiftTruck activeTruck;
-    private LiftTruck currentlyWasActiveTruck;
 
     [Header("Unload Position Variables")]
     public Transform unloadStartPosition; // Starting position for unloading
@@ -30,7 +29,6 @@ public class LiftTruckManager : MonoBehaviour
     private int boxesInColumn = 0; // Tracks the number of boxes in the current column
 
 
-    private int activeTruckIndex = 0; // Index of the active truck
     private float[] columnHeights = new float[6];
 
 
@@ -40,15 +38,16 @@ public class LiftTruckManager : MonoBehaviour
     {
         // Subscribe to events
         LiftTruck.OnTruckFull += HandleTruckFull;
-        LiftTruck.OnTruckUnloaded += HandleTruckUnloaded;
     }
 
     private void Awake()
     {
         instance = this;
+        truckQueue.Clear();
         foreach (LiftTruck truck in trucks)
         {
-            truckQueue.Enqueue(truck);
+            if (truck != null && !truckQueue.Contains(truck))
+                truckQueue.Enqueue(truck);
         }
 
     }
@@ -57,15 +56,12 @@ public class LiftTruckManager : MonoBehaviour
     {
         // Unsubscribe from events
         LiftTruck.OnTruckFull -= HandleTruckFull;
-        LiftTruck.OnTruckUnloaded -= HandleTruckUnloaded;
     }
 
     private void Start()
     {
         //SetActiveTruck(0); // Set the first truck as active at the start
-        activeTruck = truckQueue.Peek(); // The next truck in the queue becomes active
-        activeTruck.IsActive = true;
-        currentlyWasActiveTruck = null;
+        ActivateFrontTruck();
         InitializeTrucks();
         //Unload Pos
         currentUnloadPosition = unloadStartPosition.position;
@@ -251,16 +247,20 @@ public class LiftTruckManager : MonoBehaviour
     {
         int positionIndex = 0;
 
-        // Rearrange all trucks except the one currently unloading
+        // Only queued trucks are repositioned. Trucks following their unload
+        // route are deliberately not present in this queue.
         foreach (LiftTruck truck in truckQueue)
         {
-            if (truck != currentlyWasActiveTruck)
-            {
-                Vector3 targetPosition = GetPositionByIndex(positionIndex);
-                truck.MoveToNextInQueue(targetPosition,0.1f);
-                positionIndex++;
-                truck.transform.rotation = Quaternion.Euler(transform.forward);
-            }
+            if (truck == null || positionIndex >= 3)
+                continue;
+
+            Vector3 targetPosition = GetPositionByIndex(positionIndex);
+            truck.MoveToNextInQueue(targetPosition, 0.1f);
+            // The truck model's forward axis needs a -90 degree yaw offset.
+            // This produces the original parked orientation facing world +X.
+            truck.transform.rotation =
+                Quaternion.LookRotation(Vector3.right) * Quaternion.Euler(0f, -90f, 0f);
+            positionIndex++;
         }
     }
     private Vector3 GetPositionByIndex(int index)
@@ -278,33 +278,26 @@ public class LiftTruckManager : MonoBehaviour
 
     private void HandleTruckFull(LiftTruck truck)
     {
-        activeTruckIndex = trucks.IndexOf(activeTruck);
+        if (truck == null || truck != activeTruck || trucksInTransit.Contains(truck))
+            return;
 
-        // If the active truck is full, start its movement
-        if (truck == trucks[activeTruckIndex])
-        {
-            StartCoroutine(MoveActiveTruck(truck));
-        }
+        // Mark before starting the coroutine so two events in the same frame
+        // cannot launch two routes for the same truck.
+        trucksInTransit.Add(truck);
+        StartCoroutine(MoveActiveTruck(truck));
     }
 
     private IEnumerator MoveActiveTruck(LiftTruck truck)
     {
-        activeTruck.IsActive = false;
-        currentlyWasActiveTruck = activeTruck;
-        truckQueue.Dequeue();
-        activeTruck = truckQueue.Peek();
-        activeTruck.IsActive = true;
-        UpdateTruckPositions();
+        truck.SetActive(false);
 
-        //if (truckQueue.Count > 0)
-        //{
-        //    activeTruck = truckQueue.Peek(); // Get the next truck in the queue
-        //    activeTruck.MoveAfterDelay(position1.position, 0.1f);
-        //}
-        //else
-        //{
-        //    activeTruck = null; // No trucks left in the queue
-        //}
+        if (truckQueue.Count > 0 && truckQueue.Peek() == truck)
+            truckQueue.Dequeue();
+        else
+            RemoveFromQueue(truck);
+
+        ActivateFrontTruck();
+        UpdateTruckPositions();
 
         // Move the active truck through the waypoints
         yield return truck.MoveToWaypoints(waypoints);
@@ -312,37 +305,47 @@ public class LiftTruckManager : MonoBehaviour
         // Unload the boxes at the unload position
         yield return truck.UnloadBoxes();
 
-        truckQueue.Enqueue(currentlyWasActiveTruck);
-
-        // The next truck in the queue becomes active
-
-
-        //***************************************************
-        //// Move to the end of the queue
-        //trucks.Remove(truck);
-        //trucks.Add(truck);
-
-        // Set the next truck in the queue as active
-        //SetActiveTruck(0);
-    }
-
-    private void HandleTruckUnloaded(LiftTruck truck)
-    {
-        if (currentlyWasActiveTruck!=null)
-        {
-            StartCoroutine(MoveToTheThirdPosition(truck));
-        }
-    }
-    private IEnumerator MoveToTheThirdPosition(LiftTruck truck)
-    {
+        // The same coroutine owns the complete trip. This prevents a queue
+        // reposition coroutine from fighting the return-route coroutine.
         yield return truck.MoveToWaypoints(waypointsIn);
 
+        trucksInTransit.Remove(truck);
+        if (!truckQueue.Contains(truck))
+            truckQueue.Enqueue(truck);
+
+        if (activeTruck == null)
+            ActivateFrontTruck();
+
+        UpdateTruckPositions();
     }
+
+    private void ActivateFrontTruck()
+    {
+        foreach (LiftTruck truck in trucks)
+        {
+            if (truck != null)
+                truck.SetActive(false);
+        }
+
+        activeTruck = truckQueue.Count > 0 ? truckQueue.Peek() : null;
+        if (activeTruck != null)
+            activeTruck.SetActive(true);
+    }
+
+    private void RemoveFromQueue(LiftTruck truckToRemove)
+    {
+        int count = truckQueue.Count;
+        for (int i = 0; i < count; i++)
+        {
+            LiftTruck queuedTruck = truckQueue.Dequeue();
+            if (queuedTruck != truckToRemove)
+                truckQueue.Enqueue(queuedTruck);
+        }
+    }
+
     public LiftTruck GetActiveTruck()
     {
-        // Logic to return the currently active truck
-        // Assuming you have a list of trucks to choose from
-        return FindObjectsOfType<LiftTruck>().FirstOrDefault(truck => truck.IsActive);
+        return activeTruck != null && activeTruck.IsActive ? activeTruck : null;
     }
 
 
@@ -377,7 +380,6 @@ public class LiftTruckManager : MonoBehaviour
         {
             trucks[i].SetActive(i == index); // Only activate the truck at the given index
         }
-        activeTruckIndex = index;
     }
 
 }

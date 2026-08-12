@@ -2887,7 +2887,7 @@ MonoBehaviour:
   cellSpacing: {x: 0.279, y: 0.279}
   placedBoxYOffset: 0.155
   awardPackedBoxRewards: 1
-  coinsPerPackedBox: 100
+  coinsPerPackedBox: 10
   packedBoxMoveDuration: 0.37
   boardBoxes: []
   lastPlacedBox: {fileID: 0}

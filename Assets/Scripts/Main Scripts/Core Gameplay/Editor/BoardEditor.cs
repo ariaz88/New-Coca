@@ -11,6 +11,7 @@ public sealed class BoardEditor : Editor
     private SerializedProperty heightProperty;
     private SerializedProperty removedCellsProperty;
     private SerializedProperty initialBoxesProperty;
+    private SerializedProperty levelOrdersProperty;
 
     private Vector2Int selectedInitialCell = new Vector2Int(-1, -1);
     private GameObject copiedBoxPrefab;
@@ -23,6 +24,7 @@ public sealed class BoardEditor : Editor
         heightProperty = serializedObject.FindProperty("height");
         removedCellsProperty = serializedObject.FindProperty("removedCells");
         initialBoxesProperty = serializedObject.FindProperty("initialBoxes");
+        levelOrdersProperty = serializedObject.FindProperty("levelOrders");
     }
 
     public override void OnInspectorGUI()
@@ -43,6 +45,8 @@ public sealed class BoardEditor : Editor
 
         DrawShapeGrid();
         DrawInitialBoxDesigner();
+        DrawBlockedCellArt();
+        DrawOrdersDesigner();
 
         EditorGUILayout.Space();
         DrawPropertiesExcluding(
@@ -51,7 +55,9 @@ public sealed class BoardEditor : Editor
             "width",
             "height",
             "removedCells",
-            "initialBoxes");
+            "initialBoxes",
+            "levelOrders",
+            "removedCellVisualPrefab");
 
         if (serializedObject.ApplyModifiedProperties())
         {
@@ -104,6 +110,310 @@ public sealed class BoardEditor : Editor
             {
                 initialBoxesProperty.ClearArray();
             }
+        }
+    }
+
+    /// <summary>
+    /// Surfaces the blocked-cell box prefab where a level designer will look for
+    /// it, instead of leaving it buried in the fallback property list.
+    ///
+    /// Leaving it empty is easy to do and produces a plain grey cube, which does
+    /// not read as a sealed box at all. The one-click button assigns the
+    /// project's closed box so the common case takes no searching. The
+    /// assignment is deliberately a button rather than something that happens
+    /// automatically on selection: silently editing a scene because someone
+    /// clicked the Board object would be surprising.
+    /// </summary>
+    private void DrawBlockedCellArt()
+    {
+        EditorGUILayout.Space(10f);
+        EditorGUILayout.LabelField("Blocked Cell Art", EditorStyles.boldLabel);
+
+        SerializedProperty prefabProperty = serializedObject.FindProperty("removedCellVisualPrefab");
+        if (prefabProperty == null)
+        {
+            return;
+        }
+
+        EditorGUILayout.PropertyField(prefabProperty, new GUIContent("Blocked Box Prefab"));
+
+        if (prefabProperty.objectReferenceValue == null)
+        {
+            EditorGUILayout.HelpBox(
+                "No prefab assigned, so blocked cells will be plain cubes. Assign the project's " +
+                "closed box to make them look like the sealed, taped boxes in the reference.",
+                MessageType.Warning);
+
+            GameObject closedBox = FindClosedBoxPrefab();
+            using (new EditorGUI.DisabledScope(closedBox == null))
+            {
+                string label = closedBox != null
+                    ? $"Use \"{closedBox.name}\""
+                    : "No closed box prefab found";
+
+                if (GUILayout.Button(label))
+                {
+                    prefabProperty.objectReferenceValue = closedBox;
+                }
+            }
+        }
+        else
+        {
+            EditorGUILayout.HelpBox(
+                "The taped cross is generated on top of this prefab at runtime, sized from its own " +
+                "bounds and tinted a little lighter than its material. Turn it off with " +
+                "\"Draw Blocked Cell Tape\" below.",
+                MessageType.None);
+        }
+    }
+
+    /// <summary>
+    /// Looks for the project's closed box prefab by name, preferring an exact
+    /// "FullBox" match before falling back to anything that looks like a closed
+    /// box, so a renamed asset still gets found.
+    /// </summary>
+    private static GameObject FindClosedBoxPrefab()
+    {
+        string[] candidates = { "FullBox", "ClosedBox", "Box01" };
+
+        for (int index = 0; index < candidates.Length; index++)
+        {
+            string[] found = AssetDatabase.FindAssets($"{candidates[index]} t:Prefab");
+            for (int guidIndex = 0; guidIndex < found.Length; guidIndex++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(found[guidIndex]);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab != null && prefab.name == candidates[index])
+                {
+                    return prefab;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Level-design UI for this scene's Orders panel.
+    ///
+    /// Each row is one <see cref="LevelOrderData"/>: a soda color plus how many
+    /// packed boxes of that color the level requires. A color swatch is drawn
+    /// beside the dropdown so a designer can read the list at a glance, and the
+    /// rows can be reordered because row order is also the left-to-right order
+    /// of the slots in the runtime panel.
+    /// </summary>
+    private void DrawOrdersDesigner()
+    {
+        EditorGUILayout.Space(10f);
+        EditorGUILayout.LabelField("Orders (win condition)", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "The level is won when every order below is fulfilled. One packed box of a color " +
+            "decreases that color's remaining count by one. Row order is the left-to-right slot " +
+            "order in the on-screen Orders panel.",
+            MessageType.Info);
+
+        int removeIndex = -1;
+        for (int index = 0; index < levelOrdersProperty.arraySize; index++)
+        {
+            SerializedProperty element = levelOrdersProperty.GetArrayElementAtIndex(index);
+            SerializedProperty colorProperty = element.FindPropertyRelative("color");
+            SerializedProperty countProperty = element.FindPropertyRelative("requiredCount");
+
+            EditorGUILayout.BeginHorizontal();
+
+            // Swatch first: the fastest way to scan a list of orders visually.
+            Rect swatchRect = GUILayoutUtility.GetRect(
+                18f,
+                EditorGUIUtility.singleLineHeight,
+                GUILayout.Width(18f));
+            EditorGUI.DrawRect(swatchRect, GetSwatchColor((Soda.SodaColor)colorProperty.enumValueIndex));
+
+            EditorGUILayout.PropertyField(colorProperty, GUIContent.none);
+
+            GUILayout.Label("x", GUILayout.Width(12f));
+            countProperty.intValue = Mathf.Max(
+                1,
+                EditorGUILayout.IntField(countProperty.intValue, GUILayout.Width(45f)));
+
+            using (new EditorGUI.DisabledScope(index == 0))
+            {
+                if (GUILayout.Button("↑", GUILayout.Width(25f)))
+                {
+                    levelOrdersProperty.MoveArrayElement(index, index - 1);
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(index >= levelOrdersProperty.arraySize - 1))
+            {
+                if (GUILayout.Button("↓", GUILayout.Width(25f)))
+                {
+                    levelOrdersProperty.MoveArrayElement(index, index + 1);
+                }
+            }
+
+            if (GUILayout.Button("−", GUILayout.Width(25f)))
+            {
+                removeIndex = index;
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        if (removeIndex >= 0)
+        {
+            levelOrdersProperty.DeleteArrayElementAtIndex(removeIndex);
+        }
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Add Order"))
+        {
+            AddOrder();
+        }
+
+        using (new EditorGUI.DisabledScope(levelOrdersProperty.arraySize == 0))
+        {
+            if (GUILayout.Button("Clear All Orders") &&
+                EditorUtility.DisplayDialog(
+                    "Clear Orders",
+                    "Remove every order from this level?",
+                    "Clear All",
+                    "Cancel"))
+            {
+                levelOrdersProperty.ClearArray();
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+
+        DrawOrderValidation();
+    }
+
+    /// <summary>
+    /// Reports the authoring mistakes that silently break a level: no orders at
+    /// all, the same color listed twice, and an order asking for more boxes of a
+    /// color than the level's own starting sodas could ever fill.
+    /// </summary>
+    private void DrawOrderValidation()
+    {
+        if (levelOrdersProperty.arraySize == 0)
+        {
+            EditorGUILayout.HelpBox(
+                "This level has no orders, so its Orders panel will be empty and it can never be won. " +
+                "Add at least one order.",
+                MessageType.Error);
+            return;
+        }
+
+        Board board = target as Board;
+        HashSet<Soda.SodaColor> seenColors = new HashSet<Soda.SodaColor>();
+        List<string> duplicates = new List<string>();
+        List<string> shortages = new List<string>();
+        int totalBoxes = 0;
+
+        // Resolved once: ResolveBoxPrefab performs a scene search, which must not
+        // run per row on every inspector repaint.
+        int boxCapacity = GetBoxCapacity(ResolveBoxPrefab(null));
+
+        for (int index = 0; index < levelOrdersProperty.arraySize; index++)
+        {
+            SerializedProperty element = levelOrdersProperty.GetArrayElementAtIndex(index);
+            Soda.SodaColor color = (Soda.SodaColor)element.FindPropertyRelative("color").enumValueIndex;
+            int required = Mathf.Max(1, element.FindPropertyRelative("requiredCount").intValue);
+            totalBoxes += required;
+
+            if (!seenColors.Add(color))
+            {
+                duplicates.Add(color.ToString());
+                continue;
+            }
+
+            // A packed box needs a full box of one color, so the level needs at
+            // least required * capacity sodas of that color from somewhere.
+            if (board == null || boxCapacity <= 0)
+            {
+                continue;
+            }
+
+            int needed = required * boxCapacity;
+            int available = board.CountInitialSodasOfColor(color);
+            if (available < needed)
+            {
+                shortages.Add($"{color}: needs {needed} sodas, level starts with {available}");
+            }
+        }
+
+        if (duplicates.Count > 0)
+        {
+            EditorGUILayout.HelpBox(
+                "The same color is listed more than once: " + string.Join(", ", duplicates) +
+                ". Merge those rows into one order; the runtime panel shows one slot per color.",
+                MessageType.Error);
+        }
+
+        if (shortages.Count > 0)
+        {
+            EditorGUILayout.HelpBox(
+                "These orders cannot be filled from the level's starting boxes alone:\n" +
+                string.Join("\n", shortages) +
+                "\nThis is only a warning: the spawner may still supply the missing sodas.",
+                MessageType.Warning);
+        }
+
+        EditorGUILayout.LabelField(
+            "Total packed boxes required",
+            totalBoxes.ToString(),
+            EditorStyles.miniLabel);
+    }
+
+    private void AddOrder()
+    {
+        int newIndex = levelOrdersProperty.arraySize;
+        levelOrdersProperty.InsertArrayElementAtIndex(newIndex);
+        SerializedProperty element = levelOrdersProperty.GetArrayElementAtIndex(newIndex);
+
+        // Default to the first color that is not used yet so repeated clicks
+        // never create an invalid duplicate row.
+        element.FindPropertyRelative("color").enumValueIndex = (int)FindFirstUnusedColor();
+        element.FindPropertyRelative("requiredCount").intValue = 1;
+    }
+
+    private Soda.SodaColor FindFirstUnusedColor()
+    {
+        HashSet<Soda.SodaColor> used = new HashSet<Soda.SodaColor>();
+        for (int index = 0; index < levelOrdersProperty.arraySize; index++)
+        {
+            used.Add((Soda.SodaColor)levelOrdersProperty
+                .GetArrayElementAtIndex(index)
+                .FindPropertyRelative("color")
+                .enumValueIndex);
+        }
+
+        foreach (Soda.SodaColor color in System.Enum.GetValues(typeof(Soda.SodaColor)))
+        {
+            if (!used.Contains(color))
+            {
+                return color;
+            }
+        }
+
+        return Soda.SodaColor.Red;
+    }
+
+    /// <summary>
+    /// Inspector-only approximation of each soda color. This drives the small
+    /// swatch beside a row and never affects gameplay or the runtime VFX tint,
+    /// which come from the SodaVisualLibrary asset instead.
+    /// </summary>
+    private static Color GetSwatchColor(Soda.SodaColor color)
+    {
+        switch (color)
+        {
+            case Soda.SodaColor.Red: return new Color(0.87f, 0.19f, 0.19f);
+            case Soda.SodaColor.Blue: return new Color(0.20f, 0.47f, 0.92f);
+            case Soda.SodaColor.Orange: return new Color(0.95f, 0.58f, 0.13f);
+            case Soda.SodaColor.Yellow: return new Color(0.96f, 0.85f, 0.17f);
+            case Soda.SodaColor.Green: return new Color(0.30f, 0.75f, 0.32f);
+            case Soda.SodaColor.Purple: return new Color(0.60f, 0.32f, 0.83f);
+            default: return Color.gray;
         }
     }
 

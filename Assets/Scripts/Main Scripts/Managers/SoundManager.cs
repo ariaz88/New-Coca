@@ -1,185 +1,164 @@
+using System;
 using UnityEngine;
-using UnityEngine.UI;
-
+using UnityEngine.SceneManagement;
 
 public class SoundManager : MonoBehaviour
 {
+    private const string SoundEnabledKey = "SoundEnabled";
+    private const string MusicEnabledKey = "MusicEnabled";
+    private const string SodaMoveClipResourcePath = "Audio/SFX/soda_move_beep";
+    private const string BoxCompleteClipResourcePath = "Audio/SFX/box_complete_pop";
+    private const string BoxSpawnClipResourcePath = "Audio/SFX/box_spawn_pop";
+
     public static SoundManager instance;
 
-    private bool isMuted = false; // For sound effects
-    private bool isMusicMuted = false; // For music
+    private bool isMuted;
+    private bool isMusicMuted;
 
     [Header("Audio Sources")]
-    public AudioSource soundEffectSource; // Reusable AudioSource for SFX
-    public AudioSource musicSource;       // AudioSource for music
+    public AudioSource soundEffectSource;
+    public AudioSource musicSource;
 
-    //[Header("UI References")]
-    //public Image soundIcon;
-    //public Sprite soundUnmuteSprite;
-    //public Sprite soundMuteSprite;
+    [Header("SFX Clips")]
+    [SerializeField] private AudioClip sodaMoveClip;
+    [SerializeField, Range(0f, 1f)] private float sodaMoveVolume = 0.55f;
+    [SerializeField] private AudioClip boxCompleteClip;
+    [SerializeField, Range(0f, 1f)] private float boxCompleteVolume = 0.75f;
+    [SerializeField] private AudioClip boxSpawnClip;
+    [SerializeField, Range(0f, 1f)] private float boxSpawnVolume = 0.5f;
 
-    //public Image musicIcon;
-    //public Sprite musicUnmuteSprite;
-    //public Sprite musicMuteSprite;
+    public bool IsSoundEnabled => !isMuted;
+    public bool IsMusicEnabled => !isMusicMuted;
 
     private void Awake()
     {
-        if (instance == null)
+        if (instance != null && instance != this)
         {
-            instance = this;
+            Destroy(gameObject);
+            return;
         }
-    }
-    private void Start()
-    {
-        isMuted = false; 
-        isMusicMuted = false;
+
+        instance = this;
+        transform.SetParent(null);
+        DontDestroyOnLoad(gameObject);
+        LoadSavedSettings();
+        ApplyMuteState();
     }
 
-    // Play sound effects using the reusable AudioSource
     public void PlaySound(AudioClip audioClip, float volume = 1f)
     {
-        if (!isMuted && soundEffectSource != null)
+        if (!isMuted && soundEffectSource != null && audioClip != null)
         {
             soundEffectSource.PlayOneShot(audioClip, volume);
         }
     }
 
-    // Play music
-    public void PlayMusic(bool loop = true)
+    public void PlaySodaMove()
+    {
+        EnsureSodaMoveClip();
+        PlaySound(sodaMoveClip, sodaMoveVolume);
+    }
+
+    public void PlayBoxComplete()
+    {
+        if (boxCompleteClip == null)
+        {
+            boxCompleteClip = Resources.Load<AudioClip>(BoxCompleteClipResourcePath);
+        }
+
+        PlaySound(boxCompleteClip, boxCompleteVolume);
+    }
+
+    public void PlayBoxSpawn()
+    {
+        if (boxSpawnClip == null)
+        {
+            boxSpawnClip = Resources.Load<AudioClip>(BoxSpawnClipResourcePath);
+        }
+
+        PlaySound(boxSpawnClip, boxSpawnVolume);
+    }
+
+    /// <summary>Plays main music only in real gameplay levels (Level1 and later).</summary>
+    public void PlayLevelMusic()
+    {
+        string sceneName = SceneManager.GetActiveScene().name;
+        const string levelPrefix = "Level";
+        if (!sceneName.StartsWith(levelPrefix, StringComparison.OrdinalIgnoreCase) ||
+            !int.TryParse(sceneName.Substring(levelPrefix.Length), out int levelNumber) ||
+            levelNumber < 1)
+        {
+            return;
+        }
+
+        PlayMusic();
+    }
+
+    public void StopMusic()
     {
         if (musicSource != null)
         {
-            musicSource.loop = loop;
-            if (!isMusicMuted)
-            {
-                musicSource.Play();
-            }
+            musicSource.Stop();
         }
     }
 
-    // Mute/unmute sound effects
+    public void PlayMusic(bool loop = true)
+    {
+        if (musicSource == null)
+        {
+            return;
+        }
+
+        musicSource.loop = loop;
+        if (!isMusicMuted && !musicSource.isPlaying)
+        {
+            musicSource.Play();
+        }
+    }
+
     public void ToggleSoundMute(bool toggleSound)
     {
         isMuted = !toggleSound;
-        //isMuted = !isMuted;
-
-        // Update the AudioSource mute property
-        if (soundEffectSource != null)
-        {
-            soundEffectSource.mute = isMuted;
-            Debug.Log($"Sound is now {(isMuted ? "Disabled " : "Enabled")}");
-
-        }
-
-        //// Update the icon
-        //if (soundIcon != null)
-        //{
-        //    soundIcon.sprite = isMuted ? soundMuteSprite : soundUnmuteSprite;
-        //}
+        PlayerPrefs.SetInt(SoundEnabledKey, toggleSound ? 1 : 0);
+        PlayerPrefs.Save();
+        ApplyMuteState();
+        Debug.Log($"Sound is now {(isMuted ? "Disabled " : "Enabled")}");
     }
 
-    // Mute/unmute music
     public void ToggleMusicMute(bool toggleMusic)
     {
         isMusicMuted = !toggleMusic;
-        //isMusicMuted = !isMusicMuted;
+        PlayerPrefs.SetInt(MusicEnabledKey, toggleMusic ? 1 : 0);
+        PlayerPrefs.Save();
+        ApplyMuteState();
+        Debug.Log($"Music is now {(isMusicMuted ? "Disabled " : "Enabled")}");
+        PlayLevelMusic();
+    }
 
-        // Update the AudioSource mute property
+    private void LoadSavedSettings()
+    {
+        isMuted = PlayerPrefs.GetInt(SoundEnabledKey, 1) == 0;
+        isMusicMuted = PlayerPrefs.GetInt(MusicEnabledKey, 1) == 0;
+    }
+
+    private void ApplyMuteState()
+    {
+        if (soundEffectSource != null)
+        {
+            soundEffectSource.mute = isMuted;
+        }
+
         if (musicSource != null)
         {
             musicSource.mute = isMusicMuted;
-            Debug.Log($"Music is now {(isMusicMuted ? "Disabled " : "Enabled")}");
-            PlayMusic();
         }
+    }
 
-        // Update the icon
-        //    if (musicIcon != null)
-        //    {
-        //        musicIcon.sprite = isMusicMuted ? musicMuteSprite : musicUnmuteSprite;
-        //    }
-        //}
+    private void EnsureSodaMoveClip()
+    {
+        if (sodaMoveClip == null)
+        {
+            sodaMoveClip = Resources.Load<AudioClip>(SodaMoveClipResourcePath);
+        }
     }
 }
-
-
-//public class SoundManager : MonoBehaviour
-//{
-//    public static SoundManager instance;
-
-//    private bool isMuted = false; // For sound effects
-//    private bool isMusicMuted = false; // For music
-//    private AudioSource musicSource;
-
-//    [Header("UI References")]
-//    public Image soundIcon; // Icon for sound effects
-//    public Sprite soundUnmuteSprite; // Unmute icon
-//    public Sprite soundMuteSprite; // Mute icon
-
-//    public Image musicIcon; // Icon for music
-//    public Sprite musicUnmuteSprite; // Unmute icon
-//    public Sprite musicMuteSprite; // Mute icon
-
-//    private void Awake()
-//    {
-//        if (instance == null)
-//        {
-//            instance = this;
-//        }
-//    }
-
-//    // Play sound effects
-//    public void PlaySound(AudioClip audioClip, Vector3 position, float volume = 1f)
-//    {
-//        if (!isMuted) // Play only if sound is not muted
-//        {
-//            AudioSource.PlayClipAtPoint(audioClip, position, volume);
-//        }
-//    }
-
-//    // Play game music
-//    public void PlayMusic(AudioSource musicSource, bool loop = true)
-//    {
-//        this.musicSource = musicSource;
-//        musicSource.loop = loop;
-//        if (!isMusicMuted)
-//        {
-//            musicSource.Play();
-//        }
-//    }
-
-//    // Mute or unmute all sounds
-//    public void ToggleSoundMute()
-//    {
-//        isMuted = !isMuted;
-
-//        // Update the icon
-//        if (soundIcon != null)
-//        {
-//            soundIcon.sprite = isMuted ? soundMuteSprite : soundUnmuteSprite;
-//        }
-//    }
-
-//    // Mute or unmute music
-//    public void ToggleMusicMute()
-//    {
-//        isMusicMuted = !isMusicMuted;
-
-//        // Update the icon
-//        if (musicIcon != null)
-//        {
-//            musicIcon.sprite = isMusicMuted ? musicMuteSprite : musicUnmuteSprite;
-//        }
-
-//        if (musicSource != null)
-//        {
-//            if (isMusicMuted)
-//            {
-//                musicSource.Pause();
-//            }
-//            else
-//            {
-//                musicSource.Play();
-//            }
-//        }
-//    }
-//}

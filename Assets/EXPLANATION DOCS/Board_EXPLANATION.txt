@@ -199,6 +199,11 @@ not call GetAdjacentPositions because that public method deliberately filters ou
 blocked cells. The raw offsets allow Board to find a blocked coordinate while
 still enforcing bounds and orthogonal-only rules.
 
+Update: BreakBlockedCellRoutine now also shakes the box with a damped jitter and
+fires a dust-and-confetti burst once the shrink completes, and blocked boxes get
+a generated packing-tape cross taped over their lid. The unlock state transition
+below is unchanged. See BLOCKED_CELL_BOX_AND_BREAK_VFX_EXPLANATION.txt.
+
 BreakBlockedCellRoutine scales the visual toward zero. A scale break works with
 the generated opaque material and with custom prefabs, so no transparent shader
 or extra material instance is required. `blockedCellBreakDuration` is serialized,
@@ -222,3 +227,70 @@ and removedCellLookup live.
 ResolvePlacement waits while breakingBlockedCells is non-empty. This keeps
 CanInteract false until the animation and state transition finish, and guarantees
 PlacementResolutionCompleted describes the final unlocked layout.
+
+Per-level Orders data (Orders feature, Phase 1)
+-----------------------------------------------
+Board now also stores this scene's Orders list, the per-color goal that will
+replace the flat GameDataManager.boxNum >= 10 win condition.
+
+levelOrders
+    Serialized List<LevelOrderData> under a "Per-Level Orders" header, saved in
+    the scene beside removedCells and initialBoxes. It is authored through the
+    new Orders section of BoardEditor rather than as a raw array.
+
+LevelOrders
+    Public IReadOnlyList accessor. Read-only on purpose: the runtime manager
+    copies these values into its own counters at level start, so retrying a
+    level always restarts from the authored numbers instead of whatever the
+    previous attempt left behind.
+
+CountInitialSodasOfColor(color)
+    Counts the sodas of one color that this level places on the board before the
+    player acts. Only the inspector calls it, to warn a designer when an order
+    asks for more of a color than the starting layout can supply.
+
+No existing Board behavior changed in this phase. Placement, resolution,
+packing, rewards, and the current CheckWinCondition call were left untouched, so
+the addition is safe to import on its own. Full detail lives in
+LEVEL_ORDERS_DATA_AND_EDITOR_EXPLANATION.txt.
+
+Reporting packed boxes to the Orders system (Orders feature, Phase 2)
+---------------------------------------------------------------------
+RetireBox now calls ReportPackedBoxToOrders on the packed branch only, before
+the Box is destroyed.
+
+The packed branch is the correct place because it is the same branch that
+already plays the completion sound, unlocks adjacent blocked cells, and awards
+coins. Removal paths such as the Hammer, and empty transfer sources, retire with
+packed=false, so they cannot count toward an order.
+
+The color is read from the still-alive Box through GetDistinctColors. A packed
+box is single-colored by definition, so the first distinct color is the box's
+color; if that is somehow not true the report is skipped rather than guessing.
+The call is made before AwardPackedBox and MovePackedCopyToTruck so the reported
+source position is the cell the box actually occupied.
+
+OrderManager.instance is null-checked, so a scene without the Orders system
+behaves exactly as it did before. OrderManager itself ignores any color that no
+order asks for, which is why packing an unordered box produces no visual at all.
+
+Board's own win-condition call, CheckWinCondition inside AwardPackedBox, is
+unchanged in this phase. See ORDERS_RUNTIME_AND_PANEL_EXPLANATION.txt.
+
+Delayed coin burst for order-claimed boxes (Orders feature, Phase 6)
+--------------------------------------------------------------------
+ReportPackedBoxToOrders now returns whether an order actually claimed the box,
+and that result is passed into AwardPackedBox.
+
+When an order claimed it, the CoinManager burst is deferred by
+packedCoinVisualDelay (serialized, 0.95 s, set to 0 to restore the old timing).
+Two reward animations starting on the same frame competed for attention, and the
+order effect is the one that explains why the level is progressing.
+
+Only the burst animation moves. GameDataManager still receives the coins
+immediately, so nothing about scoring or the win check changes. A packed box that
+no order wanted keeps the original immediate burst.
+
+The wait is unscaled, matching the order effect, which is also unscaled so it can
+finish even after an end panel freezes gameplay. See
+ORDERS_VISUAL_PARITY_PASS_EXPLANATION.txt.

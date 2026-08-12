@@ -1,0 +1,170 @@
+ORDERS - TRAVELLING IMPACT EFFECT (PHASE 3)
+===========================================
+
+Purpose of this document
+------------------------
+Phase 2 made an order tick down the instant its box was packed. This phase adds
+the visual journey between those two points, matching the reference footage:
+a "+1" label, a color-tinted comet flying up to the order slot, sparkles shed
+along the way, and the arrival that triggers the slot's halo and hop.
+
+Which stages this owns
+----------------------
+The reference sequence has seven stages. Stages 1 and 2, closing the box and
+lifting it off the board, already exist in this project and were explicitly left
+alone. This phase implements 3 through 7:
+
+  3  "+1" label rises from where the box was and fades out       OrderVfxDirector
+  4  Tinted comet flies to the slot along a curved path          OrderVfxDirector
+  4b Sparkles shed behind the comet                              OrderVfxDirector
+  5  Arrival: halo flash and the number changes                  OrderSlotUI
+  6  The slot icon hops and settles                              OrderSlotUI
+  7  Remaining sparkles fall and fade, objects pooled            OrderVfxDirector
+
+Stages 5 and 6 were already written in phase 2. The director's responsibility
+ends the moment the comet lands: it calls the callback, and OrderPanelUI does
+the rest. That split is why the number can never change early or late relative
+to the flash.
+
+Why the effect runs in UI space
+-------------------------------
+The effect starts on a 3D board and has to finish exactly on a UI element.
+
+A world-space implementation would have to convert the slot's screen position
+back into the world every frame, and would still need sorting rules to draw over
+the canvas. Converting once, at launch, into the canvas's own coordinate space
+makes the landing pixel-exact and removes the sorting question entirely.
+
+Two different conversions are needed and they are deliberately separate methods:
+
+WorldToEffectSpace
+    For the packed box. Uses the board camera (or Camera.main).
+
+UiWorldToEffectSpace
+    For the slot. Uses the canvas camera, which is null for a Screen Space
+    Overlay canvas and the canvas's own camera otherwise. Using the board camera
+    here would offset every landing.
+
+Why pooled Images and not a ParticleSystem
+------------------------------------------
+Unity's particle systems do not render inside a Canvas without an additional
+package. Pooled UI Images produce the same look here, sort correctly with the
+rest of the UI for free, and keep the whole effect inside one hierarchy that can
+be inspected in the scene view like any other UI.
+
+OrderVfxTextures.cs (new)
+-------------------------
+Generates the two sprites the effect needs, once per session, cached statically.
+
+Sparkle
+    A soft round dot with a squared falloff: bright core, soft halo. A linear
+    falloff reads as a flat circle rather than a spark.
+
+Streak
+    A tapered comet, bright and thick at its right edge and thinning toward the
+    left. Both the thickness and the opacity fall off toward the tail, which is
+    what makes the shape read as motion instead of as a bar. The director rotates
+    it so the bright end leads.
+
+Generating these in code rather than shipping PNGs means the feature looks
+correct before any artist work exists. Both are overridable by serialized sprite
+fields on the director, so replacing them later needs no script change. The
+textures are marked HideAndDontSave so they never leak into a scene or a build
+as stray assets.
+
+OrderVfxDirector.cs (new)
+-------------------------
+Implements IOrderImpactPresenter, the seam left open in phase 2.
+
+PlayImpact
+    Guarantees the callback runs exactly once, including the failure paths where
+    the slot, the effect root, or the component itself is unavailable. Skipping
+    it would leave the order permanently "in flight" and the level could never
+    be completed. This is the single most important safety rule in the file.
+
+PlaySequence
+    Resolves the tint, converts the origin, fires the label, waits streakDelay,
+    re-checks the target, flies the comet, then invokes the callback. The target
+    is resolved after the delay rather than before, because the panel may have
+    rebuilt or a layout pass may have moved the slot in the meantime.
+
+PlayPlusOneLabel
+    White bold "+1" with a thin outline in the drink's color. White text with a
+    colored edge stays legible over a busy board, where fully colored text does
+    not. It holds full opacity for the first half of its life and fades over the
+    second; fading linearly from the start reads as a flicker.
+
+PlayStreak
+    A quadratic Bezier whose control point is pushed sideways from the midpoint
+    by pathCurvature, so the path bows the way the reference does instead of
+    running dead straight. Motion is eased in and out, so the comet accelerates
+    away from the board and decelerates into the slot.
+
+    Rotation follows the actual travel vector between frames rather than the
+    straight origin-to-target line, so the comet stays tangent to the curve.
+
+    Sparkles are released against progress along the path, not once per frame,
+    so trail density is identical at 30 and 120 fps.
+
+    Opacity fades over the final quarter of the flight so the comet dissolves
+    into the impact glow rather than disappearing on a frame boundary.
+
+PlaySparkle
+    Each sparkle drifts by a random offset biased downward, shrinks to about a
+    third of its size, and fades. Shrinking as they fade prevents the trail from
+    looking like a row of dots that all switch off at once.
+
+Timing
+    Every wait and every interpolation uses unscaled time, matching the DOTween
+    SetUpdate(true) calls in OrderSlotUI. If the last packed box completes the
+    level and something freezes timeScale, the effect must still finish, or the
+    callback would never fire and the win would never register.
+
+Effect layer
+    EnsureEffectRoot creates a full-screen child of the canvas as its last
+    sibling, so streaks draw over the Orders card. It carries a CanvasGroup with
+    blocksRaycasts false, so the layer can never swallow a drag on the board.
+
+Pooling
+    Two stacks, one for Images and one for TextMeshProUGUI labels. Objects are
+    deactivated and reset on return, so several boxes packed in quick succession
+    reuse the same handful of objects instead of allocating. Rented objects are
+    moved to the end of the sibling list so the newest effect draws on top.
+
+Color source
+    The tint comes from SodaVisualLibrary when one is assigned. When it is not,
+    SodaVisualLibrary.DefaultColorFor supplies a built-in approximation, so the
+    streak is still color-coded during early setup instead of every drink
+    sending the same white trail.
+
+Everything is serialized and tunable
+------------------------------------
+Delay, flight duration, curvature, comet size and opacity, sparkle count, size
+range, lifetime, scatter, fall distance, label rise, and font size are all
+inspector fields with tooltips. Retuning the feel needs no code edit.
+
+Setup
+-----
+Tools > Coca Sorting > Create Orders Panel now also adds OrderVfxDirector to the
+panel object. OrderPanelUI finds it through its own hierarchy search, so there
+is nothing to wire by hand. Scenes whose panel was generated by the phase 2
+version of the tool need the component added manually, or the panel deleted and
+regenerated.
+
+What is still not done
+----------------------
+- The win condition is still GameDataManager.boxNum >= 10. AllOrdersFulfilled is
+  raised but has no subscriber.
+- Order slots still show no drink art, because SodaVisualLibrary has no baked
+  icons yet.
+
+Validation performed
+--------------------
+- Assembly-CSharp and Assembly-CSharp-Editor both compile.
+- Every early-return path in PlayImpact and PlaySequence invokes the callback.
+- All timing uses unscaled time, so a frozen timeScale cannot strand an effect.
+- Sparkle spawning is driven by path progress, making density frame-rate
+  independent.
+- Generated textures are HideAndDontSave and created at most once per session.
+- Requires the Unity Editor to confirm the flight path, tint, and landing point
+  on screen.

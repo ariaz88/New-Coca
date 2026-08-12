@@ -1,0 +1,168 @@
+LEVEL ORDERS - DATA MODEL AND BOARD INSPECTOR DESIGNER (PHASE 1)
+================================================================
+
+Purpose of this document
+------------------------
+This document covers the first phase of the Orders feature: the serialized data
+that describes what a level asks the player for, and the Board inspector UI that
+a designer uses to author it. No runtime panel, no VFX, and no win-condition
+change exist yet. Those arrive in later phases and are documented separately.
+
+Why the feature exists
+----------------------
+The reference gameplay this project is matching shows an "Orders" card at the top
+of the screen. Each slot in the card is one soda type plus how many packed boxes
+of that type the level still needs. Packing a box decreases the matching slot,
+and the level is won when every slot is fulfilled.
+
+This project had no such concept. Its level goal was a flat counter
+(GameDataManager.boxNum >= 10) that ignored soda color entirely. Orders replace
+that with a per-level, per-color goal that a designer controls.
+
+Where the data lives, and why
+-----------------------------
+Orders are stored on the scene's Board component, next to the existing
+per-level layout data (width, height, removedCells, initialBoxes).
+
+The alternative was a ScriptableObject asset per level. Board was chosen because
+every other piece of level design already lives there, so a designer opens one
+scene, selects one object, and sees the whole level. Splitting orders into a
+separate asset would have introduced a second place to look and a second thing to
+keep in sync with the scene.
+
+LevelOrderData.cs (new)
+-----------------------
+A plain serializable class with two fields:
+
+color
+    Which soda the order asks for. Reuses the project's existing
+    Soda.SodaColor enum (Red, Blue, Orange, Yellow, Green, Purple) so no second
+    color vocabulary is introduced anywhere in the codebase.
+
+requiredCount
+    How many packed boxes of that color the level requires. Clamped to a minimum
+    of 1, because a zero-count order would render as an already-satisfied slot
+    and confuse the player.
+
+It is a class rather than a struct so Unity's SerializedProperty array editing
+(insert, delete, MoveArrayElement) behaves exactly the way it already does for
+InitialBoardBoxData. Struct arrays are editable too, but the existing initial-box
+designer is written against a class and matching it keeps the editor code
+uniform.
+
+SodaVisualLibrary.cs (new)
+--------------------------
+A ScriptableObject lookup that maps a Soda.SodaColor to two presentation values:
+
+iconSprite
+    The flat sprite drawn inside an Orders slot. It is produced by baking the
+    real in-game soda model, so the panel shows the project's own soda art
+    instead of unrelated placeholder icons. The baking tool is a later phase.
+
+effectColor
+    The tint used by the flying streak, its sparkle particles, and the "+1"
+    label. This is what makes a green soda send a green trail and a blue soda a
+    blue one, which was an explicit requirement.
+
+Both lookups fail soft. A missing icon returns null and the slot simply draws no
+icon; a missing color returns the asset's fallbackColor. An incomplete asset
+therefore degrades quietly instead of throwing during a level.
+
+The internal dictionary cache is rebuilt lazily and cleared in OnEnable and
+OnValidate, so editing rows in the inspector takes effect immediately without a
+domain reload. When a color appears twice, the first row wins, so list order can
+never silently change behavior.
+
+Board.cs changes
+----------------
+levelOrders
+    New serialized List<LevelOrderData> under a "Per-Level Orders" header. It
+    sits beside initialBoxes and is saved in the scene like the rest of the
+    level layout.
+
+LevelOrders
+    Public IReadOnlyList accessor. It is read-only on purpose: the runtime
+    OrderManager will copy these values into its own mutable counters at level
+    start, so retrying a level always restarts from the authored numbers rather
+    than from whatever the previous attempt left behind.
+
+CountInitialSodasOfColor(color)
+    Counts how many sodas of one color the level places on the board before the
+    player acts. Only the inspector uses it, to warn about orders that the
+    starting layout cannot possibly fill. It reads initialBoxes directly and
+    performs no allocation beyond the loop, so calling it once per inspector
+    repaint is cheap.
+
+No existing Board behavior was modified. Placement, resolution, packing,
+rewards, and the current win-condition call were all left untouched in this
+phase.
+
+BoardEditor.cs changes
+----------------------
+A new "Orders (win condition)" section is drawn after the Initial Boxes
+designer and before the fallback property list. levelOrders is added to the
+DrawPropertiesExcluding list so it is not also drawn as a raw array below.
+
+Each row shows, left to right:
+
+    [color swatch] [color dropdown] x [count field] [up] [down] [remove]
+
+The swatch is an inspector-only approximation drawn with EditorGUI.DrawRect. It
+exists purely so a designer can scan a list of orders at a glance. It is
+deliberately not read from SodaVisualLibrary, because the inspector must stay
+useful before that asset has been authored, and because a level designer should
+not need a runtime asset assigned to lay out a level.
+
+Row order matters and is editable. It is the left-to-right slot order of the
+runtime Orders panel, so the up/down buttons are a presentation control, not
+just list housekeeping.
+
+"Add Order" defaults the new row to the first color not already in the list.
+Clicking it repeatedly therefore produces Red, Blue, Orange, ... instead of six
+duplicate Red rows that would immediately trip the duplicate validator.
+
+Validation shown in the inspector
+---------------------------------
+Empty list (error)
+    A level with no orders can never be won once the win condition is switched
+    over. This is reported as an error rather than a warning because it is
+    always a mistake.
+
+Duplicate color (error)
+    The runtime panel renders one slot per color, so two rows of the same color
+    cannot both be represented. The designer is told to merge them.
+
+Unfillable order (warning)
+    For each order, the required soda count is required * box capacity. Box
+    capacity is read from the same prefab the initial-box designer resolves
+    (the override, or the scene SpawnContoller's boxPrefab). If the level's
+    starting sodas of that color are fewer than that, the row is listed.
+
+    This is a warning, not an error, and says so in its own text: the spawner
+    can legitimately supply the missing sodas during play. It is meant to catch
+    the common case of a designer asking for a color the level barely contains.
+
+Total packed boxes required
+    A small read-out of the sum of all counts. It gives a quick sense of level
+    length and is the number that used to be hard-coded as 10.
+
+What is deliberately not done yet
+---------------------------------
+- Nothing reads levelOrders at runtime.
+- The win condition is still GameDataManager.boxNum >= 10.
+- No Orders panel is rendered and no VFX are played.
+- SodaVisualLibrary has no baked icons and no asset instance yet.
+
+This phase is therefore safe to import on its own: it adds fields and inspector
+UI without altering any existing gameplay path.
+
+Validation performed
+--------------------
+- Orders data is scene-serialized on Board, matching how removedCells and
+  initialBoxes already persist per level.
+- levelOrders is excluded from the fallback property drawer, so it appears
+  exactly once in the inspector.
+- Add/remove/reorder operate through SerializedProperty, so undo and scene
+  dirtying work the same way they already do for initial boxes.
+- Requires a Unity Editor import and a look at a level scene's Board inspector
+  to visually confirm the new section.

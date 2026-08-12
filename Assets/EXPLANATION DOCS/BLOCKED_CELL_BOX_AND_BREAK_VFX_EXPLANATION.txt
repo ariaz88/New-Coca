@@ -1,0 +1,181 @@
+BLOCKED CELL - SEALED BOX ART AND BREAK EFFECT
+==============================================
+
+Purpose of this document
+------------------------
+Blocked Board cells were drawn as a plain grey cube and disappeared by silently
+shrinking. The reference shows a sealed cardboard box with packing tape crossed
+over its lid, which bursts into dust and confetti the moment an adjacent packed
+match opens it. This document covers both changes.
+
+The mechanic itself was already written and is unchanged: removedCells still
+defines which cells begin blocked, BeginUnlockAdjacentBlockedCells still runs on
+the packed branch of RetireBox only, and UnlockBlockedCell still performs the
+same authoritative state transition. Only the presentation is new.
+
+Part 1 - the sealed box
+-----------------------
+Board already had removedCellVisualPrefab, an optional prefab used instead of
+the fallback cube. It was simply never assigned, so every level fell through to
+the cube.
+
+Two things were added rather than one, because assigning a prefab alone would
+not have produced the reference look:
+
+The prefab is now surfaced in the inspector
+    BoardEditor draws a "Blocked Cell Art" section with the field, a warning
+    when it is empty, and a one-click button that assigns the project's closed
+    box. FindClosedBoxPrefab looks for FullBox, then ClosedBox, then Box01, so a
+    renamed asset is still found.
+
+    The assignment is a button, not something that happens automatically when
+    the Board is selected. Silently dirtying a scene because someone clicked an
+    object would be surprising and would show up as an unexplained diff.
+
+The tape cross is generated at runtime
+    BlockedCellVisuals.AttachTapeCross lays two crossed strips over the top face
+    of whatever box prefab the level uses.
+
+    Generated rather than authored, because the cross has to fit the box. Its
+    strips are sized from the box's own renderer bounds and its color is sampled
+    from the box's material, so swapping in a different or rescaled box prefab
+    needs no retuning and no second asset.
+
+    Placement works in world space and is then re-parented. A box prefab may
+    have arbitrary local scale or a pivot that is not at its centre; working
+    from bounds sidesteps both. SetWorldScale converts the desired world size
+    back through the parent's lossy scale for the same reason.
+
+    Lighten moves the sampled color toward white while removing some saturation,
+    which is how masking tape reads against cardboard. A plain Lerp to white was
+    tried first and washed the hue out, leaving a grey cross.
+
+    The strips use a Lit shader so they shade with the board like the box does.
+    An unlit strip sat on the lid looking like a flat sticker.
+
+    The cross is attached after the blocked-cell material and property block are
+    applied, or the tint pass would overwrite its lighter color. It also removes
+    any previous cross first, so regenerating a level cannot stack two.
+
+    Each strip's primitive collider is destroyed immediately. A decorative
+    blocker must never intercept a drop raycast.
+
+Part 2 - the break effect
+-------------------------
+BreakBlockedCellRoutine previously only scaled the visual to zero. It now also
+shakes it, and fires a dust and confetti burst.
+
+Shake
+    A sine and cosine jitter on X and Z, damped by the remaining progress. The
+    damping matters: at constant amplitude the final frames look like the box is
+    vibrating in place rather than coming apart.
+
+Burst timing
+    Spawned after the shrink completes, so the paper and dust appear to burst
+    out of the box rather than out of a box that is still standing there.
+
+    The spawn position is captured before the animation starts. The visual can
+    be destroyed mid-animation by an unrelated path, and the burst still has to
+    appear at the right cell. When there is no visual at all, the cell's own
+    world position is used.
+
+Dust
+    A hemisphere emitter rotated flat, so dust spreads sideways along the board
+    instead of shooting up like a fountain. Particles grow over their lifetime
+    and use a hold-then-fall alpha curve, so the puff billows and thins rather
+    than fading from the first frame. Slight negative gravity keeps it hanging
+    for a moment.
+
+Confetti
+    A cone emitter with real gravity, and a stretched quad mesh instead of
+    billboards. Paper needs a shape; billboarded dots read as sparks. Full
+    3-axis start rotation plus 3-axis rotation over lifetime makes the pieces
+    tumble, which is what shows both faces and sells them as paper.
+
+    Colors come from a palette. Two hard-stepped gradients are used as a random
+    range, with GradientMode.Fixed, so each piece takes one palette entry
+    outright. A normal gradient would have produced interpolated in-between
+    colors and a muddy spray.
+
+Cleanup
+    Both systems use ParticleSystemStopAction.Destroy with loop off, so each
+    burst removes its own GameObject when it finishes. No pooling and no manual
+    lifetime tracking is needed for an effect that fires a few times per level.
+
+Shader selection
+    GetParticleShader tries the URP particle shader, then the built-in one, then
+    Sprites/Default. The last is always present and renders vertex-colored
+    transparent quads correctly under URP too, so the effect cannot silently
+    render as magenta if a pipeline shader is stripped.
+
+Correction pass after the first look on screen
+----------------------------------------------
+Three problems showed up immediately in the scene view, all now fixed.
+
+The cross was far too large
+    Length was measured as 0.98 of the lid's diagonal, which is corner to
+    corner; adding the strip's own width then pushed the ends past the corners.
+    Width was 0.22 of the short edge, which is a very wide band.
+
+    Length is now 0.75 of the diagonal, which keeps the ends inside the box, and
+    width is 0.12. Both are serialized, so they can be tuned per project.
+
+The cross rendered white instead of cream
+    The tape color was sampled from the box's material. The blocked box's brown
+    came from a MaterialPropertyBlock, not from the material, so the sampled
+    value was the material's untinted white and the tape was lightened from
+    white to white.
+
+    The tape now takes an explicit serialized color, defaulting to a warm cream.
+    Deriving from the box material is still available behind
+    Blocked Cell Tape From Box Color, but it is off by default precisely because
+    it silently depends on how the box happens to be colored.
+
+Blocked boxes were a different brown from every other box
+    GenerateRemovedCellVisual applied removedCellVisualColor to whatever it
+    created, including a real box prefab that already carries the game's
+    cardboard material. The result was a dark brown blocker sitting on a board
+    full of light tan boxes.
+
+    The tint is now applied only when it is actually needed: to the fallback
+    cube, which is a bare primitive with no art of its own, or when an explicit
+    removedCellVisualMaterial override has been assigned. A plain box prefab
+    keeps its own materials and therefore matches the rest of the board exactly.
+
+New Board inspector fields
+--------------------------
+Blocked Cell Tape Cross
+    Draw Blocked Cell Tape          on/off
+    Blocked Cell Tape Color         warm cream by default
+    Blocked Cell Tape From Box Color  derive from the box instead, off by default
+    Blocked Cell Tape Lighten       used only when deriving, default 0.22
+    Blocked Cell Tape Width         fraction of the short top edge, default 0.12
+    Blocked Cell Tape Length        fraction of the lid diagonal, default 0.75
+
+Blocked Cell Break Effect
+    Play Blocked Cell Break Effect  on/off
+    Blocked Cell Dust Count         default 18, 0 disables dust
+    Blocked Cell Confetti Count     default 26, 0 disables confetti
+    Blocked Cell Dust Color
+    Blocked Cell Confetti Colors    five-entry palette by default
+    Blocked Cell Shake Amount       fraction of a cell, default 0.06
+    Blocked Cell Shake Speed        jitters per second, default 38
+
+Setup
+-----
+1. Select the Board in a level that has blocked cells.
+2. In "Blocked Cell Art", press the button to assign the closed box prefab.
+3. Save the scene, then play and pack a box next to a blocked cell.
+
+Validation performed
+--------------------
+- Assembly-CSharp and Assembly-CSharp-Editor both compile.
+- The unlock state transition in UnlockBlockedCell is untouched, so cells still
+  become real playable Nodes at exactly the same point in the sequence.
+- ResolvePlacement still waits on breakingBlockedCells, so input stays locked
+  until the animation and the state change are both finished.
+- Colliders are removed from every generated strip.
+- Burst systems self-destroy; the confetti mesh is created once and marked
+  HideAndDontSave.
+- Requires the Unity Editor to judge the tape proportions and the burst on
+  screen.

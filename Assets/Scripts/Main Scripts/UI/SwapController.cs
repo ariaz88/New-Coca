@@ -198,7 +198,8 @@ public class SwapController : MonoBehaviour
 
     public void OnBoxClicked(Box clickedBox)
     {
-        if (currentState != SwapState.OnActive || !clickedBox.IsOnBoard || HammerManager.instance.IsHammerButtonPressed)
+        if (currentState != SwapState.OnActive || !clickedBox.IsOnBoard ||
+            (HammerManager.instance != null && HammerManager.instance.IsHammerButtonPressed))
         {
             return;
         }
@@ -207,46 +208,44 @@ public class SwapController : MonoBehaviour
             return;
 
         }
-        Debug.Log("Swaping Boxes");
 
         if (firstSelectedBox == null)
         {
             firstSelectedBox = clickedBox;
             HighlightBox(firstSelectedBox, true);
+            return;
         }
-        else if (secondSelectedBox == null && Board.instance.AreAdjacent(firstSelectedBox, clickedBox))
+
+        // Clicking the same box again clears the selection instead of dead-ending.
+        if (clickedBox == firstSelectedBox)
         {
-            secondSelectedBox = clickedBox;
-            if (secondSelectedBox != firstSelectedBox)
-            {
-            HighlightBox(secondSelectedBox, true);
-            Board.instance.DOSWAP(firstSelectedBox, secondSelectedBox);
-            remainingSwapUses--;
-             buttonActivated = true;
-            DeactivateSwapFeature();
-
-            }
-
-            SaveSwapData();
-
-            if (remainingSwapUses <= 0)
-            {
-                SaveSwapData();
-                ResetSwapTimer();
-            }
-
-            swapText.text = remainingSwapUses.ToString();
-        }
-     
-        else
-        {
-            // Reset selection if invalid or not adjacent
             HighlightBox(firstSelectedBox, false);
-            HighlightBox(secondSelectedBox, false);
-            firstSelectedBox = clickedBox;
-            secondSelectedBox = null;
-            HighlightBox(firstSelectedBox, true);
+            DeactivateSwapFeature();
+            return;
         }
+
+        // Any two boxes on the board may trade places. Requiring them to be
+        // neighbours made every non-adjacent pick silently do nothing.
+        secondSelectedBox = clickedBox;
+        Debug.Log($"Swapping '{firstSelectedBox.name}' with '{secondSelectedBox.name}'");
+
+        HighlightBox(firstSelectedBox, false);
+        HighlightBox(secondSelectedBox, false);
+
+        Board.instance.DOSWAP(firstSelectedBox, secondSelectedBox);
+
+        remainingSwapUses--;
+        buttonActivated = true;
+        DeactivateSwapFeature();
+
+        SaveSwapData();
+
+        if (remainingSwapUses <= 0)
+        {
+            ResetSwapTimer();
+        }
+
+        swapText.text = Mathf.Max(0, remainingSwapUses).ToString();
     }
 
     private void ResetSwapTimer()
@@ -273,12 +272,91 @@ public class SwapController : MonoBehaviour
         }
     }
 
+    [Header("Selection Feedback")]
+    [Tooltip("How much the selected box grows while pulsing. 1 = no growth.")]
+    [SerializeField] private float selectionPulseScale = 1.07f;
+    [Tooltip("Seconds for one half of the pulse.")]
+    [SerializeField] private float selectionPulseTime = 0.45f;
+    [Tooltip("Tint strength blended over the box's own colour. 0 = none, 1 = full swap material.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float selectionTintStrength = 0.25f;
+
+    private readonly Dictionary<Box, Vector3> selectionBaseScales = new Dictionary<Box, Vector3>();
+
+    /// <summary>
+    /// Marks a box as selected with a soft pulse and a light tint, rather than
+    /// replacing its material outright, which read as a harsh flat green.
+    /// </summary>
     public void HighlightBox(Box box, bool highlight)
     {
-        if (box != null)
+        if (box == null)
         {
-            box.GetComponentInChildren<MeshRenderer>().material = highlight ? box.highLightMaterialForSwap : box.OriginalMaterial;
+            return;
         }
+
+        Transform t = box.transform;
+
+        if (highlight)
+        {
+            if (!selectionBaseScales.ContainsKey(box))
+            {
+                selectionBaseScales[box] = t.localScale;
+            }
+
+            Vector3 baseScale = selectionBaseScales[box];
+            t.DOKill();
+            t.localScale = baseScale;
+            t.DOScale(baseScale * selectionPulseScale, selectionPulseTime)
+             .SetEase(Ease.InOutSine)
+             .SetLoops(-1, LoopType.Yoyo)
+             .SetLink(box.gameObject);
+
+            ApplyTint(box, selectionTintStrength);
+        }
+        else
+        {
+            t.DOKill();
+
+            if (selectionBaseScales.TryGetValue(box, out Vector3 baseScale))
+            {
+                t.DOScale(baseScale, 0.15f).SetEase(Ease.OutQuad).SetLink(box.gameObject);
+                selectionBaseScales.Remove(box);
+            }
+
+            ApplyTint(box, 0f);
+        }
+    }
+
+    private void ApplyTint(Box box, float strength)
+    {
+        MeshRenderer renderer = box.GetComponentInChildren<MeshRenderer>();
+        if (renderer == null || box.OriginalMaterial == null)
+        {
+            return;
+        }
+
+        // Blend toward the swap colour instead of replacing the material, so the
+        // box keeps its own look and the cue stays subtle.
+        if (strength <= 0f || box.highLightMaterialForSwap == null)
+        {
+            renderer.material = box.OriginalMaterial;
+            return;
+        }
+
+        Material tinted = new Material(box.OriginalMaterial);
+        if (tinted.HasProperty("_BaseColor") && box.highLightMaterialForSwap.HasProperty("_BaseColor"))
+        {
+            tinted.SetColor("_BaseColor",
+                Color.Lerp(box.OriginalMaterial.GetColor("_BaseColor"),
+                           box.highLightMaterialForSwap.GetColor("_BaseColor"), strength));
+        }
+        else if (tinted.HasProperty("_Color") && box.highLightMaterialForSwap.HasProperty("_Color"))
+        {
+            tinted.SetColor("_Color",
+                Color.Lerp(box.OriginalMaterial.color, box.highLightMaterialForSwap.color, strength));
+        }
+
+        renderer.material = tinted;
     }
     public bool IsSwapActive()
     {

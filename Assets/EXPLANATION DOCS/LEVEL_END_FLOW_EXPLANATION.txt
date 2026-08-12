@@ -1,0 +1,130 @@
+WIN, LOSE, PAUSE, AND LEVEL PROGRESSION
+=======================================
+
+Purpose
+-------
+This document explains why Level Complete could run twice, why the final level
+could not load another scene, and how Win/Lose now stop gameplay without freezing
+their own UI.
+
+Update (Orders feature, Phase 5)
+--------------------------------
+The packed-box counter described below is no longer the only win trigger. A scene
+with an OrderManager holding a non-empty order list is won by
+OrderManager.AllOrdersFulfilled, which fires only after the last travelling
+effect has landed and the final slot shows its green check. CheckWinCondition
+returns early for those scenes, so the win panel can never appear over an order
+that has not finished animating.
+
+Both triggers now funnel through GameManager.BeginWinSequence, which holds the
+single end-sequence guard, the spawn stop, and the music stop. Scenes without an
+OrderManager, including the Tutorial, keep the behavior described below
+unchanged. See ORDERS_WIN_CONDITION_EXPLANATION.txt.
+
+Files in this flow
+------------------
+- GameManager.cs owns the one-time Win/Lose state and gameplay pause.
+- GameDataManager.cs owns saved level data and per-level runtime counters.
+- Board.cs waits for matching to finish before asking whether the board is full.
+- UIManager.cs listens for Win/Lose and reveals the appropriate panel.
+- WinPanel.cs grants one reward claim and chooses the next valid scene.
+- RevivePanel.cs runs its countdown while gameplay is paused.
+- LoseGame.cs handles retrying the current scene or returning to MainMenu.
+- LiftTruck.cs and its manager need no special end-state branch because their
+  scaled coroutines stop when Time.timeScale becomes zero.
+
+Why Win previously ran more than once
+-------------------------------------
+Every packed Box calls GameManager.CheckWinCondition. One placement can pack more
+than one Box, so several calls may happen during the same resolver. The old method
+started a LevelWon coroutine every time boxNum was at least 10.
+
+GameDataManager is DontDestroyOnLoad, but boxNum was never reset. After one level
+reached 10, later matches also satisfied the condition immediately.
+
+The new endSequenceStarted flag is an exactly-once gate shared by Win and Lose.
+The first valid result closes the gate before starting any coroutine or event.
+Later calls return immediately. GameManager.Start opens a fresh gate and calls
+GameDataManager.BeginLevel, which resets boxNum and coin for the new scene.
+
+Why the reward buttons also need a gate
+---------------------------------------
+Even with one Win event, a player can tap a button twice before its 0.7-second
+closing tween finishes. WinPanel.TryBeginClaim records the first tap and disables
+both reward buttons immediately. Rewards, saved progress, and scene loading can
+therefore happen only once.
+
+Correct Lose timing
+-------------------
+Board does not call CheckBoardFill at the instant the final Box enters the array.
+ResolvePlacement first waits for UniversalSodaTransferSystem, terminal Box
+removal, and adjacent blocked-cell break animations. Only then does it call
+CheckBoardFill.
+
+Consequences:
+- If the final placement creates a match, the removed Box leaves a free Node and
+  Lose is not raised.
+- If no match creates space and every playable Node remains occupied, Lose is
+  raised.
+- Removed/locked coordinates are not counted as playable until they unlock.
+
+This ordering was already correct and was preserved.
+
+How scene pause works
+---------------------
+When UIManager activates either the Win panel or Revive panel, it calls
+GameManager.PauseForEndPanel. Time.timeScale becomes zero. Movement based on
+Time.deltaTime, scaled WaitForSeconds, and normal DOTween animations pause. This
+includes lift-truck movement, spawning, board animations, and gameplay input.
+
+The end-panel tweens use SetUpdate(true), and countdowns use unscaledDeltaTime or
+WaitForSecondsRealtime. They continue while gameplay time is zero, so buttons,
+panel animations, and the Revive countdown remain usable.
+
+Revive and scene transitions
+----------------------------
+ResumeAfterRevive restores Time.timeScale, clears gameEnded/gameOver and the
+exactly-once gate, and restarts both spawning flags.
+
+PrepareSceneTransition restores Time.timeScale before loading another scene.
+GameManager.OnDestroy also restores it as a safety net. This prevents MainMenu or
+the next Level from opening with time still frozen.
+
+Safe next-level routing
+-----------------------
+WinPanel no longer assumes fixed Build Index arithmetic. It reads the active
+scene name:
+
+- TUTORIAL routes to Level1.
+- LevelN calculates Level(N+1).
+- Application.CanStreamedLevelBeLoaded verifies that the target is configured.
+- Only a valid target is written through GameDataManager.SetLevel.
+- If no next Level exists, the current level is treated as the final configured
+  level and the player returns to MainMenu without saving an invalid number.
+
+When GameManager starts LevelN, BeginLevel also synchronizes PlayerPrefs to N.
+This repairs stale values created by older builds.
+
+Lose menu routing
+-----------------
+Play Again reloads the currently active level instead of always loading Level1.
+Main Menu restores gameplay time and loads MainMenu. Both buttons share an
+exactly-once transition gate and use unscaled closing tweens.
+
+Manual verification
+-------------------
+1. Complete two packed Boxes in the same resolver. Expect one Level Won log and
+   one Win panel.
+2. Tap a Win reward button repeatedly. Expect one reward and one scene load.
+3. Win Level5. Expect Level6 and saved Level = 6.
+4. Win Level6 when Level7 is absent. Expect MainMenu and no Level7/8 save.
+5. Fill the final Board cell with no match. Expect Lose after resolution ends.
+6. Fill the final cell and create a match. Expect no Lose if a Node becomes empty.
+7. While Win or Lose UI is visible, verify trucks, rail Boxes, and gameplay stop.
+8. Verify the Win/Lose panel animation and Revive countdown still move.
+9. Choose Revive. Expect gameplay time and input to resume.
+10. Choose Play Again on Level4. Expect Level4, not Level1.
+
+Compilation
+-----------
+The Unity runtime assembly compiled with zero C# errors after these changes.

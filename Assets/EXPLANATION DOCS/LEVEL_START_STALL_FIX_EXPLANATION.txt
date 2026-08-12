@@ -1,0 +1,90 @@
+LEVEL START STALL - CAUSE AND FIX
+=================================
+
+Reported symptom
+----------------
+Pressing Play in a level used to spawn the rail boxes immediately. It began
+taking several seconds before anything appeared.
+
+What was ruled out first
+------------------------
+The Orders feature was the obvious suspect because it was added just before the
+stall was noticed. It was ruled out by fact, not by reasoning:
+
+The GUIDs of every Orders script were searched across every .unity scene and
+every .prefab in the project:
+
+    OrderManager.cs      404391f12467f3e4f817e5be6105a773
+    OrderPanelUI.cs      91fc5ec64d609e949b8168cb0b3f51c6
+    OrderSlotUI.cs       1b8b522247819a745addef0d4ce18ca0
+    OrderVfxDirector.cs  9ce9ac83d12c0a94ca0bd41ef2d95586
+
+Not one of them appears in any saved scene or prefab. The Orders panel had been
+generated and tested in Play mode but the scene was never saved, so Play-mode
+objects were discarded. None of the Orders code therefore runs at level start in
+the saved project, and it cannot be the cause.
+
+Board.cs, the only existing runtime file the Orders work touched, was also
+checked: its single addition, ReportPackedBoxToOrders, is called from RetireBox
+on the packed branch only. Nothing was added to any startup path.
+
+Actual cause
+------------
+Assets/Scripts/Manager Scripts/Sound/Jindupe_2.mp3 - the level music, 2.8 MB -
+was imported with:
+
+    loadType: 0          Decompress On Load
+    compressionFormat: 1 Vorbis
+    preloadAudioData: 1  load with the scene
+    loadInBackground: 0  block the main thread while loading
+
+Together those four settings mean: when the scene loads, Unity fully decodes the
+entire compressed track into raw PCM, on the main thread, before the first frame
+runs. A 2.8 MB Vorbis file expands to tens of megabytes of PCM, which is where
+the multi-second pause came from.
+
+Nothing in the scene starts until that finishes, which is why the rail spawn -
+SpawnContoller.LevelSpawnRoutine, a coroutine that waits 0.1 s and then spawns -
+appeared to be delayed. It was not slow; it simply could not start yet.
+
+Why it started being noticeable
+-------------------------------
+GameManager.Start began calling SoundManager.PlayLevelMusic(), and the music
+AudioSource and its clip were wired into the scene. Before that, the clip was
+not part of the loaded level, so its import settings never cost anything.
+
+The fix
+-------
+Jindupe_2.mp3.meta now reads:
+
+    loadType: 2          Streaming
+    preloadAudioData: 0  do not load with the scene
+    loadInBackground: 1  never block the main thread
+
+Streaming is the correct mode for a single long background track: it decodes in
+small pieces while playing instead of materialising the whole waveform up front,
+and it holds a few kilobytes of memory rather than tens of megabytes.
+preloadAudioData off means the clip is no longer part of scene load at all, and
+loadInBackground guarantees that even the initial buffer fill cannot stall the
+main thread.
+
+Unity reimports the file automatically when it regains focus.
+
+Why the SFX clips were left alone
+---------------------------------
+box_complete_pop.wav, box_spawn_pop.wav, and soda_move_beep.wav are 9 to 23 KB
+each. Decompress On Load is the right choice for short, frequently triggered
+sounds: they must be instantly available, and their decoded size is negligible.
+Switching them to streaming would add latency to every soda move for no benefit.
+
+How to confirm
+--------------
+1. Let Unity reimport the mp3.
+2. Press Play in a level. The rail batch should appear right after the existing
+   0.1 s wait in LevelSpawnRoutine.
+3. The music should still start, just slightly after the first frame instead of
+   before it.
+
+If a stall remains, Window > Analysis > Profiler with "Deep Profile" on the first
+frames will name the responsible load, since this class of problem always shows
+up as a single long main-thread block during scene load.

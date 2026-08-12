@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "com.google.ads.mobile": "https://github.com/googleads/googleads-mobile-unity.git?path=packages/com.google.ads.mobile#v11.2.0",
+    "com.google.external-dependency-manager": "1.2.187",
+    "com.unity.ai.assistant": "2.17.0-pre.1",
     "com.unity.ai.navigation": "2.0.14",
     "com.unity.cinemachine": "2.10.7",
     "com.unity.collab-proxy": "2.12.4",
@@ -46,5 +49,14 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
-  }
+  },
+  "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.google"
+      ]
+    }
+  ]
 }

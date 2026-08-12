@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "unity-mcp-gateway": {
+      "command": "F:\\Projects\\unitypProjects\\Coca Sorting_Revised\\New-Coca\\Library\\PackageCache\\com.unity.ai.assistant@284c75a8d208\\RelayApp~\\relay_win.exe",
+      "args": [
+        "--mcp",
+        "--log-dir",
+        "F:\\Projects\\unitypProjects\\Coca Sorting_Revised\\New-Coca\\Logs"
+      ],
+      "env": {
+        "UNITY_ACP_SESSION_TOKEN": "b06acc90cdb7a63fbdf4ef6db9fde3feff7e8784f42941b28d2e6594a29e324b",
+        "UNITY_INSTANCE_ID": "38724"
+      }
+    }
+  }
+}

@@ -11,6 +11,9 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public class SpawnContoller : MonoBehaviour
 {
+    /// <summary>Highest distinct-color count the mix chances below can express.</summary>
+    private const int MaxSupportedColorMix = 3;
+
     public static SpawnContoller instance;
 
     [SerializeField] private List<Transform> spawnPositions;
@@ -18,7 +21,48 @@ public class SpawnContoller : MonoBehaviour
     [SerializeField] private Transform[] endPos;
     [SerializeField, Min(0f)] private float spawnDelay = 0.03f;
     [SerializeField, Min(0.01f)] private float moveDuration = 0.5f;
-    [SerializeField, Min(1)] private int maxBoxCount = 6;
+
+    [Header("Per-Level Rail Batch")]
+    [SerializeField, Min(1)]
+    [Tooltip("How many boxes this level spawns per rail batch. Clamped by the number of Start/End rail Transforms.")]
+    private int maxBoxCount = 6;
+
+    [Header("Per-Level Soda Palette")]
+    [Tooltip("Colors that may spawn on this level's rail boxes. Leave empty to allow every Soda.SodaColor.")]
+    [SerializeField] private List<Soda.SodaColor> allowedColors = new List<Soda.SodaColor>();
+
+    [Header("Per-Level Box Fill")]
+    [SerializeField, Min(1)]
+    [Tooltip("Minimum sodas placed in a spawned box. A rail box is never spawned empty.")]
+    private int minSodasPerBox = 1;
+
+    [SerializeField, Min(1)]
+    [Tooltip("Maximum sodas placed in a spawned box. Always clamped to (box capacity - 1) so a rail box is never spawned full.")]
+    private int maxSodasPerBox = 3;
+
+    [SerializeField, Min(1)]
+    [Tooltip("Minimum number of distinct colors inside a spawned box. Ignored while Use Color Mix Chances is on.")]
+    private int minDistinctColorsPerBox = 1;
+
+    [SerializeField, Min(1)]
+    [Tooltip("Maximum number of distinct colors inside a spawned box. 1 = single-color levels, 2 or 3 = mixed / hardest levels. Ignored while Use Color Mix Chances is on.")]
+    private int maxDistinctColorsPerBox = 1;
+
+    [Header("Per-Level Color Mix Chance")]
+    [Tooltip("When on, the number of distinct colors is drawn from the chances below instead of uniformly from the Min/Max range. The Min/Max range still acts as a hard clamp.")]
+    [SerializeField] private bool useColorMixChances = false;
+
+    [SerializeField, Min(0f)]
+    [Tooltip("Chance in percent of spawning a single-color box. The three chances should add up to 100.")]
+    private float singleColorChance = 100f;
+
+    [SerializeField, Min(0f)]
+    [Tooltip("Chance in percent of spawning a box with exactly 2 distinct colors.")]
+    private float twoColorChance = 0f;
+
+    [SerializeField, Min(0f)]
+    [Tooltip("Chance in percent of spawning a box with exactly 3 distinct colors.")]
+    private float threeColorChance = 0f;
 
     public float speed = 1f;
     public GameObject boxPrefab;
@@ -26,6 +70,7 @@ public class SpawnContoller : MonoBehaviour
     public float respawnDelay = 2f;
     public List<GameObject> spawnedBoxes = new List<GameObject>();
     public bool stopSpawn;
+    private Coroutine spawnRoutine;
     public bool isTutorialState;
 
     private void Awake()
@@ -43,8 +88,28 @@ public class SpawnContoller : MonoBehaviour
     {
         if (!isTutorialState)
         {
-            StartCoroutine(LevelSpawnRoutine());
+            spawnRoutine = StartCoroutine(LevelSpawnRoutine());
         }
+    }
+
+    /// <summary>
+    /// Restarts rail replenishment after a revive. LevelSpawnRoutine's while loop
+    /// exits for good once stopSpawn or gameEnded goes true, so clearing those
+    /// flags is not enough to resume spawning; the routine has to start again.
+    /// </summary>
+    public void RestartSpawning()
+    {
+        if (isTutorialState)
+        {
+            return;
+        }
+
+        if (spawnRoutine != null)
+        {
+            StopCoroutine(spawnRoutine);
+        }
+
+        spawnRoutine = StartCoroutine(LevelSpawnRoutine());
     }
 
     private void OnDestroy()
@@ -200,6 +265,7 @@ public class SpawnContoller : MonoBehaviour
             spawnedBoxes.Add(boxObject);
             batch.Add(boxObject);
             SpawnRandomSodas(boxObject);
+            SoundManager.instance?.PlayBoxSpawn();
 
             if (spawnDelay > 0f)
             {
@@ -270,17 +336,193 @@ public class SpawnContoller : MonoBehaviour
             return;
         }
 
+        List<Soda.SodaColor> recipe = BuildRandomRecipe(slots.Length);
         List<Transform> available = new List<Transform>(slots);
-        int sodaCount = UnityEngine.Random.Range(1, Mathf.Min(3, available.Count) + 1);
-        for (int i = 0; i < sodaCount; i++)
+        for (int i = 0; i < recipe.Count; i++)
         {
             int index = UnityEngine.Random.Range(0, available.Count);
             Transform slot = available[index];
             available.RemoveAt(index);
-            SpawnSodaAtSlot(box, slot, GetRandomSodaColor());
+            SpawnSodaAtSlot(box, slot, recipe[i]);
         }
 
         box.RefreshContents();
+    }
+
+    /// <summary>
+    /// Builds one random soda list for a rail box using the per-level inspector
+    /// settings. The result is never empty and never fills the box, so a spawned
+    /// rail box always leaves the player at least one free slot to work with.
+    /// </summary>
+    private List<Soda.SodaColor> BuildRandomRecipe(int capacity)
+    {
+        List<Soda.SodaColor> recipe = new List<Soda.SodaColor>();
+        if (capacity <= 0)
+        {
+            return recipe;
+        }
+
+        if (capacity < 2)
+        {
+            Debug.LogWarning(
+                $"Box capacity is {capacity}; a rail box cannot be spawned partially filled.",
+                this);
+        }
+
+        // Never full: at most capacity - 1 sodas. Never empty: at least one.
+        int highestFill = Mathf.Max(1, capacity - 1);
+        int maxFill = Mathf.Clamp(maxSodasPerBox, 1, highestFill);
+        int minFill = Mathf.Clamp(minSodasPerBox, 1, maxFill);
+
+        // The color count is rolled first so a level asking for 3-color boxes is
+        // not silently starved by a small soda count, then the fill count is
+        // rolled inside the range that can actually hold those colors.
+        List<Soda.SodaColor> palette = GetLevelPalette();
+
+        // With the mix chances on, the chances alone drive the color count; the
+        // Min/Max Distinct fields are ignored so they cannot silently veto a
+        // 100% three-color level. Only real limits (fill room, palette) clamp it.
+        int hardCeiling = Mathf.Min(maxFill, palette.Count);
+        int colorCeiling = useColorMixChances
+            ? Mathf.Min(MaxSupportedColorMix, hardCeiling)
+            : Mathf.Min(maxDistinctColorsPerBox, hardCeiling);
+        colorCeiling = Mathf.Max(1, colorCeiling);
+        int colorFloor = useColorMixChances
+            ? 1
+            : Mathf.Clamp(minDistinctColorsPerBox, 1, colorCeiling);
+        int distinctCount = RollDistinctColorCount(colorFloor, colorCeiling);
+
+        int sodaCount = UnityEngine.Random.Range(Mathf.Max(minFill, distinctCount), maxFill + 1);
+
+        // Pick the distinct colors for this box without repeats.
+        List<Soda.SodaColor> pool = new List<Soda.SodaColor>(palette);
+        List<Soda.SodaColor> chosen = new List<Soda.SodaColor>();
+        for (int i = 0; i < distinctCount && pool.Count > 0; i++)
+        {
+            int index = UnityEngine.Random.Range(0, pool.Count);
+            chosen.Add(pool[index]);
+            pool.RemoveAt(index);
+        }
+
+        // Guarantee every chosen color appears at least once, then fill the rest.
+        recipe.AddRange(chosen);
+        while (recipe.Count < sodaCount)
+        {
+            recipe.Add(chosen[UnityEngine.Random.Range(0, chosen.Count)]);
+        }
+
+        return recipe;
+    }
+
+    /// <summary>
+    /// Picks how many distinct colors a box gets. With the mix chances enabled the
+    /// counts are drawn by weight; chances for counts outside [floor, ceiling] are
+    /// dropped, and if nothing usable remains the uniform range is used instead.
+    /// </summary>
+    private int RollDistinctColorCount(int colorFloor, int colorCeiling)
+    {
+        if (!useColorMixChances)
+        {
+            return UnityEngine.Random.Range(colorFloor, colorCeiling + 1);
+        }
+
+        float[] chances = { singleColorChance, twoColorChance, threeColorChance };
+        float total = 0f;
+        for (int count = 1; count <= chances.Length; count++)
+        {
+            if (count >= colorFloor && count <= colorCeiling)
+            {
+                total += Mathf.Max(0f, chances[count - 1]);
+            }
+        }
+
+        if (total <= 0f)
+        {
+            return UnityEngine.Random.Range(colorFloor, colorCeiling + 1);
+        }
+
+        float roll = UnityEngine.Random.value * total;
+        for (int count = 1; count <= chances.Length; count++)
+        {
+            if (count < colorFloor || count > colorCeiling)
+            {
+                continue;
+            }
+
+            roll -= Mathf.Max(0f, chances[count - 1]);
+            if (roll <= 0f)
+            {
+                return count;
+            }
+        }
+
+        return colorCeiling;
+    }
+
+    /// <summary>Distinct colors this level is allowed to spawn; empty inspector list means every color.</summary>
+    private List<Soda.SodaColor> GetLevelPalette()
+    {
+        List<Soda.SodaColor> palette = new List<Soda.SodaColor>();
+        if (allowedColors != null)
+        {
+            foreach (Soda.SodaColor color in allowedColors)
+            {
+                if (!palette.Contains(color))
+                {
+                    palette.Add(color);
+                }
+            }
+        }
+
+        if (palette.Count == 0)
+        {
+            palette.AddRange((Soda.SodaColor[])Enum.GetValues(typeof(Soda.SodaColor)));
+        }
+
+        return palette;
+    }
+
+    private void OnValidate()
+    {
+        maxBoxCount = Mathf.Max(1, maxBoxCount);
+        maxSodasPerBox = Mathf.Max(1, maxSodasPerBox);
+        minSodasPerBox = Mathf.Clamp(minSodasPerBox, 1, maxSodasPerBox);
+        maxDistinctColorsPerBox = Mathf.Max(1, maxDistinctColorsPerBox);
+        minDistinctColorsPerBox = Mathf.Clamp(minDistinctColorsPerBox, 1, maxDistinctColorsPerBox);
+
+        singleColorChance = Mathf.Max(0f, singleColorChance);
+        twoColorChance = Mathf.Max(0f, twoColorChance);
+        threeColorChance = Mathf.Max(0f, threeColorChance);
+
+        if (useColorMixChances)
+        {
+            float total = singleColorChance + twoColorChance + threeColorChance;
+            if (total <= 0f)
+            {
+                Debug.LogWarning(
+                    "All color mix chances are 0; the Min/Max distinct color range will be used instead.",
+                    this);
+            }
+            else if (Mathf.Abs(total - 100f) > 0.01f)
+            {
+                Debug.LogWarning(
+                    $"Color mix chances add up to {total}, not 100. They will be normalized at runtime.",
+                    this);
+            }
+
+            if (threeColorChance > 0f && maxSodasPerBox < 3)
+            {
+                Debug.LogWarning(
+                    "Three-color boxes need Max Sodas Per Box of at least 3; the chance will fall back to fewer colors.",
+                    this);
+            }
+            else if (twoColorChance > 0f && maxSodasPerBox < 2)
+            {
+                Debug.LogWarning(
+                    "Two-color boxes need Max Sodas Per Box of at least 2; the chance will fall back to a single color.",
+                    this);
+            }
+        }
     }
 
     private void SpawnSodaAtSlot(Box box, Transform slot, Soda.SodaColor color)
@@ -368,12 +610,5 @@ public class SpawnContoller : MonoBehaviour
     private static bool IsGameEnded()
     {
         return GameManager.instance != null && GameManager.instance.gameEnded;
-    }
-
-    private static Soda.SodaColor GetRandomSodaColor()
-    {
-        Soda.SodaColor[] colors =
-            (Soda.SodaColor[])Enum.GetValues(typeof(Soda.SodaColor));
-        return colors[UnityEngine.Random.Range(0, colors.Length)];
     }
 }

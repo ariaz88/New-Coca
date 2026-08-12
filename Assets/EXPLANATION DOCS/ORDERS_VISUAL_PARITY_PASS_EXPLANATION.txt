@@ -1,0 +1,145 @@
+ORDERS - VISUAL PARITY PASS AGAINST THE REFERENCE (PHASE 6)
+===========================================================
+
+Purpose of this document
+------------------------
+A capture of the working feature was compared frame by frame against the
+reference footage. This document lists every difference found, what caused it,
+and what was changed. Nothing here alters game logic; it is presentation only.
+
+The one structural idea behind most of the fixes
+------------------------------------------------
+The panel builder created its placeholders from Unity's built-in UISprite, which
+is a rounded rectangle. That was fine for a card background and wrong for
+everything else it was used for. A rounded rectangle used as a halo reads as a
+yellow box, and used as a tick it reads as a green square.
+
+Rather than requiring artwork, the shapes are now generated in code and applied
+by OrderSlotUI at runtime. That has a second benefit: panels created by an older
+version of the tool are corrected without being rebuilt, because the fix lives in
+the component rather than in the generated hierarchy.
+
+Generated sprites added to OrderVfxTextures
+-------------------------------------------
+Glow
+    A wide radial halo: a broad soft body plus a tight hot core. A radial falloff
+    has no edge, which is also what fixes the halo spilling past the card border.
+    It simply fades to nothing before it gets there.
+
+Star
+    A four-pointed twinkle, built from an astroid (|u|^0.5 + |v|^0.5 = 1) with a
+    small round core. Round dots read as dust; the reference trail and burst are
+    made of small bright stars with visible points.
+
+Checkmark
+    A real tick, drawn as the distance field of two line segments with a soft
+    edge, replacing the placeholder green square.
+
+Differences found, and the fix for each
+---------------------------------------
+
+1. The impact flash was a yellow rectangle
+   Cause: the glow Image used the built-in rounded-rect sprite at high opacity.
+   Fix: OrderSlotUI assigns the generated radial Glow, forces Image.Type.Simple
+   (a Sliced draw would stretch a radial texture's middle row and column into
+   bars), and exposes a sprite override for real artwork later.
+
+2. The flash spilled outside the card border
+   Cause: a 150-unit glow on a 96-unit slot, with a hard-edged sprite and no
+   mask. Visible at 17 s on the left slot and 22 s on the right.
+   Fix: the halo is 118 units and radial, so its edge is transparent long before
+   it reaches the border. Masking was rejected: it would have clipped the halo
+   into a visible straight line along the card edge, trading one artifact for
+   another.
+
+3. There was no star burst on arrival
+   Fix: PlayImpactBurst throws burstStarCount stars outward from the slot. Angles
+   are evenly spaced with a random offset and a small jitter, not fully random:
+   random directions clump, and a clumped burst reads as a mistake rather than a
+   spray. Each star pops to full size in the first fifth of its life and then
+   shrinks and fades, so the burst blooms instead of appearing and vanishing.
+   Each also gets a random roll, so twelve identical four-point stars do not look
+   like a stamped pattern.
+
+4. The comet was a faint pale smear
+   Cause: one semi-transparent tinted sprite, 190x46, against a light board.
+   Fix: larger (300x84), full opacity, and a second narrower near-white copy
+   drawn on top, tracking the same position and rotation. The hot core is what
+   makes it read as emitted light rather than as a scratch. Path curvature was
+   raised from 0.22 to 0.30, since the flight was reading as a straight line.
+
+5. Trail sparkles were barely visible
+   Fix: they now use the Star sprite, are larger (16 to 40, was 8 to 20), more
+   numerous (24, was 14), and each is randomly rolled.
+
+6. The "+1" icon was tiny and crowded against the text
+   Fix: icon height 76 (was 42), centre-to-centre gap 92 (was 34), font 52 (was
+   34). The pair stays centred on the origin, so the larger gap does not shift
+   the "+1" away from where the box was.
+
+7. The "+1" was hard to read
+   Cause: white text with a pale tinted outline over a light blue board.
+   Fix: a dark outline at 0.32 width. The drink's identity is already carried by
+   the icon beside it and by the streak color, so the outline does not need to
+   carry it too.
+
+8. The tick was a green square
+   Fix: the generated Checkmark sprite, larger (42, was 30), with preserveAspect.
+
+9. A completed order became almost unreadable
+   Fix: fulfilledIconAlpha raised from 0.75 to 0.88. The reference does fade a
+   completed drink, but only slightly.
+
+10. Separators were invisible
+    Cause: a 2 px line in a low-contrast tan.
+    Fix: 4 px, taller, and a darker brown.
+
+11. The card was much wider than its contents
+    Fix: 360 wide (was 420), tighter container insets, spacing 10 (was 18), slot
+    104 and icon 96. The drinks now fill the card the way they do in the
+    reference.
+
+12. The "Orders" tab was a thin bar with tiny text
+    Fix: larger tab, bold 32 pt text.
+
+13. The count was too small
+    Fix: 40 pt bold, positioned closer to the drink.
+
+14. Coins competed with the order effect
+    Cause: Board.AwardPackedBox fired CoinManager on the same frame the order
+    effect started, so two reward animations began together.
+    Fix: ReportPackedBoxToOrders now returns whether an order actually claimed
+    the box, and AwardPackedBox delays only that case by packedCoinVisualDelay
+    (0.95 s, serialized, 0 restores the old behaviour). The delay is unscaled to
+    match the order effect, which also runs unscaled so it can finish after an
+    end panel freezes gameplay.
+
+    Coins are still awarded to the data immediately; only the burst animation
+    moves. A packed box that no order wanted keeps the original timing.
+
+A pooling detail worth recording
+--------------------------------
+The same pooled Image now serves five roles: comet, comet core, trail sparkle,
+burst star, and "+1" icon. They disagree about preserveAspect and rotation, so
+ReturnImage resets both along with the sprite reference. Leaving preserveAspect
+set by the "+1" icon would squash the next comet into its sprite's ratio.
+
+Steps to apply
+--------------
+1. Delete the OrdersPanel object and re-run Tools > Coca Sorting > Create Orders
+   Panel. Items 10 to 13 are baked into the generated hierarchy and only apply to
+   a fresh panel. Items 1, 2, 8 and 9 apply to an existing panel without this.
+2. Re-run Tools > Coca Sorting > Bake Soda Icons, if the icons still look like
+   narrow bars. The bounding-box framing and margin trimming from the previous
+   phase only affect a fresh bake.
+3. Save the scene.
+
+Validation performed
+--------------------
+- Assembly-CSharp and Assembly-CSharp-Editor both compile.
+- Generated textures are created at most once per session and are
+  HideAndDontSave, so they cannot leak into a scene or a build.
+- Every new effect object is rented and returned through the existing pool.
+- The coin delay only applies when an order consumed the box, so levels without
+  orders are byte-for-byte unchanged in behaviour.
+- Requires the Unity Editor to judge the result on screen.

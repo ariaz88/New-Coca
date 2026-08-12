@@ -595,6 +595,11 @@ public class Box : MonoBehaviour
         }
 
         sodaTransform.SetParent(null, true);
+        if (SoundManager.instance != null)
+        {
+            SoundManager.instance.PlaySodaMove();
+        }
+
         float elapsed = 0f;
         while (elapsed < sodaMoveDuration && soda != null)
         {

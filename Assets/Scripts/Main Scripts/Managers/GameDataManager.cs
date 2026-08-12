@@ -77,10 +77,18 @@ public class GameDataManager : MonoBehaviour
     {
         coin += amount;       
     }
+    /// <summary>
+    /// Balance to show in the HUD: the persisted total plus whatever the current
+    /// level has earned but not yet committed. Lets the counter react to every
+    /// packed box without writing to PlayerPrefs on each one.
+    /// </summary>
+    public int DisplayCoins => TotalCoins + coin;
+
     public void AddToTotalCoins()
     {
         TotalCoins += coin;
-        //coin = 0;           // Reset the gameplay coin counter
+        coin = 0;           // Reset the gameplay coin counter, so a second call
+                            // cannot bank the same pending coins twice.
         PlayerPrefs.SetInt("TotalCoins", TotalCoins);
         PlayerPrefs.Save();
     }
@@ -88,6 +96,22 @@ public class GameDataManager : MonoBehaviour
     public void BoxCompletion(int box)
     {
         boxNum += box;
+    }
+
+    /// <summary>
+    /// Clears values that belong only to one gameplay scene. When the active
+    /// scene has a logical Level number, it also repairs stale saved progress so
+    /// scene state and PlayerPrefs cannot drift apart.
+    /// </summary>
+    public void BeginLevel(int logicalLevel)
+    {
+        boxNum = 0;
+        coin = 0;
+
+        if (logicalLevel >= 1)
+        {
+            SetLevel(logicalLevel);
+        }
     }
     public int GetGameplayCoins()
     {
@@ -104,6 +128,34 @@ public class GameDataManager : MonoBehaviour
         //Debug.Log($"Gems Added: {amount}, Total Gems: {currentGems}");
     }
 
+    public int GetGems()
+    {
+        return PlayerPrefs.GetInt(GemsKey, 2);
+    }
+
+    /// <summary>
+    /// Spends gems only when the player can actually afford the cost, so a
+    /// purchase can never push the balance negative. Returns false when the
+    /// caller should cancel whatever it was about to grant.
+    /// </summary>
+    public bool TrySpendGems(int amount)
+    {
+        if (amount <= 0)
+        {
+            return true;
+        }
+
+        int currentGems = GetGems();
+        if (currentGems < amount)
+        {
+            return false;
+        }
+
+        PlayerPrefs.SetInt(GemsKey, currentGems - amount);
+        PlayerPrefs.Save();
+        return true;
+    }
+
     // Update level
     public int IncrementLevel()
     {
@@ -113,6 +165,13 @@ public class GameDataManager : MonoBehaviour
         PlayerPrefs.Save();
         Debug.Log($"Level Increased: {currentLevel}");
         return currentLevel;
+    }
+
+    public void SetLevel(int logicalLevel)
+    {
+        int safeLevel = Mathf.Max(1, logicalLevel);
+        PlayerPrefs.SetInt(LevelKey, safeLevel);
+        PlayerPrefs.Save();
     }
 
     // Reset all data

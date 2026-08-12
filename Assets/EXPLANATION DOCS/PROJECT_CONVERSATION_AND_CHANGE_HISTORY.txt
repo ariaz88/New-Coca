@@ -1,0 +1,723 @@
+PROJECT CONVERSATION AND CHANGE HISTORY
+======================================
+
+Project:
+Unity puzzle game / Coca Sorting
+
+Purpose of this document:
+This file stores two things together:
+
+1. The conversation history that is currently available in Codex context.
+2. A clean, organized explanation of the problems, decisions, and code changes discussed during the project.
+
+Important limitation:
+This is not a raw export from the ChatGPT/Codex UI. Codex does not have direct access to the full hidden chat export file.
+This document is reconstructed from the conversation context available inside the current coding session.
+
+
+PART 1 - AVAILABLE CONVERSATION HISTORY
+=======================================
+
+1. Merge conflict in material file
+----------------------------------
+
+User reported:
+When running the game, Unity shows this error:
+
+"The file 'Assets/Material/cylinderMat.mat' seems to have merge conflicts. Please open it in a text editor and fix the merge."
+
+Main topic:
+The material file had unresolved merge conflict markers and needed to be cleaned so Unity could parse it again.
+
+
+2. Tutorial pointer hand position
+---------------------------------
+
+User reported:
+In the Tutorial Scene, there is a pointer hand that moves toward the destination, but it goes a little farther than the destination pivot.
+The user wanted the hand to stop at the green check mark position instead of the red cross position.
+
+Follow-up:
+The user said the hand still pointed to the red-cross position from the screenshot and asked why.
+
+Main topic:
+The pointer logic was using a position/offset that overshot the target cell pivot. The tutorial hand needed to point to the actual destination/cell center, not beyond it.
+
+
+3. Tutorial phase two order rule
+--------------------------------
+
+User requested:
+In phase two of the tutorial, when there are two color boxes, add logic so boxes must be selected in the correct order:
+from the most-left box, then the middle box, then the right box.
+
+If the player tries to drag a box out of order, that box should not move at all.
+
+Main topic:
+Tutorial-only drag restriction based on the intended teaching order.
+
+
+4. Documentation and mentor-style learning prompt
+-------------------------------------------------
+
+User requested:
+Add the new changes to the game documentation inside the "EXPLANATION DOCS" folder.
+
+The user also wanted a strong prompt that can be given to another AI so it explains the full code like a teacher teaching a junior developer.
+The prompt should tell the AI to add a voice/narration for each part, but Codex should not generate the audio itself.
+
+Follow-up:
+The user clarified that the prompt should first explain the whole game to the AI:
+
+- What the game is.
+- Which genre it belongs to.
+- Which parts the game has.
+- Which scripts exist.
+- The brief purpose of every script.
+- Then ask the AI to explain the previous requested subjects.
+
+Follow-up:
+The user asked to remove unused, repeated, or old-version scripts from the prompt and only include usable and needed scripts.
+
+Main topic:
+Create learning documentation and a teaching prompt that is useful for a junior developer.
+
+
+5. Script organization
+----------------------
+
+User requested:
+Move all usable scripts to a separate folder named "Main Scripts".
+Move remaining scripts to "old version scripts".
+Inside "Main Scripts", use subfolders for each part:
+
+- UI
+- Managers
+- Core Gameplay
+- Tutorial
+- Save and Load
+- and similar categories.
+
+Follow-up question:
+User asked which folder is related to Save and Load, and whether those scripts went into their subfolder.
+
+Answer given briefly:
+Save and Load related scripts are in:
+Assets/Scripts/Main Scripts/Save and Load
+
+
+6. Scene order and level progression
+------------------------------------
+
+User explained in Persian:
+The build scene order was changed so:
+
+- MainMenu
+- PersistenceScene
+- TUTORIAL
+- Level1
+- Level2
+- Level3
+- Level4
+- Level5
+
+After resetting save/load data, the game starts, goes to tutorial, then Level1, but after Level1 it goes back to Tutorial instead of the next level.
+
+User asked:
+Is the scene order in the screenshot correct or should it be updated?
+Can we use another method where scene numbering starts from 2, so Tutorial is 2, Level1 is 3, Level2 is 4, etc.?
+
+Decision:
+Using raw build indices directly is fragile.
+The better approach is to separate "logical level number" from "Unity build index".
+
+Reason:
+Unity build indices change whenever scenes are added, removed, or reordered.
+Gameplay progression should not depend on fragile raw numbers.
+
+
+7. Board and level-design system upgrade
+----------------------------------------
+
+User requested:
+Before changing anything, inspect the architecture responsible for:
+
+- Board generation
+- Board cells
+- Box placement
+- Box contents
+- Item/soda colors
+- Matching and clearing
+- Drag-and-drop
+- Rail spawning
+- Tutorial highlighting
+- Level loading
+
+User instruction:
+Do not rewrite working systems unnecessarily.
+Reuse current scripts, prefabs, materials, and gameplay logic whenever possible.
+
+Codex confirmed readiness before the user sent separate phases.
+
+
+8. Phase 1 - Dynamic board size and shape
+-----------------------------------------
+
+User described the current problem:
+The board was fixed, probably around 5 x 4 with about 20 cells.
+The board size was hardcoded or shared by every level.
+The user did not want every level to use the same board.
+
+Required result:
+Each level must have its own configurable board layout.
+
+Examples:
+
+- Level1: 5 x 4
+- Level2: 3 x 4
+- Level3: 5 x 5
+- Level4: board with some cells removed
+- Other levels: different dimensions or custom shapes
+
+The developer should configure the board per level without editing code.
+
+
+9. Board gizmos and blocked cells
+---------------------------------
+
+User requested in Persian:
+
+1. In the Scene window, draw the main grid using Gizmos, even if it has more than 20 cells, so the whole grid can be seen.
+2. For forbidden/blocked points, in addition to an X, spawn a GameObject such as a brown cube.
+
+Follow-up correction:
+The cube should only be created at runtime.
+The cubes were appearing under the board and were not visible, so they needed to be raised.
+The board Gizmos should be visible in the Scene view, but they were not visible yet.
+
+Short answer requested:
+The user asked whether new scripts were created for board size and occupied/blocked cells.
+
+Answer:
+No new runtime script was required for the core feature.
+Existing board/level layout scripts were changed.
+
+
+10. Initial boxes and custom level setup
+----------------------------------------
+
+User requested:
+At the moment, every level starts with an empty board.
+The user wants to design levels where selected cells already contain boxes when the level starts.
+The user also wants to configure the contents of those starting boxes.
+
+Required per-level configuration:
+
+- Which cells start empty.
+- Which cells start with a box.
+- The type of box placed in each starting cell.
+- How many items are inside the box.
+- The type/color of each item.
+- The order of items, if order matters.
+- Any other box state already supported by the game.
+
+Important instruction:
+Do not blindly copy a new structure.
+First inspect the existing Box, item, soda, color, and capacity systems.
+Reuse existing enums, data objects, prefab references, and initialization methods.
+Avoid creating a second item-color system.
+
+Editor workflow requested:
+
+- View active board layout.
+- Select a board cell from grid preview.
+- Mark selected cell as empty or occupied.
+- Choose box prefab/type.
+- Choose number of items.
+- Choose color/type of each item.
+- Remove configured starting box.
+- Copy or duplicate cell settings.
+- Clear all initial boxes.
+- Save configuration into that level data.
+
+
+11. Android build and screen fitting
+------------------------------------
+
+User asked:
+Can Codex build the Android build too?
+
+Then requested:
+Build Android, but make sure the game screen matches phones with smaller screens than 1125 x 2436.
+
+Follow-up questions:
+The user asked briefly:
+
+- How many build methods were tried?
+- Which failed and which succeeded?
+- Why Gradle Bundle caused so many compatibility problems?
+- For future builds, do we now know the fastest method to reach a correct final build?
+- What trick was used to fix different mobile screen sizes?
+- In which folder was the game build placed?
+
+Main topic:
+Android build workflow, Gradle compatibility, and responsive mobile camera/UI setup.
+
+
+12. Dragged box display priority
+--------------------------------
+
+User requested:
+When dragging a box from the bottom rail toward the board, the dragged box appears behind boxes already placed on the board.
+
+Required:
+
+- The currently dragged box must always render above every board box.
+- It must remain fully visible while dragged.
+- When dropped or returned to the rail, restore normal rendering settings.
+- Do not change gameplay logic, placement rules, box scale, or drag movement.
+
+Follow-up problem:
+After this change, the game screen looked visibly dimmer/faded.
+The user asked why settings were touched when the request was only to fix dragged-box rendering.
+
+Explanation:
+The dimming was likely caused by changing layer/rendering/camera/URP-related visibility or rendering priority in a way that affected more than the dragged object.
+The fix needed to be limited only to the dragged box render priority and should restore all render settings afterwards.
+
+Follow-up:
+User suspected URP settings.
+Codex checked and reported briefly.
+Then user asked to fix it.
+
+
+13. Put build in a new folder inside Assets
+-------------------------------------------
+
+User requested:
+Also put the build in a new folder in Assets.
+
+Main topic:
+Store Android build output under a clear project folder inside Assets.
+
+
+14. Breakable blocked cells
+---------------------------
+
+User requested a new blocked-cell mechanic:
+
+- Brown cells are initially locked and cannot accept dragged boxes.
+- When a box completes a match and is removed, check its direct orthogonal neighbors: up, down, left, and right.
+- Any adjacent brown blocked cells should play a short fade-out or break animation and disappear.
+- After removal, those cells become normal empty playable cells where boxes can be placed.
+- Refresh board occupancy, placement highlights, and neighbor detection after unlocking.
+- Only blockers directly adjacent to the matched box should be removed.
+- Do not trigger unrelated or chain removals.
+- Animation duration should be configurable in the Inspector.
+- Reuse the existing match/clear system where possible.
+
+Codex confirmed the requirement was clear.
+
+Then user requested:
+Update the documentation related to the changed scripts and implement the logic.
+
+
+15. Level complete and next-level bug
+-------------------------------------
+
+User asked before changing code:
+Why does Level Complete happen and the Complete menu appear, but then nothing happens and the game does not go to the next scene?
+Previously it did not behave like this.
+
+The screenshot showed console warning:
+"Cannot load logical Level 8: Build Index 10 is not configured. Add the next level to Build Profiles or handle game completion."
+
+User also observed:
+Sometimes in some levels, after winning, Level Complete seems to be called twice.
+
+Diagnosis:
+
+- CheckWinCondition() did not have a one-time guard.
+- If several boxes matched almost at the same time, several win coroutines could be created.
+- GameDataManager.boxNum persisted between scenes and was not reset for the new level.
+- After reaching the maximum configured level, the logic kept increasing the level number into invalid territory.
+
+Required fixes:
+
+- Add a one-time win guard.
+- Reset counters for each new level.
+- Handle final-level completion safely.
+- Prevent invalid level increase.
+- This was not directly caused by the new blocker mechanic.
+
+
+16. Game lose timing and freezing scene on end menu
+---------------------------------------------------
+
+User requested a check without code changes first:
+When all board cells become full, does game lose happen immediately?
+It should not trigger instantly before waiting to see whether the last placed box creates a match.
+
+Correct behavior:
+
+- After placing the final box, first resolve possible match/clear logic.
+- If a match happens, cells become empty and the player should not lose.
+- If no match happens, then show the Game Lose menu.
+
+Also:
+For both game win and game lose, when the menu appears, everything in the scene should stop.
+The user noticed the lift truck sometimes continued moving after the win menu appeared.
+
+Follow-up:
+User asked to fix these win/lose issues together with the double Level Complete problem.
+
+
+17. Unity 6.3 LTS hang
+----------------------
+
+User reported:
+Unity 6.3 LTS was stuck for about 40 minutes on:
+
+"Hold on (busy...)"
+"Application.TickGlobalCallbacks"
+"Waiting for Unity's code to finish executing."
+
+User asked why.
+
+Then user said:
+The project had been upgraded to Unity 6.3 LTS yesterday.
+
+User then asked to stop it.
+
+Later:
+The same issue happened again even after deleting Library and Logs.
+Eventually the user rolled the project back to the previous Unity 6 version instead of Unity 6.3.
+
+Main topic:
+Unity 6.3 caused editor execution hangs in this project. The user decided to move back to the previous Unity 6 version.
+
+
+18. Lift truck stopping/parking bug
+-----------------------------------
+
+User reported:
+Several times, the truck stopped in the middle of work or after transferring a box.
+The game was still running, and the user asked to check it.
+
+Then user requested:
+Fix it so it no longer repeats.
+
+Follow-up problem:
+User said the fix broke truck orientation: trucks became vertical, while the previous correct behavior was that they were lined up behind each other and moving toward +X.
+
+Final correction:
+The truck parking orientation was adjusted so parked trucks face world +X again.
+
+Main scripts involved:
+
+- Assets/Scripts/Main Scripts/Core Gameplay/LiftTruck.cs
+- Assets/Scripts/Main Scripts/Managers/LiftTruckManager.cs
+
+Documentation:
+
+- Assets/EXPLANATION DOCS/LIFT_TRUCK_QUEUE_EXPLANATION.txt
+
+
+19. Match priority across connected boxes
+-----------------------------------------
+
+User reported:
+If a box on the rail is placed between two lower-row boxes, the system should perform a 4-soda match when the total connected sodas make that possible.
+
+Observed problem:
+Sometimes the middle soda moves into the left or right box instead, preventing the intended 4-match.
+
+User clarified:
+Even if the three boxes are not in a straight line and form an L shape, if a 4-match is possible, it must happen.
+
+Main topic:
+The transfer/matching algorithm should prioritize completing an available match of 4 across the connected component before making greedy local transfers that can break the match opportunity.
+
+Relevant script:
+
+- Assets/Scripts/Main Scripts/Core Gameplay/UniversalSodaTransferSystem.cs
+
+
+20. Conversation documentation request
+--------------------------------------
+
+User asked:
+How can Codex write the whole conversation between user and Codex as a text file?
+
+Answer:
+Codex can write a text file inside the project, but cannot directly access the raw chat export from the UI.
+Codex can write:
+
+1. The conversation currently available in context.
+2. A clean organized version of decisions, problems, changes, and reasons.
+3. A learning/report style document.
+
+User then requested:
+Do 1 and 2 together and save them in a text file.
+
+This file is the result of that request.
+
+
+PART 2 - CLEAN ORGANIZED PROJECT NOTES
+======================================
+
+High-level game explanation
+---------------------------
+
+This project is a mobile-friendly Unity puzzle/sorting game.
+The player receives boxes from a bottom rail and drags them onto a board grid.
+Each box can contain soda/items with different colors.
+When boxes are placed next to each other, the game checks connected neighbors and transfers/merges matching soda colors.
+When enough same-color sodas gather in a valid box, that box completes a match, clears, and rewards progress.
+
+The core genre is:
+
+- Casual puzzle
+- Sorting puzzle
+- Match/clear puzzle
+- Mobile board-and-drag game
+
+
+Main systems in the game
+------------------------
+
+1. Board system
+
+Responsible for creating the grid, tracking active cells, blocked cells, occupied cells, and valid placement positions.
+Recent work added per-level board size and custom board shapes.
+
+Important concepts:
+
+- Not every level needs the same width/height.
+- Some cells can be removed or blocked.
+- Board layout data should live in level configuration, not hardcoded code.
+- Gizmos are used to see board cells in the Scene view.
+
+
+2. Cell/node system
+
+Each board cell represents a possible position for a box.
+Cells know whether they are playable, occupied, blocked, or empty.
+The board uses these cells to find neighbors and decide where a dragged box can be placed.
+
+
+3. Box system
+
+Boxes are the main objects the player drags and places.
+A box can contain one or more soda/items.
+The box has capacity and state.
+The system should reuse the existing box capacity and item-color logic instead of inventing duplicate data.
+
+
+4. Soda/item color system
+
+The game already has a color/type system for sodas/items.
+Any new editor setup or initial-box configuration should reuse the existing Soda color enum/data.
+Creating a second color system would cause bugs and confusion.
+
+
+5. Rail spawning system
+
+The bottom rail spawns boxes that the player can drag onto the board.
+The rail must keep feeding the player boxes according to the level setup.
+Dragging a box from the rail should not change gameplay rules just to fix rendering.
+
+
+6. Drag-and-drop system
+
+The player drags a box from the rail and drops it onto a valid board cell.
+Important rules:
+
+- A dragged box should appear visually above board boxes.
+- Placement rules must not change during visual render fixes.
+- Box scale and movement should remain the same.
+- Rendering priority should be restored after drop or return.
+
+
+7. Matching and transfer system
+
+The matching system checks connected boxes and moves sodas/items between them.
+The latest important design decision:
+If a 4-match is possible inside the connected component, the resolver should prioritize the path that completes that match.
+
+Why this matters:
+The old greedy logic could make a locally valid transfer that accidentally destroyed the chance of a bigger match.
+For example, if the center box is the bridge between left and right boxes, emptying the center too early disconnects the group.
+
+Better behavior:
+Search the connected component briefly before choosing the next transfer.
+If a short sequence can complete a match of 4, choose the first move from that sequence.
+If no match path exists, use the existing greedy behavior as fallback.
+
+
+8. Tutorial system
+
+The tutorial teaches specific moves using highlights, hand pointer movement, and controlled drag rules.
+Important tutorial fixes:
+
+- Hand pointer should stop at the intended cell/target position.
+- In tutorial phase two, boxes must be selected in correct order: left, middle, right.
+- Out-of-order boxes should not move.
+
+
+9. Level loading/progression system
+
+The project should not rely blindly on raw Unity build index numbers.
+Instead, the game should understand logical levels separately from build indices.
+
+Example:
+
+- Tutorial may be a scene in build index 2.
+- Level1 may be build index 3.
+- But gameplay should think of them as Tutorial and Level 1, not just raw numbers.
+
+This prevents bugs when new scenes are added or scene order changes.
+
+
+10. Save and Load system
+
+Save/load data is stored and managed separately from normal gameplay logic.
+The relevant scripts were organized under:
+
+Assets/Scripts/Main Scripts/Save and Load
+
+Important issue:
+Persistent data like GameDataManager.boxNum must be reset properly for each new level.
+If not reset, old level state leaks into the next level and causes wrong win logic.
+
+
+11. Win and lose system
+
+Win:
+The win condition must be guarded so it fires only once.
+If multiple matches happen almost at the same time, only one win sequence should run.
+
+Lose:
+Game lose should not happen instantly the moment the board becomes full.
+The game must first wait for transfer/match/clear resolution after the final placement.
+If a match clears space, the player continues.
+If no match clears space, then the lose menu appears.
+
+End menu pause:
+When win or lose menu appears, gameplay movement should stop.
+This includes lift trucks and other active scene movement.
+
+
+12. Breakable blocked cells
+
+Brown blocked cells are locked cells that cannot accept boxes.
+When a matched box is removed, the board checks only direct orthogonal neighbors:
+
+- Up
+- Down
+- Left
+- Right
+
+If a brown blocker is adjacent to the matched box, it should fade/break and then become a normal playable empty cell.
+
+Important rules:
+
+- Only direct neighbors unlock.
+- No diagonal unlock.
+- No chain reaction.
+- No unrelated blockers unlock.
+- Animation duration should be configurable in Inspector.
+
+
+13. Android build and screen adaptation
+
+The game is intended for mobile screens.
+For different phone sizes, the board/camera/UI must fit smaller screens than the development test resolution.
+
+Important idea:
+The visible gameplay area should be framed according to the screen aspect ratio.
+UI should use proper anchors/scaling and should not depend on a single fixed device resolution.
+
+Gradle issue summary:
+Android builds are sensitive to Unity version, Android Gradle Plugin version, Gradle wrapper version, JDK version, SDK/NDK versions, and installed Android modules.
+When one of these is mismatched, Gradle can fail even if the game code is fine.
+
+
+14. Unity 6.3 problem
+
+The project experienced severe hangs after upgrading to Unity 6.3 LTS.
+The editor got stuck on Application.TickGlobalCallbacks.
+Deleting Library and Logs did not solve it.
+The user reverted to the previous Unity 6 version.
+
+Lesson:
+For this project, Unity 6.3 introduced editor instability.
+Future changes should be tested first in the stable Unity version used by the project.
+
+
+15. Lift truck queue/movement
+
+Problem:
+Trucks could stop in the middle of the route or after transferring boxes.
+
+Fix direction:
+Truck queue logic needed stronger movement recovery and stable parking alignment.
+After correction, parked trucks should face world +X and appear lined up behind each other, as in the original correct layout.
+
+
+16. Current match-priority lesson
+
+Problem:
+The old transfer logic could choose a local move that was legal but strategically wrong.
+It might move the center soda away before using it as the bridge for a 4-match.
+
+Required behavior:
+If a match of 4 is possible among directly connected boxes, complete that match.
+This must work in both:
+
+- Straight-line layouts
+- L-shaped connected layouts
+
+Good implementation principle:
+Do not rewrite the whole match system.
+Keep the current resolver, but add a small deterministic look-ahead before the old greedy fallback.
+
+
+Important scripts mentioned during the project
+==============================================
+
+The exact full list can change as the project evolves, but the main usable scripts discussed include:
+
+- Board.cs
+- Node.cs
+- Box.cs
+- UniversalSodaTransferSystem.cs
+- LiftTruck.cs
+- LiftTruckManager.cs
+- GameDataManager.cs
+- LoadManager.cs
+- WinPanel.cs
+- UIManager.cs
+- SortingTutorialController.cs
+- TutorialManager.cs
+- TutorialControllerBase.cs
+- TutorialCompletionStore.cs
+- ToolTipTutorial.cs
+- SpawnContoller.cs
+
+
+Recommended way to use this document
+====================================
+
+For learning:
+Read PART 2 first.
+It explains the project systems in a clean order.
+
+For historical context:
+Read PART 1.
+It shows what the user asked for and why the features changed.
+
+For asking another AI to teach the code:
+Give the AI this document together with the scripts in "Assets/Scripts/Main Scripts" and the files inside "Assets/EXPLANATION DOCS".
+Ask it to explain each script like a senior game developer mentoring a junior developer.
+

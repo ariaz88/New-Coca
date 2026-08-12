@@ -54,8 +54,10 @@ public class SettingManager : MonoBehaviour
     {
         HideSettingsPanel();
         InitializeONOFFImages();
-        toggleMusicOn = false;
-        ToggleONOFFMusics();
+        toggleMusicOn = SoundManager.instance == null || SoundManager.instance.IsMusicEnabled;
+        toggleSoundOn = SoundManager.instance == null || SoundManager.instance.IsSoundEnabled;
+        SetToggleImages(musicOn, musicOff, toggleMusicOn);
+        SetToggleImages(soundOn, soundOff, toggleSoundOn);
     }
     private void InitializeONOFFImages()
     {
@@ -71,33 +73,21 @@ public class SettingManager : MonoBehaviour
     public void ToggleONOFFMusics()
     {
         toggleMusicOn = !toggleMusicOn;
-        if (toggleMusicOn)
+        SetToggleImages(musicOn, musicOff, toggleMusicOn);
+        if (SoundManager.instance != null)
         {
-            musicOn.gameObject.SetActive(true);
-            musicOff.gameObject.SetActive(false);
+            SoundManager.instance.ToggleMusicMute(toggleMusicOn);
         }
-        else
-        {
-            musicOn.gameObject.SetActive(false);
-            musicOff.gameObject.SetActive(true);
-        }
-        SoundManager.instance.ToggleMusicMute(toggleMusicOn);
 
     }
     public void ToggleONOFFSounds()
     {
         toggleSoundOn = !toggleSoundOn;
-        if (toggleSoundOn)
+        SetToggleImages(soundOn, soundOff, toggleSoundOn);
+        if (SoundManager.instance != null)
         {
-            soundOn.gameObject.SetActive(true);
-            soundOff.gameObject.SetActive(false);
+            SoundManager.instance.ToggleSoundMute(toggleSoundOn);
         }
-        else
-        {
-            soundOn.gameObject.SetActive(false);
-            soundOff.gameObject.SetActive(true);
-        }
-        SoundManager.instance.ToggleSoundMute(toggleSoundOn);
 
 
     }
@@ -151,6 +141,19 @@ public class SettingManager : MonoBehaviour
     public void HideSettingsPanel()
     {
         settingPanel.gameObject.SetActive(false);
+    }
+
+    private void SetToggleImages(Image onImage, Image offImage, bool isOn)
+    {
+        if (onImage != null)
+        {
+            onImage.gameObject.SetActive(isOn);
+        }
+
+        if (offImage != null)
+        {
+            offImage.gameObject.SetActive(!isOn);
+        }
     }
 
 }
