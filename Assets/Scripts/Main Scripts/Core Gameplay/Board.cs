@@ -1165,6 +1165,17 @@ public class Board : MonoBehaviour
 
         GameObject movingBox = Instantiate(boxPref, sourcePosition, Quaternion.identity);
 
+        // The match-confirmation punch. It is applied to this copy rather than to
+        // the real box because RetireBox destroys the real one on the same frame it
+        // is packed, so a punch there would never be seen. This copy is purely
+        // visual and already on its way to the truck, so scaling it changes nothing
+        // about the board or the match rules.
+        Vector3 restScale = movingBox.transform.localScale;
+        DOTween.Sequence()
+            .Append(movingBox.transform.DOScale(restScale * 1.08f, 0.06f).SetEase(Ease.OutBack))
+            .Append(movingBox.transform.DOScale(restScale * 0.96f, 0.05f).SetEase(Ease.InOutQuad))
+            .Append(movingBox.transform.DOScale(restScale, 0.05f).SetEase(Ease.OutQuad));
+
         if (activeTruck.IsEnoughRoomLeft())
         {
             Vector3 target = activeTruck.GetNextAvailablePosition();
