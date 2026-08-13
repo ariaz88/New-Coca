@@ -74,93 +74,54 @@ MonoBehaviour:
     requiredCount: 3
   - color: 4
     requiredCount: 3
-  palette: 05000000020000000300000004000000
+  palette: 050000000200000003000000040000000100000000000000
   railQueue:
   - sodas:
     - color: 2
       count: 1
-    - color: 3
+    - color: 0
       count: 1
   - sodas:
-    - color: 4
+    - color: 3
       count: 3
   - sodas:
-    - color: 5
+    - color: 4
       count: 2
   - sodas:
-    - color: 2
+    - color: 5
       count: 3
   - sodas:
-    - color: 3
-      count: 2
     - color: 2
-      count: 1
-  - sodas:
-    - color: 5
       count: 2
-  - sodas:
-    - color: 3
+    - color: 0
       count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 5
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 5
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 5
-      count: 2
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
   - sodas:
     - color: 4
       count: 2
   - sodas:
     - color: 2
       count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
     - color: 5
+      count: 1
+    - color: 4
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 2
@@ -170,26 +131,84 @@ MonoBehaviour:
       count: 1
     - color: 2
       count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
     - color: 4
       count: 1
   - sodas:
     - color: 5
       count: 2
-    - color: 3
-      count: 1
   - sodas:
-    - color: 4
-      count: 2
     - color: 3
+      count: 2
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 5
-      count: 2
+      count: 3
   - sodas:
+    - color: 2
+      count: 1
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
     - color: 3
       count: 1
   - sodas:
     - color: 4
+      count: 2
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 0
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -199,7 +218,7 @@ MonoBehaviour:
   mainChallenge: 'Campaign finale: eight columns, four orders, sixteen blockers.'
   designerNotes: Widest board in the campaign. The four anchors sit on one row, so
     every order has to be grown outward through the blocker lattice.
-  bakedChecksum: 1a8d362f-182
+  bakedChecksum: a76a7763-1a7
   lastVerification:
     checksum: 
     solved: 0

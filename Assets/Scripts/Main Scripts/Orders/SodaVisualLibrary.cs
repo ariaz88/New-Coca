@@ -150,7 +150,9 @@ public sealed class SodaVisualLibrary : ScriptableObject
             case Soda.SodaColor.Red: return new Color(0.95f, 0.25f, 0.25f);
             case Soda.SodaColor.Blue: return new Color(0.35f, 0.62f, 1f);
             case Soda.SodaColor.Orange: return new Color(1f, 0.65f, 0.20f);
-            case Soda.SodaColor.Yellow: return new Color(1f, 0.92f, 0.30f);
+            // Matches Mat003 on Bottle.prefab, the material this colour actually
+            // renders with in game.
+            case Soda.SodaColor.Pink: return new Color(1f, 0.38f, 0.66f);
             case Soda.SodaColor.Green: return new Color(0.45f, 0.90f, 0.40f);
             case Soda.SodaColor.Purple: return new Color(0.72f, 0.45f, 0.95f);
             default: return Color.white;

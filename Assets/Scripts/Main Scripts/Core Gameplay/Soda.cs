@@ -7,7 +7,15 @@ public class Soda : MonoBehaviour
         Red,
         Blue,
         Orange,
-        Yellow,
+
+        // Renamed from Yellow. The gameplay material for this slot (Mat003 on
+        // Bottle.prefab) has always been pink - RGB(1.00, 0.38, 0.66) - but the
+        // name, the Orders icon and the effect tint were never updated, so the
+        // same drink appeared pink on the board and yellow in the UI.
+        // The position in the enum is unchanged, so every scene, level asset and
+        // saved order that stores this value as an integer keeps working.
+        Pink,
+
         Green,
         Purple
     }
@@ -38,7 +46,7 @@ public class Soda : MonoBehaviour
             case SodaColor.Orange:
                 rend.material = sodaMaterials[2];
                 break;
-            case SodaColor.Yellow:
+            case SodaColor.Pink:
                 rend.material = sodaMaterials[3];
                 break;
             case SodaColor.Green:

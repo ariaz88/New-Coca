@@ -61,7 +61,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 1
     requiredCount: 3
-  palette: 04000000000000000100000003000000
+  palette: 040000000000000001000000030000000200000005000000
   railQueue:
   - sodas:
     - color: 0
@@ -75,7 +75,7 @@ MonoBehaviour:
   - sodas:
     - color: 1
       count: 1
-    - color: 3
+    - color: 4
       count: 1
   - sodas:
     - color: 0
@@ -83,7 +83,7 @@ MonoBehaviour:
   - sodas:
     - color: 1
       count: 2
-    - color: 4
+    - color: 5
       count: 1
   - sodas:
     - color: 4
@@ -119,44 +119,59 @@ MonoBehaviour:
   - sodas:
     - color: 4
       count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+  - sodas:
     - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 1
       count: 2
   - sodas:
     - color: 4
-      count: 2
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 4
-      count: 1
-    - color: 1
       count: 1
   - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
+    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -167,7 +182,7 @@ MonoBehaviour:
     space.
   designerNotes: The distractor is supplied as a whole set of four, so it can always
     be packed away - a remainder would permanently poison a cell.
-  bakedChecksum: dafc013c-139
+  bakedChecksum: 28726ce7-156
   lastVerification:
     checksum: 
     solved: 0

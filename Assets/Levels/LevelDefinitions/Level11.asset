@@ -40,7 +40,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 5
     requiredCount: 3
-  palette: 0200000005000000
+  palette: 0200000005000000000000000100000003000000
   railQueue:
   - sodas:
     - color: 2
@@ -48,27 +48,51 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 5
+      count: 1
     - color: 2
       count: 1
   - sodas:
     - color: 5
       count: 2
-    - color: 2
+    - color: 0
       count: 1
   - sodas:
     - color: 5
       count: 2
     - color: 2
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
       count: 1
   - sodas:
     - color: 2
@@ -78,27 +102,22 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 5
-      count: 3
-  - sodas:
+      count: 1
     - color: 2
       count: 1
-    - color: 5
-      count: 1
   - sodas:
-    - color: 2
+    - color: 0
       count: 2
-    - color: 5
+    - color: 1
       count: 1
   - sodas:
-    - color: 2
+    - color: 1
       count: 2
+  - sodas:
     - color: 5
       count: 1
   - sodas:
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 5
+    - color: 0
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -107,7 +126,7 @@ MonoBehaviour:
   expectedSeconds: 270
   mainChallenge: First permanent holes. Unlike blockers, these corners never open.
   designerNotes: Teaches the hole/blocker distinction before both appear together.
-  bakedChecksum: aa6fdf0c-b7
+  bakedChecksum: 32132f07-de
   lastVerification:
     checksum: 
     solved: 0

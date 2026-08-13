@@ -444,7 +444,7 @@ public sealed class BoardEditor : Editor
             case Soda.SodaColor.Red: return new Color(0.87f, 0.19f, 0.19f);
             case Soda.SodaColor.Blue: return new Color(0.20f, 0.47f, 0.92f);
             case Soda.SodaColor.Orange: return new Color(0.95f, 0.58f, 0.13f);
-            case Soda.SodaColor.Yellow: return new Color(0.96f, 0.85f, 0.17f);
+            case Soda.SodaColor.Pink: return new Color(1f, 0.38f, 0.66f);
             case Soda.SodaColor.Green: return new Color(0.30f, 0.75f, 0.32f);
             case Soda.SodaColor.Purple: return new Color(0.60f, 0.32f, 0.83f);
             default: return Color.gray;

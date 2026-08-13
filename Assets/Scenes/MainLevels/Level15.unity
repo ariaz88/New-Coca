@@ -3450,7 +3450,7 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 1
-    - color: 3
+    - color: 1
       count: 1
   - sodas:
     - color: 5
@@ -3461,36 +3461,63 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 2
+    - color: 1
+      count: 1
+  - sodas:
     - color: 3
+      count: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 5
       count: 3
   - sodas:
     - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 5
       count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
   - sodas:
     - color: 5
       count: 3
   - sodas:
     - color: 3
-      count: 2
-    - color: 5
       count: 1
-  - sodas:
-    - color: 3
+    - color: 1
       count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 3
   - sodas:
     - color: 5
       count: 2
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 1
+      count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 127958
-  allowedColors: 0500000003000000
+  allowedColors: 0500000003000000040000000000000001000000
+  orderColorWeight: 2
   minSodasPerBox: 1
   maxSodasPerBox: 3
   minDistinctColorsPerBox: 1

@@ -44,6 +44,9 @@ public class SpawnContoller : MonoBehaviour
     [Tooltip("Colors that may spawn on this level's rail boxes. Leave empty to allow every Soda.SodaColor.")]
     [SerializeField] private List<Soda.SodaColor> allowedColors = new List<Soda.SodaColor>();
 
+    [SerializeField, Min(1f), Tooltip("How much more likely a colour an unfinished order still wants is to be picked, versus a colour no order needs. 1 = no bias.")]
+    private float orderColorWeight = 2f;
+
     [Header("Per-Level Box Fill")]
     [SerializeField, Min(1)]
     [Tooltip("Minimum sodas placed in a spawned box. A rail box is never spawned empty.")]
@@ -609,12 +612,13 @@ public class SpawnContoller : MonoBehaviour
 
         int sodaCount = UnityEngine.Random.Range(Mathf.Max(minFill, distinctCount), maxFill + 1);
 
-        // Pick the distinct colors for this box without repeats.
+        // Pick the distinct colors for this box without repeats, biased toward the
+        // colors the active orders actually want.
         List<Soda.SodaColor> pool = new List<Soda.SodaColor>(palette);
         List<Soda.SodaColor> chosen = new List<Soda.SodaColor>();
         for (int i = 0; i < distinctCount && pool.Count > 0; i++)
         {
-            int index = UnityEngine.Random.Range(0, pool.Count);
+            int index = PickWeightedColorIndex(pool);
             chosen.Add(pool[index]);
             pool.RemoveAt(index);
         }
@@ -627,6 +631,64 @@ public class SpawnContoller : MonoBehaviour
         }
 
         return recipe;
+    }
+
+    /// <summary>
+    /// Weighted pick from the remaining palette.
+    ///
+    /// Once a level's rail carries more colours than its orders need, a uniform
+    /// draw makes the useful colours rare: with six colours on the rail and two
+    /// ordered, only a third of what arrives can advance an order, and the level
+    /// turns into a wait rather than a puzzle. Ordered colours therefore get
+    /// orderColorWeight times the chance of the rest - enough that progress
+    /// stays steady while the distractor colours still show up often enough to
+    /// occupy space and force real decisions.
+    /// </summary>
+    private int PickWeightedColorIndex(List<Soda.SodaColor> pool)
+    {
+        if (pool.Count == 1)
+        {
+            return 0;
+        }
+
+        float total = 0f;
+        for (int index = 0; index < pool.Count; index++)
+        {
+            total += GetColorWeight(pool[index]);
+        }
+
+        if (total <= 0f)
+        {
+            return UnityEngine.Random.Range(0, pool.Count);
+        }
+
+        float roll = UnityEngine.Random.value * total;
+        for (int index = 0; index < pool.Count; index++)
+        {
+            roll -= GetColorWeight(pool[index]);
+            if (roll <= 0f)
+            {
+                return index;
+            }
+        }
+
+        return pool.Count - 1;
+    }
+
+    private float GetColorWeight(Soda.SodaColor color)
+    {
+        // Only orders that still need boxes count. Weighting a colour that is
+        // already fulfilled would keep flooding the rail with a drink the player
+        // has no remaining use for.
+        OrderManager orders = OrderManager.instance;
+        if (orders == null || !orders.HasOrders)
+        {
+            return 1f;
+        }
+
+        OrderRuntimeState state = orders.GetOrder(color);
+        bool wanted = state != null && !state.IsFulfilled;
+        return wanted ? Mathf.Max(1f, orderColorWeight) : 1f;
     }
 
     /// <summary>

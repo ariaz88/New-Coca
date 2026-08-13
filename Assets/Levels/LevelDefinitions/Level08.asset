@@ -40,7 +40,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 2
     requiredCount: 3
-  palette: 0300000002000000
+  palette: 03000000020000000400000005000000
   railQueue:
   - sodas:
     - color: 2
@@ -48,40 +48,40 @@ MonoBehaviour:
   - sodas:
     - color: 3
       count: 1
-    - color: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 3
       count: 1
-    - color: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 3
       count: 1
-    - color: 2
+    - color: 5
       count: 1
   - sodas:
-    - color: 3
-      count: 1
     - color: 2
+      count: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 3
       count: 2
   - sodas:
-    - color: 3
-      count: 1
     - color: 2
+      count: 1
+    - color: 5
       count: 1
   - sodas:
-    - color: 3
-      count: 1
     - color: 2
+      count: 1
+    - color: 3
       count: 1
   - sodas:
-    - color: 3
-      count: 1
     - color: 2
+      count: 1
+    - color: 5
       count: 1
   - sodas:
     - color: 3
@@ -102,7 +102,19 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 3
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 2
       count: 1
+  - sodas:
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 2
@@ -111,7 +123,7 @@ MonoBehaviour:
   mainChallenge: 'Six blockers and a narrow working area: order of operations starts
     to matter.'
   designerNotes: 
-  bakedChecksum: 2b006b80-bb
+  bakedChecksum: 4bf53993-d3
   lastVerification:
     checksum: 
     solved: 0

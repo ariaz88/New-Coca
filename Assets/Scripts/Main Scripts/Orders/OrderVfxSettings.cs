@@ -609,9 +609,15 @@ public sealed class OrderVfxSettings : ScriptableObject
         Color.RGBToHSV(color, out float hue, out float saturation, out float value);
 
         // Hue is normalised 0-1. Warm runs from red (0) through yellow (~0.17).
-        // Anything above 0.17 and below 0.92 is already cool enough to pass.
+        // Anything above 0.17 and below the wrap point is already cool enough.
+        //
+        // The wrap sits at 0.96 rather than 0.92 so the pink drink (hue ~0.925)
+        // passes through untouched. At 0.92 it was caught by the guard and
+        // rotated down to ~0.75, which is violet - it made pink's trail almost
+        // indistinguishable from the purple drink's. Deep reds above 0.96 are
+        // still guarded, which is what the rule was actually for.
         const float warmEnd = 0.17f;
-        const float warmWrap = 0.92f;
+        const float warmWrap = 0.96f;
 
         bool isWarm = hue <= warmEnd || hue >= warmWrap;
         if (!isWarm)

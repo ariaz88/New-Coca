@@ -181,7 +181,7 @@ public class BoxSpawner : MonoBehaviour
     {
         int sodaCount = Random.Range(1, 4);
         Soda.SodaColor randomColor = GetRandomSodaColor();
-        //Soda.SodaColor randomColor = Soda.SodaColor.Yellow;
+        //Soda.SodaColor randomColor = Soda.SodaColor.Pink;
         Transform[] sodaPositions = GetSodaPositions(box);
 
         List<Transform> availablePositions = new List<Transform>(sodaPositions);
@@ -317,7 +317,7 @@ public class BoxSpawner : MonoBehaviour
     {
         int sodaCount = Random.Range(1, 4);
         Soda.SodaColor randomColor = GetRandomSodaColor();
-        //Soda.SodaColor randomColor = Soda.SodaColor.Yellow;
+        //Soda.SodaColor randomColor = Soda.SodaColor.Pink;
         Transform[] sodaPositions = GetSodaPositions(box);
 
         List<Transform> availablePositions = new List<Transform>(sodaPositions);
@@ -397,7 +397,7 @@ public class BoxSpawner : MonoBehaviour
                 Soda sodaScript = soda.GetComponent<Soda>();
                 if (sodaScript != null)
                 {
-                    sodaScript.SetColor(Soda.SodaColor.Yellow);
+                    sodaScript.SetColor(Soda.SodaColor.Pink);
                 }
             }
 

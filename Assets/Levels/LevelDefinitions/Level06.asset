@@ -29,23 +29,47 @@ MonoBehaviour:
   orders:
   - color: 4
     requiredCount: 2
-  palette: 04000000
+  palette: 04000000000000000100000002000000
   railQueue:
   - sodas:
     - color: 4
       count: 3
   - sodas:
     - color: 4
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 4
       count: 3
   - sodas:
-    - color: 4
+    - color: 1
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 2
       count: 2
   - sodas:
     - color: 4
-      count: 2
+      count: 1
   - sodas:
-    - color: 4
-      count: 2
+    - color: 0
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 0
@@ -54,7 +78,7 @@ MonoBehaviour:
   mainChallenge: 'TUTORIAL: completing a box breaks the X blockers touching it.'
   designerNotes: The 'G' in the shape row is the starting box cell, kept playable.
     Blockers sit north, west and east of it; only the south cell is free.
-  bakedChecksum: 870bd040-4a
+  bakedChecksum: 27664af9-7a
   lastVerification:
     checksum: 
     solved: 0

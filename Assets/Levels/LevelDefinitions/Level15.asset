@@ -36,7 +36,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 3
     requiredCount: 3
-  palette: 0500000003000000
+  palette: 0500000003000000040000000000000001000000
   railQueue:
   - sodas:
     - color: 3
@@ -44,7 +44,7 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 1
-    - color: 3
+    - color: 1
       count: 1
   - sodas:
     - color: 5
@@ -55,33 +55,59 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 2
+    - color: 1
+      count: 1
+  - sodas:
     - color: 3
+      count: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 5
       count: 3
   - sodas:
     - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 5
       count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
   - sodas:
     - color: 5
       count: 3
   - sodas:
     - color: 3
-      count: 2
-    - color: 5
       count: 1
-  - sodas:
-    - color: 3
+    - color: 1
       count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 3
   - sodas:
     - color: 5
       count: 2
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 1
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 2
@@ -89,7 +115,7 @@ MonoBehaviour:
   expectedSeconds: 270
   mainChallenge: 'Both blocker types side by side: one cheap to open, one expensive.'
   designerNotes: 
-  bakedChecksum: a7cb1b1c-91
+  bakedChecksum: 506c01a9-c5
   lastVerification:
     checksum: 
     solved: 0

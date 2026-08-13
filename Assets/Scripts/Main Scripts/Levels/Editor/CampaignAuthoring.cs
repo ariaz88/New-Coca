@@ -12,6 +12,10 @@ using UnityEngine;
 /// The first string is the TOP row, matching how the Board inspector draws the
 /// grid, so what is written here is what a designer sees in the editor.
 ///
+/// Starting-box contents use one letter per soda:
+///   R red   B blue   O orange   K pink   G green   P purple
+/// Pink is K because P is already purple.
+///
 /// Rail queues are generated rather than hand-listed. Supply is the one thing a
 /// level cannot get wrong - an order needing 3 packed boxes needs exactly 12
 /// sodas of that colour - so the counts are derived from the orders and the
@@ -28,7 +32,7 @@ public static class CampaignAuthoring
     private const Soda.SodaColor R = Soda.SodaColor.Red;
     private const Soda.SodaColor B = Soda.SodaColor.Blue;
     private const Soda.SodaColor O = Soda.SodaColor.Orange;
-    private const Soda.SodaColor Y = Soda.SodaColor.Yellow;
+    private const Soda.SodaColor K = Soda.SodaColor.Pink;
     private const Soda.SodaColor G = Soda.SodaColor.Green;
     private const Soda.SodaColor P = Soda.SodaColor.Purple;
 
@@ -144,11 +148,11 @@ public static class CampaignAuthoring
             Shape = Open4x5,
             Starts = new[]
             {
-                new Start(0, 4, "RR"), new Start(3, 4, "YY"),
-                new Start(0, 0, "YY"), new Start(3, 0, "RR")
+                new Start(0, 4, "RR"), new Start(3, 4, "KK"),
+                new Start(0, 0, "KK"), new Start(3, 0, "RR")
             },
-            Orders = new[] { new Order(R, 3), new Order(Y, 3) },
-            Palette = new[] { R, Y },
+            Orders = new[] { new Order(R, 3), new Order(K, 3) },
+            Palette = new[] { R, K },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
             Difficulty = LevelDifficulty.Easy,
@@ -251,9 +255,9 @@ public static class CampaignAuthoring
                 "....",
                 ".XX."
             },
-            Starts = new[] { new Start(0, 3, "YY"), new Start(3, 1, "OO") },
-            Orders = new[] { new Order(Y, 3), new Order(O, 3) },
-            Palette = new[] { Y, O },
+            Starts = new[] { new Start(0, 3, "KK"), new Start(3, 1, "OO") },
+            Orders = new[] { new Order(K, 3), new Order(O, 3) },
+            Palette = new[] { K, O },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
             Difficulty = LevelDifficulty.Medium,
@@ -295,9 +299,9 @@ public static class CampaignAuthoring
                 "....",
                 "XX.X"
             },
-            Starts = new[] { new Start(0, 3, "GG"), new Start(3, 1, "BB"), new Start(1, 1, "YY") },
-            Orders = new[] { new Order(G, 3), new Order(B, 3), new Order(Y, 2) },
-            Palette = new[] { G, B, Y },
+            Starts = new[] { new Start(0, 3, "GG"), new Start(3, 1, "BB"), new Start(1, 1, "KK") },
+            Orders = new[] { new Order(G, 3), new Order(B, 3), new Order(K, 2) },
+            Palette = new[] { G, B, K },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
             Difficulty = LevelDifficulty.Hard,
@@ -342,9 +346,9 @@ public static class CampaignAuthoring
                 "....",
                 ".X.#"
             },
-            Starts = new[] { new Start(1, 3, "RR"), new Start(2, 1, "YY"), new Start(1, 1, "GG") },
-            Orders = new[] { new Order(R, 3), new Order(Y, 3), new Order(G, 2) },
-            Palette = new[] { R, Y, G },
+            Starts = new[] { new Start(1, 3, "RR"), new Start(2, 1, "KK"), new Start(1, 1, "GG") },
+            Orders = new[] { new Order(R, 3), new Order(K, 3), new Order(G, 2) },
+            Palette = new[] { R, K, G },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
             Difficulty = LevelDifficulty.Hard,
@@ -410,9 +414,9 @@ public static class CampaignAuthoring
                 ".FX.",
                 "...."
             },
-            Starts = new[] { new Start(0, 3, "PP"), new Start(3, 1, "YY") },
-            Orders = new[] { new Order(P, 3), new Order(Y, 3) },
-            Palette = new[] { P, Y },
+            Starts = new[] { new Start(0, 3, "PP"), new Start(3, 1, "KK") },
+            Orders = new[] { new Order(P, 3), new Order(K, 3) },
+            Palette = new[] { P, K },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
             Difficulty = LevelDifficulty.Medium,
@@ -454,9 +458,9 @@ public static class CampaignAuthoring
                 "....",
                 "F.X#"
             },
-            Starts = new[] { new Start(1, 3, "BB"), new Start(2, 1, "OO"), new Start(2, 3, "YY") },
-            Orders = new[] { new Order(B, 3), new Order(O, 3), new Order(Y, 2) },
-            Palette = new[] { B, O, Y },
+            Starts = new[] { new Start(1, 3, "BB"), new Start(2, 1, "OO"), new Start(2, 3, "KK") },
+            Orders = new[] { new Order(B, 3), new Order(O, 3), new Order(K, 2) },
+            Palette = new[] { B, O, K },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
             Difficulty = LevelDifficulty.Hard,
@@ -500,9 +504,9 @@ public static class CampaignAuthoring
                 ".F.F.",
                 "#.X.#"
             },
-            Starts = new[] { new Start(1, 4, "YY"), new Start(3, 0, "BB"), new Start(2, 2, "OO") },
-            Orders = new[] { new Order(Y, 3), new Order(B, 3), new Order(O, 3) },
-            Palette = new[] { Y, B, O },
+            Starts = new[] { new Start(1, 4, "KK"), new Start(3, 0, "BB"), new Start(2, 2, "OO") },
+            Orders = new[] { new Order(K, 3), new Order(B, 3), new Order(O, 3) },
+            Palette = new[] { K, B, O },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
             Difficulty = LevelDifficulty.Hard,
@@ -544,9 +548,9 @@ public static class CampaignAuthoring
                 "...F..",
                 "#X..X#"
             },
-            Starts = new[] { new Start(1, 3, "OO"), new Start(2, 1, "YY"), new Start(1, 2, "BB") },
-            Orders = new[] { new Order(O, 3), new Order(Y, 3), new Order(B, 3) },
-            Palette = new[] { O, Y, B },
+            Starts = new[] { new Start(1, 3, "OO"), new Start(2, 1, "KK"), new Start(1, 2, "BB") },
+            Orders = new[] { new Order(O, 3), new Order(K, 3), new Order(B, 3) },
+            Palette = new[] { O, K, B },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
             Difficulty = LevelDifficulty.Boss,
@@ -590,9 +594,9 @@ public static class CampaignAuthoring
                 "...FF.",
                 "X#..#X"
             },
-            Starts = new[] { new Start(0, 3, "YY"), new Start(5, 1, "PP"), new Start(3, 3, "OO") },
-            Orders = new[] { new Order(Y, 3), new Order(P, 3), new Order(O, 3) },
-            Palette = new[] { Y, P, O },
+            Starts = new[] { new Start(0, 3, "KK"), new Start(5, 1, "PP"), new Start(3, 3, "OO") },
+            Orders = new[] { new Order(K, 3), new Order(P, 3), new Order(O, 3) },
+            Palette = new[] { K, P, O },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
             Difficulty = LevelDifficulty.Boss,
@@ -615,7 +619,7 @@ public static class CampaignAuthoring
             Starts = new[] { new Start(1, 3, "GG"), new Start(4, 1, "RR"), new Start(2, 1, "BB") },
             Orders = new[] { new Order(G, 3), new Order(R, 3), new Order(B, 3) },
             Palette = new[] { G, R, B },
-            Distractors = new[] { Y },
+            Distractors = new[] { K },
             DistractorSets = 1,
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
@@ -641,10 +645,10 @@ public static class CampaignAuthoring
             Starts = new[]
             {
                 new Start(3, 2, "PP"), new Start(4, 2, "OO"),
-                new Start(1, 2, "YY"), new Start(6, 2, "GG")
+                new Start(1, 2, "KK"), new Start(6, 2, "GG")
             },
-            Orders = new[] { new Order(P, 3), new Order(O, 3), new Order(Y, 3), new Order(G, 3) },
-            Palette = new[] { P, O, Y, G },
+            Orders = new[] { new Order(P, 3), new Order(O, 3), new Order(K, 3), new Order(G, 3) },
+            Palette = new[] { P, O, K, G },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
             Difficulty = LevelDifficulty.Boss,
@@ -752,12 +756,17 @@ public static class CampaignAuthoring
         definition.EditorSetBoard(width, height, cells, boxes);
         definition.EditorSetOrders(orders);
 
-        Dictionary<Soda.SodaColor, int> railNeeds = ComputeRailNeeds(spec, boxes);
+        // The rail carries more colours than the orders need from level 6 on, so
+        // the player has to work around drinks that cannot advance anything.
+        List<Soda.SodaColor> distractors = ResolveDistractors(spec);
+        int maxColorsPerBox = Mathf.Max(spec.MaxColorsPerRailBox, GetMaxColorsPerRailBox(spec.Number));
+
+        Dictionary<Soda.SodaColor, int> railNeeds = ComputeRailNeeds(spec, boxes, distractors);
         List<TutorialBoxRecipe> queue = BuildRailQueue(
-            railNeeds, spec.MaxColorsPerRailBox, 7717 + spec.Number * 131);
+            railNeeds, maxColorsPerBox, 7717 + spec.Number * 131, OrderColors(spec));
 
         List<Soda.SodaColor> palette = new List<Soda.SodaColor>(spec.Palette);
-        foreach (Soda.SodaColor distractor in spec.Distractors)
+        foreach (Soda.SodaColor distractor in distractors)
         {
             if (!palette.Contains(distractor))
             {
@@ -771,6 +780,93 @@ public static class CampaignAuthoring
     }
 
     /// <summary>
+    /// How many distinct colours this level's rail should carry in total,
+    /// including the ordered ones.
+    ///
+    /// Levels 1-5 stay on their order colours alone: while the player is still
+    /// learning that a box packs when it holds four of one drink, a rail full of
+    /// colours that cannot pay off just reads as noise. From level 6 the rail
+    /// widens to four colours, then five, then all six, so the same board size
+    /// keeps getting harder to keep tidy.
+    /// </summary>
+    private static int GetTargetRailColors(int levelNumber)
+    {
+        if (levelNumber <= 5) return 0;      // orders only
+        if (levelNumber <= 10) return 4;
+        if (levelNumber <= 17) return 5;
+        return 6;
+    }
+
+    /// <summary>
+    /// Most distinct colours allowed inside a single rail box.
+    ///
+    /// A three-colour box is much harder to place well, because two of its
+    /// drinks will usually be stranded wherever it lands, so it is held back
+    /// until the player is comfortable with two-colour boxes.
+    /// </summary>
+    private static int GetMaxColorsPerRailBox(int levelNumber)
+    {
+        if (levelNumber <= 2) return 1;
+        if (levelNumber <= 13) return 2;
+        return 3;
+    }
+
+    private static List<Soda.SodaColor> OrderColors(LevelSpec spec)
+    {
+        List<Soda.SodaColor> colors = new List<Soda.SodaColor>();
+        foreach (Order order in spec.Orders)
+        {
+            if (!colors.Contains(order.Color))
+            {
+                colors.Add(order.Color);
+            }
+        }
+
+        return colors;
+    }
+
+    /// <summary>
+    /// Picks the non-ordered colours this level's rail also carries, topping the
+    /// palette up to the level's target colour count. Explicit spec distractors
+    /// win; the rest are filled deterministically from the remaining drinks so a
+    /// re-author always produces the same level.
+    /// </summary>
+    private static List<Soda.SodaColor> ResolveDistractors(LevelSpec spec)
+    {
+        List<Soda.SodaColor> distractors = new List<Soda.SodaColor>(spec.Distractors);
+
+        int target = GetTargetRailColors(spec.Number);
+        if (target <= 0)
+        {
+            return distractors;
+        }
+
+        List<Soda.SodaColor> used = new List<Soda.SodaColor>(spec.Palette);
+        foreach (Soda.SodaColor color in distractors)
+        {
+            if (!used.Contains(color))
+            {
+                used.Add(color);
+            }
+        }
+
+        // Rotated by level number so consecutive levels do not all reach for the
+        // same spare colour, which would make the added pressure feel identical.
+        Soda.SodaColor[] all = { R, B, O, K, G, P };
+        for (int offset = 0; offset < all.Length && used.Count < target; offset++)
+        {
+            Soda.SodaColor candidate = all[(spec.Number + offset) % all.Length];
+            if (!used.Contains(candidate))
+            {
+                used.Add(candidate);
+                distractors.Add(candidate);
+            }
+        }
+
+        return distractors;
+    }
+
+    /// <summary>
     /// Works out how many sodas of each colour the rail must deliver.
     ///
     /// Every colour is rounded up to a whole number of boxes. For an ordered
@@ -779,7 +875,7 @@ public static class CampaignAuthoring
     /// its cell when it is full and single-coloured.
     /// </summary>
     private static Dictionary<Soda.SodaColor, int> ComputeRailNeeds(
-        LevelSpec spec, List<InitialBoardBoxData> boxes)
+        LevelSpec spec, List<InitialBoardBoxData> boxes, List<Soda.SodaColor> distractors)
     {
         Dictionary<Soda.SodaColor, int> onBoard = new Dictionary<Soda.SodaColor, int>();
         foreach (InitialBoardBoxData box in boxes)
@@ -799,7 +895,9 @@ public static class CampaignAuthoring
             totals[order.Color] = existing + (order.Count + spec.SlackSets) * BoxCapacity;
         }
 
-        foreach (Soda.SodaColor distractor in spec.Distractors)
+        // A distractor is supplied as whole boxes so it can always be packed away
+        // and its cell recovered. An odd remainder would sit on the board forever.
+        foreach (Soda.SodaColor distractor in distractors)
         {
             totals.TryGetValue(distractor, out int existing);
             totals[distractor] = existing + spec.DistractorSets * BoxCapacity;
@@ -845,7 +943,10 @@ public static class CampaignAuthoring
     /// authoring error.
     /// </summary>
     private static List<TutorialBoxRecipe> BuildRailQueue(
-        Dictionary<Soda.SodaColor, int> needs, int maxColorsPerBox, int seed)
+        Dictionary<Soda.SodaColor, int> needs,
+        int maxColorsPerBox,
+        int seed,
+        List<Soda.SodaColor> orderColors)
     {
         System.Random random = new System.Random(seed);
         List<TutorialBoxRecipe> queue = new List<TutorialBoxRecipe>();
@@ -856,14 +957,24 @@ public static class CampaignAuthoring
 
         while (true)
         {
-            // Always drain the largest pool first, so no colour is left stranded in
-            // a tail of single-soda boxes at the end of the level.
+            // Drain the largest pool first so no colour is stranded in a tail of
+            // single-soda boxes, but weight ordered colours up so they arrive
+            // roughly twice as often as the distractors rather than being
+            // back-loaded behind them.
             Soda.SodaColor primary = default;
             int best = 0;
+            float bestScore = 0f;
             foreach (Soda.SodaColor color in colors)
             {
-                if (remaining.TryGetValue(color, out int count) && count > best)
+                if (!remaining.TryGetValue(color, out int count) || count <= 0)
                 {
+                    continue;
+                }
+
+                float score = count * (orderColors != null && orderColors.Contains(color) ? 2f : 1f);
+                if (score > bestScore)
+                {
+                    bestScore = score;
                     best = count;
                     primary = color;
                 }
@@ -950,7 +1061,7 @@ public static class CampaignAuthoring
                 case 'R': result.Add(R); break;
                 case 'B': result.Add(B); break;
                 case 'O': result.Add(O); break;
-                case 'Y': result.Add(Y); break;
+                case 'K': result.Add(K); break;
                 case 'G': result.Add(G); break;
                 case 'P': result.Add(P); break;
             }

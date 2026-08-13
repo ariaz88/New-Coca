@@ -3514,6 +3514,7 @@ MonoBehaviour:
   railExhaustionPolicy: 2
   fallbackSeed: 48768
   allowedColors: 000000000400000001000000
+  orderColorWeight: 2
   minSodasPerBox: 1
   maxSodasPerBox: 3
   minDistinctColorsPerBox: 1

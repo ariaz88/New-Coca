@@ -57,47 +57,37 @@ MonoBehaviour:
     requiredCount: 3
   - color: 2
     requiredCount: 3
-  palette: 030000000100000002000000
+  palette: 030000000100000002000000040000000500000000000000
   railQueue:
   - sodas:
     - color: 1
       count: 2
-    - color: 3
+    - color: 4
       count: 1
   - sodas:
     - color: 2
       count: 2
+  - sodas:
     - color: 3
-      count: 1
+      count: 3
   - sodas:
     - color: 1
       count: 3
   - sodas:
     - color: 2
-      count: 3
-  - sodas:
-    - color: 3
       count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 3
+    - color: 4
       count: 1
   - sodas:
     - color: 2
       count: 2
+  - sodas:
     - color: 3
+      count: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 1
-      count: 3
-  - sodas:
-    - color: 3
       count: 2
   - sodas:
     - color: 2
@@ -107,33 +97,60 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 1
-      count: 2
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 2
-      count: 1
+      count: 3
   - sodas:
     - color: 3
       count: 2
   - sodas:
+    - color: 2
+      count: 1
+    - color: 4
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
     - color: 1
       count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
@@ -141,7 +158,7 @@ MonoBehaviour:
   expectedSeconds: 360
   mainChallenge: 'A lattice board: almost every free cell touches a blocker.'
   designerNotes: 
-  bakedChecksum: 8c0ed3d5-107
+  bakedChecksum: 18dac042-12a
   lastVerification:
     checksum: 
     solved: 0

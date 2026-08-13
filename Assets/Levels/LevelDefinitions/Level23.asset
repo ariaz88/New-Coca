@@ -61,7 +61,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 2
     requiredCount: 3
-  palette: 030000000500000002000000
+  palette: 030000000500000002000000000000000100000004000000
   railQueue:
   - sodas:
     - color: 2
@@ -77,52 +77,84 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 2
-    - color: 3
+    - color: 4
       count: 1
   - sodas:
     - color: 2
       count: 3
   - sodas:
-    - color: 5
+    - color: 3
       count: 3
   - sodas:
-    - color: 3
-      count: 1
     - color: 5
       count: 1
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
     - color: 2
       count: 1
+  - sodas:
     - color: 5
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 3
       count: 2
   - sodas:
     - color: 2
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 2
       count: 2
   - sodas:
     - color: 5
       count: 2
+    - color: 4
+      count: 1
+  - sodas:
     - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 0
       count: 1
   - sodas:
     - color: 2
@@ -133,22 +165,18 @@ MonoBehaviour:
     - color: 5
       count: 2
   - sodas:
-    - color: 2
-      count: 1
-    - color: 3
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
+    - color: 0
       count: 2
   - sodas:
+    - color: 1
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
     - color: 2
+      count: 1
+  - sodas:
+    - color: 1
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -158,7 +186,7 @@ MonoBehaviour:
   mainChallenge: 'Asymmetric frozen pairs: the two halves of the board open at different
     rates.'
   designerNotes: 
-  bakedChecksum: 2b7027da-129
+  bakedChecksum: 27563f3b-161
   lastVerification:
     checksum: 
     solved: 0

@@ -55,23 +55,23 @@ MonoBehaviour:
     requiredCount: 3
   - color: 0
     requiredCount: 3
-  palette: 050000000400000000000000
+  palette: 050000000400000000000000010000000200000003000000
   railQueue:
   - sodas:
     - color: 0
       count: 1
-    - color: 4
+    - color: 1
       count: 1
   - sodas:
-    - color: 5
+    - color: 4
       count: 3
   - sodas:
-    - color: 0
-      count: 1
     - color: 5
       count: 1
-  - sodas:
     - color: 4
+      count: 1
+  - sodas:
+    - color: 0
       count: 1
     - color: 5
       count: 1
@@ -79,20 +79,35 @@ MonoBehaviour:
     - color: 0
       count: 2
   - sodas:
-    - color: 4
+    - color: 5
       count: 1
     - color: 0
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 2
       count: 1
   - sodas:
     - color: 4
       count: 2
+  - sodas:
     - color: 0
-      count: 1
+      count: 3
+  - sodas:
+    - color: 5
+      count: 2
   - sodas:
     - color: 4
       count: 1
-    - color: 5
+    - color: 1
       count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 5
+      count: 2
   - sodas:
     - color: 0
       count: 3
@@ -101,28 +116,34 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 5
-      count: 1
+      count: 2
+  - sodas:
     - color: 0
+      count: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 5
       count: 2
   - sodas:
     - color: 4
-      count: 2
-  - sodas:
-    - color: 5
-      count: 3
+      count: 1
+    - color: 1
+      count: 1
   - sodas:
     - color: 0
       count: 2
   - sodas:
     - color: 4
-      count: 2
+      count: 1
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
   - sodas:
-    - color: 0
-      count: 2
     - color: 5
+      count: 2
+    - color: 1
       count: 1
   - sodas:
     - color: 4
@@ -130,20 +151,20 @@ MonoBehaviour:
     - color: 5
       count: 1
   - sodas:
-    - color: 4
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 4
+    - color: 3
       count: 2
-  - sodas:
-    - color: 5
+    - color: 4
       count: 1
+  - sodas:
     - color: 0
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -152,7 +173,7 @@ MonoBehaviour:
   expectedSeconds: 360
   mainChallenge: 'Frozen mastery: a wider board, nine blockers, five of them frozen.'
   designerNotes: 
-  bakedChecksum: 39a4a5f2-118
+  bakedChecksum: a6db78ab-143
   lastVerification:
     checksum: 
     solved: 0

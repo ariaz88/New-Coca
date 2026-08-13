@@ -45,12 +45,12 @@ MonoBehaviour:
     requiredCount: 3
   - color: 4
     requiredCount: 2
-  palette: 000000000300000004000000
+  palette: 0000000003000000040000000100000002000000
   railQueue:
   - sodas:
     - color: 0
       count: 2
-    - color: 4
+    - color: 3
       count: 1
   - sodas:
     - color: 3
@@ -64,9 +64,29 @@ MonoBehaviour:
     - color: 0
       count: 2
   - sodas:
+    - color: 4
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
     - color: 3
       count: 2
     - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 1
       count: 1
   - sodas:
     - color: 4
@@ -75,59 +95,47 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 3
-      count: 2
-    - color: 0
       count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 3
+    - color: 1
       count: 1
   - sodas:
     - color: 4
       count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 0
-      count: 1
   - sodas:
     - color: 3
       count: 2
-  - sodas:
-    - color: 4
-      count: 2
     - color: 0
       count: 1
   - sodas:
-    - color: 0
+    - color: 4
       count: 3
   - sodas:
-    - color: 3
+    - color: 0
       count: 1
-    - color: 4
+    - color: 3
       count: 1
   - sodas:
-    - color: 3
+    - color: 0
       count: 2
   - sodas:
-    - color: 4
+    - color: 3
       count: 1
     - color: 0
       count: 1
   - sodas:
-    - color: 4
-      count: 2
-  - sodas:
     - color: 3
+      count: 3
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 0
       count: 1
+  - sodas:
+    - color: 2
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
@@ -135,7 +143,7 @@ MonoBehaviour:
   expectedSeconds: 300
   mainChallenge: Holes and blockers together, on an asymmetric board.
   designerNotes: 
-  bakedChecksum: 77dce219-ef
+  bakedChecksum: f73fbc62-101
   lastVerification:
     checksum: 
     solved: 0

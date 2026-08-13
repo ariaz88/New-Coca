@@ -51,7 +51,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 3
     requiredCount: 2
-  palette: 040000000100000003000000
+  palette: 04000000010000000300000005000000
   railQueue:
   - sodas:
     - color: 1
@@ -100,7 +100,7 @@ MonoBehaviour:
   - sodas:
     - color: 4
       count: 2
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
     - color: 1
@@ -117,15 +117,18 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 3
+      count: 2
+    - color: 5
       count: 1
+  - sodas:
     - color: 4
-      count: 1
+      count: 2
   - sodas:
     - color: 3
       count: 1
   - sodas:
-    - color: 4
-      count: 1
+    - color: 5
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
@@ -134,7 +137,7 @@ MonoBehaviour:
   mainChallenge: 'X-blocker mastery: eight blockers, three orders, very little free
     space.'
   designerNotes: 
-  bakedChecksum: f28885f1-f1
+  bakedChecksum: a97b7b55-f8
   lastVerification:
     checksum: 
     solved: 0

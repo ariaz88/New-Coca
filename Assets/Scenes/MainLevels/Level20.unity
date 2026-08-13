@@ -3470,26 +3470,21 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 1
-    - color: 0
+    - color: 2
       count: 1
   - sodas:
     - color: 5
       count: 2
   - sodas:
-    - color: 4
+    - color: 0
       count: 2
   - sodas:
-    - color: 0
+    - color: 4
       count: 3
   - sodas:
     - color: 5
       count: 2
   - sodas:
-    - color: 4
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
     - color: 0
       count: 2
     - color: 5
@@ -3497,44 +3492,6 @@ MonoBehaviour:
   - sodas:
     - color: 4
       count: 2
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 4
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 5
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 2
-  - sodas:
-    - color: 4
-      count: 1
     - color: 5
       count: 1
   - sodas:
@@ -3543,14 +3500,76 @@ MonoBehaviour:
   - sodas:
     - color: 4
       count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
     - color: 5
       count: 1
   - sodas:
     - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 5
+      count: 3
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 167553
-  allowedColors: 000000000400000005000000
+  allowedColors: 000000000400000005000000020000000300000001000000
+  orderColorWeight: 2
   minSodasPerBox: 1
   maxSodasPerBox: 3
   minDistinctColorsPerBox: 1

@@ -26,7 +26,12 @@ using UnityEngine.Rendering;
 /// </summary>
 public sealed class SodaIconBaker : EditorWindow
 {
-    private const string DefaultSodaPrefabPath = "Assets/Prefabs/Soda.prefab";
+    // Bottle.prefab, not Soda.prefab. Bottle is what SpawnContoller actually
+    // instantiates in every level scene; Soda.prefab is an older model whose
+    // material list has since drifted - its slot 3 is still yellow where the
+    // shipping Bottle is pink. Baking from the wrong prefab is exactly how the
+    // Orders panel ended up showing a yellow icon for a pink drink.
+    private const string DefaultSodaPrefabPath = "Assets/Prefabs/Bottle.prefab";
     private const string DefaultOutputFolder = "Assets/GameAssets/UI/OrderIcons";
     private const string DefaultLibraryFolder = "Assets/GameAssets/UI";
     private const string LibraryAssetName = "SodaVisualLibrary.asset";
@@ -60,6 +65,37 @@ public sealed class SodaIconBaker : EditorWindow
         window.minSize = new Vector2(380f, 460f);
         window.ResolveDefaults();
         window.Show();
+    }
+
+    /// <summary>
+    /// Bakes every colour with the default settings and no window.
+    ///
+    /// The window exists so the camera angle can be dialled in by eye, but once
+    /// that is settled a re-bake is a mechanical step - after a material changes,
+    /// or after the source prefab is corrected - and should not need a human to
+    /// open a window and press a button.
+    /// </summary>
+    [MenuItem("Tools/Coca Sorting/Bake Soda Icons (No Window)", false, 102)]
+    public static void BakeAllHeadless()
+    {
+        SodaIconBaker baker = CreateInstance<SodaIconBaker>();
+        try
+        {
+            baker.ResolveDefaults();
+            if (baker.sodaPrefab == null)
+            {
+                Debug.LogError("Soda icon bake failed: no prefab at " + DefaultSodaPrefabPath);
+                return;
+            }
+
+            baker.BakeAll();
+            Debug.Log("Soda icons baked from " + AssetDatabase.GetAssetPath(baker.sodaPrefab) +
+                      ". " + baker.statusMessage);
+        }
+        finally
+        {
+            DestroyImmediate(baker);
+        }
     }
 
     private void OnEnable()

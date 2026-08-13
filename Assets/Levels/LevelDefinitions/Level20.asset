@@ -53,7 +53,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 5
     requiredCount: 3
-  palette: 000000000400000005000000
+  palette: 000000000400000005000000020000000300000001000000
   railQueue:
   - sodas:
     - color: 0
@@ -64,26 +64,21 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 1
-    - color: 0
+    - color: 2
       count: 1
   - sodas:
     - color: 5
       count: 2
   - sodas:
-    - color: 4
+    - color: 0
       count: 2
   - sodas:
-    - color: 0
+    - color: 4
       count: 3
   - sodas:
     - color: 5
       count: 2
   - sodas:
-    - color: 4
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
     - color: 0
       count: 2
     - color: 5
@@ -91,44 +86,6 @@ MonoBehaviour:
   - sodas:
     - color: 4
       count: 2
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 4
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 5
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 2
-  - sodas:
-    - color: 4
-      count: 1
     - color: 5
       count: 1
   - sodas:
@@ -137,10 +94,71 @@ MonoBehaviour:
   - sodas:
     - color: 4
       count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
     - color: 5
       count: 1
   - sodas:
     - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 5
+      count: 3
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -149,7 +167,7 @@ MonoBehaviour:
   expectedSeconds: 390
   mainChallenge: Three-colour rail boxes arrive for the first time on a tight board.
   designerNotes: 
-  bakedChecksum: 8528bc04-111
+  bakedChecksum: f49606c4-137
   lastVerification:
     checksum: 
     solved: 0

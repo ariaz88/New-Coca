@@ -44,23 +44,23 @@ MonoBehaviour:
     requiredCount: 3
   - color: 4
     requiredCount: 3
-  palette: 0000000004000000
+  palette: 0000000004000000050000000100000002000000
   railQueue:
   - sodas:
     - color: 0
       count: 1
-    - color: 4
+    - color: 5
       count: 1
-  - sodas:
-    - color: 0
-      count: 2
   - sodas:
     - color: 4
       count: 2
   - sodas:
     - color: 0
-      count: 1
+      count: 2
+  - sodas:
     - color: 4
+      count: 1
+    - color: 5
       count: 1
   - sodas:
     - color: 0
@@ -70,8 +70,28 @@ MonoBehaviour:
       count: 3
   - sodas:
     - color: 0
+      count: 1
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 0
       count: 2
-    - color: 4
+    - color: 1
       count: 1
   - sodas:
     - color: 4
@@ -80,27 +100,26 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 4
-      count: 2
-    - color: 0
+      count: 1
+    - color: 1
       count: 1
   - sodas:
-    - color: 0
-      count: 1
     - color: 4
-      count: 1
+      count: 3
   - sodas:
     - color: 0
       count: 3
   - sodas:
     - color: 4
-      count: 1
+      count: 2
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
     - color: 0
       count: 1
   - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 4
+    - color: 1
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -109,7 +128,7 @@ MonoBehaviour:
   expectedSeconds: 300
   mainChallenge: The cheap blockers are inside, the expensive ones out at the corners.
   designerNotes: 
-  bakedChecksum: af304f8b-bf
+  bakedChecksum: 854bae0c-e6
   lastVerification:
     checksum: 
     solved: 0

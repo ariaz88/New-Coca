@@ -23,8 +23,8 @@ MonoBehaviour:
     iconSprite: {fileID: 21300000, guid: 16dc9145ca4acba4890fdcb511f75fc7, type: 3}
     effectColor: {r: 1, g: 0.5782389, b: 0.100000024, a: 1}
   - color: 3
-    iconSprite: {fileID: 21300000, guid: b5285faef5bf6c542b3505976b22b83c, type: 3}
-    effectColor: {r: 1, g: 0.8403226, b: 0.100000024, a: 1}
+    iconSprite: {fileID: 21300000, guid: 4a014fa46ef2f194d929362d46114f70, type: 3}
+    effectColor: {r: 1, g: 0.37999994, b: 0.65999997, a: 1}
   - color: 4
     iconSprite: {fileID: 21300000, guid: 357b79f5bfef44c46b0f1e600649129e, type: 3}
     effectColor: {r: 0.3118141, g: 0.85, b: 0.08500002, a: 1}

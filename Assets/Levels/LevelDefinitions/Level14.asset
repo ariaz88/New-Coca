@@ -36,11 +36,31 @@ MonoBehaviour:
     requiredCount: 3
   - color: 2
     requiredCount: 3
-  palette: 0100000002000000
+  palette: 0100000002000000030000000400000005000000
   railQueue:
   - sodas:
     - color: 1
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
       count: 2
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 3
+      count: 1
   - sodas:
     - color: 2
       count: 2
@@ -49,16 +69,27 @@ MonoBehaviour:
       count: 3
   - sodas:
     - color: 2
-      count: 2
+      count: 1
+    - color: 5
+      count: 1
   - sodas:
     - color: 2
-      count: 2
+      count: 1
+    - color: 4
+      count: 1
   - sodas:
     - color: 1
-      count: 2
+      count: 3
   - sodas:
     - color: 2
-      count: 2
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
   - sodas:
     - color: 1
       count: 2
@@ -69,19 +100,22 @@ MonoBehaviour:
     - color: 1
       count: 2
   - sodas:
-    - color: 1
-      count: 3
-  - sodas:
     - color: 2
       count: 2
   - sodas:
-    - color: 2
+    - color: 3
       count: 2
   - sodas:
     - color: 1
+      count: 1
+  - sodas:
+    - color: 4
       count: 2
   - sodas:
-    - color: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -90,7 +124,7 @@ MonoBehaviour:
   expectedSeconds: 240
   mainChallenge: Four frozen blockers. Plan to complete twice beside each one.
   designerNotes: 
-  bakedChecksum: 099444a7-90
+  bakedChecksum: c28d63cc-d4
   lastVerification:
     checksum: 
     solved: 0

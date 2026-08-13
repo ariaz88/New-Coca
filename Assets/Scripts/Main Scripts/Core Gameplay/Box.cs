@@ -842,9 +842,24 @@ public class Box : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// The point the Board maps to a cell while this Box is being dragged.
+    ///
+    /// This must be the transform position, because that is what placement moves:
+    /// Board.UpdateBoxPosition assigns transform.position = GetPlacementWorldPosition(cell).
+    /// Using the same point for the hover test makes "the cell that lights up" and
+    /// "the cell the box lands in" the same cell by construction.
+    ///
+    /// It used to read inputCollider.bounds.center instead. The box prefab's
+    /// collider is centred at local Y +0.32, and the box is rotated -90 degrees
+    /// about X, which turns that into a world Z shift of -0.32 - larger than one
+    /// whole cell (cellSpacing is 0.279). So the Board was being asked about a
+    /// cell more than a row away from the box, and the player had to overshoot
+    /// before the right cell would highlight.
+    /// </summary>
     private Vector3 GetPlacementReferencePosition()
     {
-        return inputCollider != null ? inputCollider.bounds.center : transform.position;
+        return transform.position;
     }
 
     private void CancelDrag()

@@ -3446,52 +3446,87 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 1
-      count: 2
+      count: 1
+    - color: 5
+      count: 1
   - sodas:
     - color: 2
-      count: 2
-  - sodas:
+      count: 1
     - color: 1
-      count: 3
+      count: 1
   - sodas:
     - color: 2
-      count: 2
-  - sodas:
-    - color: 2
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 2
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 2
-      count: 2
-  - sodas:
-    - color: 2
-      count: 2
+      count: 1
+    - color: 4
+      count: 1
   - sodas:
     - color: 1
       count: 2
   - sodas:
     - color: 2
       count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 120039
-  allowedColors: 0100000002000000
+  allowedColors: 0100000002000000030000000400000005000000
+  orderColorWeight: 2
   minSodasPerBox: 1
   maxSodasPerBox: 3
   minDistinctColorsPerBox: 1

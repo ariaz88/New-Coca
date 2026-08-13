@@ -58,7 +58,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 4
     requiredCount: 2
-  palette: 000000000100000004000000
+  palette: 000000000100000004000000050000000200000003000000
   railQueue:
   - sodas:
     - color: 0
@@ -69,7 +69,7 @@ MonoBehaviour:
   - sodas:
     - color: 1
       count: 2
-    - color: 4
+    - color: 5
       count: 1
   - sodas:
     - color: 0
@@ -77,28 +77,28 @@ MonoBehaviour:
   - sodas:
     - color: 1
       count: 2
+    - color: 5
+      count: 1
+  - sodas:
     - color: 4
+      count: 1
+    - color: 1
+      count: 1
+    - color: 2
       count: 1
   - sodas:
     - color: 0
       count: 1
     - color: 1
       count: 1
-    - color: 4
-      count: 1
   - sodas:
-    - color: 0
-      count: 1
-    - color: 1
-      count: 1
+    - color: 4
+      count: 2
   - sodas:
     - color: 0
       count: 2
   - sodas:
     - color: 4
-      count: 2
-  - sodas:
-    - color: 1
       count: 3
   - sodas:
     - color: 0
@@ -106,41 +106,68 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
+    - color: 0
+      count: 1
     - color: 4
       count: 1
-    - color: 1
-      count: 1
   - sodas:
-    - color: 0
+    - color: 1
       count: 2
     - color: 4
       count: 1
   - sodas:
-    - color: 4
-      count: 1
     - color: 0
       count: 1
+    - color: 2
+      count: 1
   - sodas:
+    - color: 0
+      count: 1
     - color: 4
       count: 1
+  - sodas:
     - color: 1
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 0
       count: 2
   - sodas:
-    - color: 4
-      count: 1
     - color: 1
+      count: 2
+    - color: 4
       count: 1
   - sodas:
-    - color: 4
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
       count: 2
   - sodas:
     - color: 0
       count: 1
   - sodas:
     - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -150,7 +177,7 @@ MonoBehaviour:
   mainChallenge: 'Only two anchors on a heavily blocked board: the opening is the
     whole puzzle.'
   designerNotes: 
-  bakedChecksum: 7ec1db2b-117
+  bakedChecksum: f7da2264-14c
   lastVerification:
     checksum: 
     solved: 0

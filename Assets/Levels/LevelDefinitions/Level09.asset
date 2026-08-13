@@ -44,7 +44,7 @@ MonoBehaviour:
     requiredCount: 3
   - color: 5
     requiredCount: 3
-  palette: 0000000005000000
+  palette: 00000000050000000300000004000000
   railQueue:
   - sodas:
     - color: 0
@@ -63,7 +63,7 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 2
-    - color: 0
+    - color: 4
       count: 1
   - sodas:
     - color: 0
@@ -74,7 +74,7 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 1
-    - color: 5
+    - color: 4
       count: 1
   - sodas:
     - color: 0
@@ -82,18 +82,36 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 1
-    - color: 0
+    - color: 4
       count: 1
   - sodas:
     - color: 5
       count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
     - color: 0
       count: 1
   - sodas:
-    - color: 5
-      count: 3
-  - sodas:
-    - color: 0
+    - color: 3
       count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -103,7 +121,7 @@ MonoBehaviour:
   mainChallenge: 'Work outward from the centre: the corners only open once the ring
     falls.'
   designerNotes: 
-  bakedChecksum: d6edc1ae-b1
+  bakedChecksum: f952a0f3-d5
   lastVerification:
     checksum: 
     solved: 0

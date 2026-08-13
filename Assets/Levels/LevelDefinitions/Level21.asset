@@ -57,24 +57,63 @@ MonoBehaviour:
     requiredCount: 3
   - color: 1
     requiredCount: 3
-  palette: 020000000300000001000000
+  palette: 020000000300000001000000040000000500000000000000
   railQueue:
   - sodas:
     - color: 1
       count: 1
-    - color: 3
+    - color: 4
       count: 1
   - sodas:
     - color: 2
       count: 1
     - color: 3
       count: 1
+    - color: 0
+      count: 1
+  - sodas:
     - color: 1
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 3
+      count: 1
+    - color: 0
       count: 1
   - sodas:
     - color: 2
-      count: 1
+      count: 2
+  - sodas:
     - color: 1
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 0
       count: 1
   - sodas:
     - color: 2
@@ -82,9 +121,27 @@ MonoBehaviour:
   - sodas:
     - color: 3
       count: 1
+    - color: 5
+      count: 1
     - color: 2
       count: 1
+  - sodas:
     - color: 1
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 3
@@ -95,54 +152,21 @@ MonoBehaviour:
     - color: 2
       count: 1
   - sodas:
-    - color: 3
-      count: 2
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
     - color: 2
       count: 2
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+  - sodas:
     - color: 3
       count: 1
   - sodas:
-    - color: 1
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 3
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 2
+    - color: 4
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -151,7 +175,7 @@ MonoBehaviour:
   expectedSeconds: 420
   mainChallenge: A six-wide board where the useful space is a narrow cross.
   designerNotes: 
-  bakedChecksum: 9081c60b-11b
+  bakedChecksum: d8827a85-14b
   lastVerification:
     checksum: 
     solved: 0
