@@ -196,6 +196,20 @@ public sealed class OrderSlotUI : MonoBehaviour
     }
 
     /// <summary>
+    /// Re-reads the icon's rest position and scale.
+    ///
+    /// The impact punch springs the icon back to a pose captured once, at Bind.
+    /// Anything that moves the icon afterwards - OrderPanelSkin's relayout does -
+    /// has to call this, or the first delivery will snap the icon back to where it
+    /// used to be.
+    /// </summary>
+    public void RefreshRestState()
+    {
+        restCaptured = false;
+        CaptureRestState();
+    }
+
+    /// <summary>
     /// Updates what the slot displays. <paramref name="animated"/> is false at
     /// level start so a level does not open with six tick animations.
     /// </summary>

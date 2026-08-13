@@ -47,6 +47,7 @@ public sealed class OrderPanelUI : MonoBehaviour
 
     private readonly List<OrderSlotUI> slots = new List<OrderSlotUI>();
     private readonly List<GameObject> separators = new List<GameObject>();
+    private OrderPanelSkin skin;
     private IOrderImpactPresenter impactPresenter;
     private OrderManager subscribedManager;
 
@@ -75,6 +76,15 @@ public sealed class OrderPanelUI : MonoBehaviour
         // Resolved from this object's hierarchy so a designer only has to drop
         // the director component onto the panel, with no extra wiring.
         impactPresenter = GetComponentInChildren<IOrderImpactPresenter>(true);
+
+        // Added in code rather than serialized into each scene: the card's look is
+        // generated at runtime, so adding the skin here restyles all 25 level
+        // scenes without any of them having to be opened and re-saved.
+        skin = GetComponent<OrderPanelSkin>();
+        if (skin == null)
+        {
+            skin = gameObject.AddComponent<OrderPanelSkin>();
+        }
     }
 
     private void OnEnable()
@@ -186,6 +196,10 @@ public sealed class OrderPanelUI : MonoBehaviour
                 state.Remaining);
             slots.Add(slot);
         }
+
+        // Slots are instantiated fresh here, so the chip art has to be applied
+        // after the rebuild rather than only once at Awake.
+        skin?.RefreshSlots();
 
         if (hideWhenEmpty)
         {
