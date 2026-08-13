@@ -36,24 +36,26 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0500000005000000
   orders:
-  - color: 2
+  - kind: 0
+    color: 2
     requiredCount: 3
-  - color: 5
-    requiredCount: 3
+  - kind: 1
+    color: 0
+    requiredCount: 2
   palette: 0200000005000000000000000100000003000000
   railQueue:
   - sodas:
     - color: 2
       count: 2
   - sodas:
-    - color: 5
+    - color: 2
       count: 1
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
       count: 2
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
     - color: 2
@@ -61,9 +63,9 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
       count: 1
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
     - color: 2
@@ -71,7 +73,7 @@ MonoBehaviour:
     - color: 3
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
       count: 3
   - sodas:
     - color: 2
@@ -80,44 +82,50 @@ MonoBehaviour:
     - color: 2
       count: 3
   - sodas:
-    - color: 5
-      count: 1
     - color: 2
       count: 1
-  - sodas:
     - color: 5
+      count: 1
+  - sodas:
+    - color: 2
       count: 2
     - color: 0
       count: 1
   - sodas:
-    - color: 5
-      count: 2
     - color: 2
+      count: 2
+    - color: 3
       count: 1
   - sodas:
     - color: 2
       count: 3
   - sodas:
-    - color: 5
+    - color: 2
       count: 2
   - sodas:
-    - color: 5
-      count: 1
     - color: 2
       count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
   - sodas:
     - color: 0
       count: 2
+  - sodas:
     - color: 1
       count: 1
   - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 0
+    - color: 3
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -126,10 +134,10 @@ MonoBehaviour:
   expectedSeconds: 270
   mainChallenge: First permanent holes. Unlike blockers, these corners never open.
   designerNotes: Teaches the hole/blocker distinction before both appear together.
-  bakedChecksum: 32132f07-de
+  bakedChecksum: ffdca9aa-ec
   lastVerification:
-    checksum: 32132f07-de
+    checksum: ffdca9aa-ec
     solved: 1
-    moves: 11
-    nodes: 11
-    utcStamp: 2026-08-13 10:09:15Z
+    moves: 7
+    nodes: 7
+    utcStamp: 2026-08-13 13:07:03Z

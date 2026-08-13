@@ -32,10 +32,12 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0200000002000000
   orders:
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
-  - color: 2
-    requiredCount: 3
+  - kind: 1
+    color: 0
+    requiredCount: 2
   palette: 0100000002000000030000000400000005000000
   railQueue:
   - sodas:
@@ -44,8 +46,73 @@ MonoBehaviour:
     - color: 5
       count: 1
   - sodas:
+    - color: 1
+      count: 1
     - color: 2
       count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
     - color: 1
       count: 1
   - sodas:
@@ -54,68 +121,15 @@ MonoBehaviour:
     - color: 4
       count: 1
   - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 2
-      count: 1
     - color: 3
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
       count: 1
     - color: 4
       count: 1
   - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 1
-      count: 1
     - color: 2
       count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 2
-      count: 2
   - sodas:
     - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -124,10 +138,10 @@ MonoBehaviour:
   expectedSeconds: 240
   mainChallenge: Four frozen blockers. Plan to complete twice beside each one.
   designerNotes: 
-  bakedChecksum: c28d63cc-d4
+  bakedChecksum: 9febe030-ee
   lastVerification:
-    checksum: c28d63cc-d4
+    checksum: 9febe030-ee
     solved: 1
-    moves: 13
-    nodes: 13
-    utcStamp: 2026-08-13 10:09:15Z
+    moves: 21
+    nodes: 788
+    utcStamp: 2026-08-13 13:07:04Z

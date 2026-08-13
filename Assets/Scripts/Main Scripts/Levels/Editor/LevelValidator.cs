@@ -297,11 +297,36 @@ public static class LevelValidator
         }
 
         HashSet<Soda.SodaColor> seenColors = new HashSet<Soda.SodaColor>();
+        int blocksOrders = 0;
 
         foreach (LevelOrderData order in definition.Orders)
         {
             if (order == null)
             {
+                continue;
+            }
+
+            if (order.IsBlocks)
+            {
+                blocksOrders++;
+                if (blocksOrders > 1)
+                {
+                    issues.Add(new ValidationIssue(
+                        IssueSeverity.Error, "ORDER_DUP_BLOCKS",
+                        "A level can only ask for locked blocks once; OrderManager ignores the second."));
+                }
+
+                int breakable = definition.CountCellsOfKind(BoardCellKind.Blocker) +
+                                definition.CountCellsOfKind(BoardCellKind.Frozen);
+
+                if (order.requiredCount > breakable)
+                {
+                    issues.Add(new ValidationIssue(
+                        IssueSeverity.Error, "ORDER_BLOCKS_SUPPLY",
+                        $"The level asks for {order.requiredCount} locked blocks to be opened but only " +
+                        $"{breakable} breakable blockers exist. Holes never open and do not count."));
+                }
+
                 continue;
             }
 

@@ -2980,10 +2980,12 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0500000005000000
   levelOrders:
-  - color: 2
+  - kind: 0
+    color: 2
     requiredCount: 3
-  - color: 5
-    requiredCount: 3
+  - kind: 1
+    color: 0
+    requiredCount: 2
   drawLayoutGizmos: 1
   playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}
   removedCellGizmoColor: {r: 0.38, g: 0.18, b: 0.07, a: 0.75}
@@ -3452,14 +3454,14 @@ MonoBehaviour:
     - color: 2
       count: 2
   - sodas:
-    - color: 5
+    - color: 2
       count: 1
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
       count: 2
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
     - color: 2
@@ -3467,9 +3469,9 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
       count: 1
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
     - color: 2
@@ -3477,7 +3479,7 @@ MonoBehaviour:
     - color: 3
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
       count: 3
   - sodas:
     - color: 2
@@ -3486,44 +3488,50 @@ MonoBehaviour:
     - color: 2
       count: 3
   - sodas:
-    - color: 5
-      count: 1
     - color: 2
       count: 1
-  - sodas:
     - color: 5
+      count: 1
+  - sodas:
+    - color: 2
       count: 2
     - color: 0
       count: 1
   - sodas:
-    - color: 5
-      count: 2
     - color: 2
+      count: 2
+    - color: 3
       count: 1
   - sodas:
     - color: 2
       count: 3
   - sodas:
-    - color: 5
+    - color: 2
       count: 2
   - sodas:
-    - color: 5
-      count: 1
     - color: 2
       count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
   - sodas:
     - color: 0
       count: 2
+  - sodas:
     - color: 1
       count: 1
   - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 0
+    - color: 3
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 96282

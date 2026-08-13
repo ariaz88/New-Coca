@@ -68,6 +68,10 @@ public static class CampaignAuthoring
         public string[] Shape;
         public Start[] Starts = new Start[0];
         public Order[] Orders = new Order[0];
+
+        /// <summary>Locked blocks the level asks the player to open. 0 = no such order.</summary>
+        public int BlocksOrder;
+
         public Soda.SodaColor[] Palette = new Soda.SodaColor[0];
 
         /// <summary>Extra full box-sets of an ordered colour, beyond what the orders demand.</summary>
@@ -324,7 +328,12 @@ public static class CampaignAuthoring
                 "#..#"
             },
             Starts = new[] { new Start(1, 3, "OO"), new Start(2, 1, "PP") },
-            Orders = new[] { new Order(O, 3), new Order(P, 3) },
+
+            // From here on the campaign mixes goal types: one of the drink orders
+            // is replaced by "open N locked blocks", so clearing the board is a
+            // stated objective rather than only a means to free space.
+            Orders = new[] { new Order(O, 3) },
+            BlocksOrder = 2,
             Palette = new[] { O, P },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
@@ -347,7 +356,8 @@ public static class CampaignAuthoring
                 ".X.#"
             },
             Starts = new[] { new Start(1, 3, "RR"), new Start(2, 1, "KK"), new Start(1, 1, "GG") },
-            Orders = new[] { new Order(R, 3), new Order(K, 3), new Order(G, 2) },
+            Orders = new[] { new Order(R, 3), new Order(K, 3) },
+            BlocksOrder = 2,
             Palette = new[] { R, K, G },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
@@ -394,7 +404,8 @@ public static class CampaignAuthoring
                 "...."
             },
             Starts = new[] { new Start(0, 4, "BB"), new Start(3, 0, "OO") },
-            Orders = new[] { new Order(B, 3), new Order(O, 3) },
+            Orders = new[] { new Order(B, 3) },
+            BlocksOrder = 2,
             Palette = new[] { B, O },
             SlackSets = 1,
             Difficulty = LevelDifficulty.Medium,
@@ -415,7 +426,8 @@ public static class CampaignAuthoring
                 "...."
             },
             Starts = new[] { new Start(0, 3, "PP"), new Start(3, 1, "KK") },
-            Orders = new[] { new Order(P, 3), new Order(K, 3) },
+            Orders = new[] { new Order(P, 3) },
+            BlocksOrder = 2,
             Palette = new[] { P, K },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
@@ -437,7 +449,8 @@ public static class CampaignAuthoring
                 "F..F"
             },
             Starts = new[] { new Start(1, 2, "RR"), new Start(2, 2, "GG") },
-            Orders = new[] { new Order(R, 3), new Order(G, 3) },
+            Orders = new[] { new Order(R, 3) },
+            BlocksOrder = 2,
             Palette = new[] { R, G },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
@@ -459,7 +472,8 @@ public static class CampaignAuthoring
                 "F.X#"
             },
             Starts = new[] { new Start(1, 3, "BB"), new Start(2, 1, "OO"), new Start(2, 3, "KK") },
-            Orders = new[] { new Order(B, 3), new Order(O, 3), new Order(K, 2) },
+            Orders = new[] { new Order(B, 3), new Order(O, 3) },
+            BlocksOrder = 2,
             Palette = new[] { B, O, K },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
@@ -474,14 +488,15 @@ public static class CampaignAuthoring
             Number = 18,
             Shape = new[]
             {
-                "FX.XF",
-                ".....",
-                "X.F.X",
-                ".....",
-                "FX.XF"
+                "FX.X",
+                "....",
+                "X.F.",
+                "....",
+                "FX.X"
             },
             Starts = new[] { new Start(2, 3, "PP"), new Start(2, 1, "GG"), new Start(0, 1, "RR") },
-            Orders = new[] { new Order(P, 3), new Order(G, 3), new Order(R, 3) },
+            Orders = new[] { new Order(P, 3), new Order(G, 3) },
+            BlocksOrder = 3,
             Palette = new[] { P, G, R },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
@@ -504,14 +519,15 @@ public static class CampaignAuthoring
             // woven look while leaving every open cell connected to the rest.
             Shape = new[]
             {
-                "#.X.#",
-                "..F..",
-                "X...X",
-                "..F..",
-                "#.X.#"
+                "#.X.",
+                "..F.",
+                "X...",
+                "..F.",
+                "#.X."
             },
             Starts = new[] { new Start(1, 3, "KK"), new Start(3, 1, "BB"), new Start(2, 2, "OO") },
-            Orders = new[] { new Order(K, 3), new Order(B, 3), new Order(O, 3) },
+            Orders = new[] { new Order(K, 3), new Order(B, 3) },
+            BlocksOrder = 3,
             Palette = new[] { K, B, O },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
@@ -526,14 +542,15 @@ public static class CampaignAuthoring
             Number = 20,
             Shape = new[]
             {
-                "..X..",
-                "#.F.#",
-                "X...X",
-                "#.F.#",
-                "..X.."
+                ".X..",
+                "#.F.",
+                "..X.",
+                "#.F.",
+                ".X.."
             },
-            Starts = new[] { new Start(1, 2, "RR"), new Start(3, 2, "GG"), new Start(0, 4, "PP") },
-            Orders = new[] { new Order(R, 3), new Order(G, 3), new Order(P, 3) },
+            Starts = new[] { new Start(1, 2, "RR"), new Start(3, 2, "GG"), new Start(2, 4, "PP") },
+            Orders = new[] { new Order(R, 3), new Order(G, 3) },
+            BlocksOrder = 3,
             Palette = new[] { R, G, P },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
@@ -548,14 +565,15 @@ public static class CampaignAuthoring
             Number = 21,
             Shape = new[]
             {
-                "#X..X#",
-                "..F...",
-                "X....X",
-                "...F..",
-                "#X..X#"
+                "#X.X",
+                "..F.",
+                "X...",
+                ".F..",
+                "#X.X"
             },
             Starts = new[] { new Start(1, 3, "OO"), new Start(2, 1, "KK"), new Start(1, 2, "BB") },
-            Orders = new[] { new Order(O, 3), new Order(K, 3), new Order(B, 3) },
+            Orders = new[] { new Order(O, 3), new Order(K, 3) },
+            BlocksOrder = 3,
             Palette = new[] { O, K, B },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
@@ -576,14 +594,15 @@ public static class CampaignAuthoring
             // the level still reads as the tightest board so far.
             Shape = new[]
             {
-                "..XX..",
-                ".F..F.",
-                "X....X",
-                ".F..F.",
-                "..XX.."
+                ".XX.",
+                "....",
+                "FX.F",
+                "....",
+                ".XX."
             },
-            Starts = new[] { new Start(2, 2, "RR"), new Start(3, 2, "BB"), new Start(2, 3, "GG") },
-            Orders = new[] { new Order(R, 3), new Order(B, 3), new Order(G, 2) },
+            Starts = new[] { new Start(2, 2, "RR"), new Start(3, 1, "BB"), new Start(2, 3, "GG") },
+            Orders = new[] { new Order(R, 3), new Order(B, 3) },
+            BlocksOrder = 3,
             Palette = new[] { R, B, G },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
@@ -598,14 +617,15 @@ public static class CampaignAuthoring
             Number = 23,
             Shape = new[]
             {
-                "X#..#X",
-                ".FF...",
-                "..XX..",
-                "...FF.",
-                "X#..#X"
+                "X#.X",
+                ".FF.",
+                "....",
+                ".FF.",
+                "X#.X"
             },
-            Starts = new[] { new Start(0, 3, "KK"), new Start(5, 1, "PP"), new Start(3, 3, "OO") },
-            Orders = new[] { new Order(K, 3), new Order(P, 3), new Order(O, 3) },
+            Starts = new[] { new Start(0, 3, "KK"), new Start(3, 1, "PP"), new Start(3, 3, "OO") },
+            Orders = new[] { new Order(K, 3), new Order(P, 3) },
+            BlocksOrder = 4,
             Palette = new[] { K, P, O },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
@@ -620,14 +640,15 @@ public static class CampaignAuthoring
             Number = 24,
             Shape = new[]
             {
-                "#XF.X#",
-                "......",
-                "F.XX.F",
-                "......",
-                "#X.FX#"
+                "#XF.",
+                "....",
+                "F.XX",
+                "....",
+                "#X.F"
             },
-            Starts = new[] { new Start(1, 3, "GG"), new Start(4, 1, "RR"), new Start(2, 1, "BB") },
-            Orders = new[] { new Order(G, 3), new Order(R, 3), new Order(B, 3) },
+            Starts = new[] { new Start(1, 3, "GG"), new Start(3, 1, "RR"), new Start(2, 1, "BB") },
+            Orders = new[] { new Order(G, 3), new Order(R, 3) },
+            BlocksOrder = 4,
             Palette = new[] { G, R, B },
             Distractors = new[] { K },
             DistractorSets = 1,
@@ -646,18 +667,23 @@ public static class CampaignAuthoring
             Number = 25,
             Shape = new[]
             {
-                "#XF..FX#",
-                "..X..X..",
-                "F......F",
-                "..X..X..",
-                "#XF..FX#"
+                "#XF.",
+                "....",
+                "F..F",
+                "....",
+                ".FX#"
             },
             Starts = new[]
             {
-                new Start(3, 2, "PP"), new Start(4, 2, "OO"),
-                new Start(1, 2, "KK"), new Start(6, 2, "GG")
+                new Start(0, 3, "KK"), new Start(3, 3, "OO"), new Start(1, 2, "PP")
             },
-            Orders = new[] { new Order(P, 3), new Order(O, 3), new Order(K, 3), new Order(G, 3) },
+
+            // Two drink orders rather than four. On a 4x5 board the finale only has
+            // twelve open cells to work in, and four simultaneous goals left no room
+            // to manoeuvre at all - the difficulty came from having nowhere to put
+            // anything, which is not the same as being hard.
+            Orders = new[] { new Order(P, 3), new Order(O, 3) },
+            BlocksOrder = 4,
             Palette = new[] { P, O, K, G },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
@@ -760,6 +786,13 @@ public static class CampaignAuthoring
         foreach (Order order in spec.Orders)
         {
             orders.Add(new LevelOrderData { color = order.Color, requiredCount = order.Count });
+        }
+
+        // Placed last so the crate always sits at the right of the card, which
+        // keeps the drinks grouped together across the whole campaign.
+        if (spec.BlocksOrder > 0)
+        {
+            orders.Add(LevelOrderData.Blocks(spec.BlocksOrder));
         }
 
         definition.EditorSetIdentity(spec.Number);
@@ -903,6 +936,27 @@ public static class CampaignAuthoring
         {
             totals.TryGetValue(order.Color, out int existing);
             totals[order.Color] = existing + (order.Count + spec.SlackSets) * BoxCapacity;
+        }
+
+        // A "open N locked blocks" order still has to be paid for in sodas.
+        //
+        // Blockers are only ever opened by packing a box in an orthogonally
+        // adjacent cell, and a frozen blocker needs two such packs. Sizing the rail
+        // from the drink orders alone therefore under-supplied every level that
+        // traded a drink order for a block order: the solver could finish all the
+        // drinks and then find nothing left to break the blockers with.
+        //
+        // Two extra boxes per requested block covers the frozen case; the boxes
+        // are spread across the ordered colours so no single drink dominates.
+        if (spec.BlocksOrder > 0 && spec.Orders.Length > 0)
+        {
+            int extraBoxes = spec.BlocksOrder * 2;
+            for (int index = 0; index < extraBoxes; index++)
+            {
+                Soda.SodaColor color = spec.Orders[index % spec.Orders.Length].Color;
+                totals.TryGetValue(color, out int existing);
+                totals[color] = existing + BoxCapacity;
+            }
         }
 
         // A distractor is supplied as whole boxes so it can always be packed away

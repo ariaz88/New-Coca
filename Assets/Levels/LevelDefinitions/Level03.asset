@@ -30,9 +30,11 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0000000000000000
   orders:
-  - color: 0
+  - kind: 0
+    color: 0
     requiredCount: 3
-  - color: 3
+  - kind: 0
+    color: 3
     requiredCount: 3
   palette: 0000000003000000
   railQueue:
@@ -84,10 +86,10 @@ MonoBehaviour:
   mainChallenge: 'First mixed-colour rail boxes: a box can now carry two colours
     at once.'
   designerNotes: 
-  bakedChecksum: 222ecf0c-84
+  bakedChecksum: f5fd8f28-88
   lastVerification:
-    checksum: 222ecf0c-84
+    checksum: f5fd8f28-88
     solved: 1
     moves: 7
     nodes: 7
-    utcStamp: 2026-08-13 10:09:14Z
+    utcStamp: 2026-08-13 13:07:02Z

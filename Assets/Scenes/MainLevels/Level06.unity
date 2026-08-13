@@ -2971,7 +2971,8 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 040000000400000004000000
   levelOrders:
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 2
   drawLayoutGizmos: 1
   playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}

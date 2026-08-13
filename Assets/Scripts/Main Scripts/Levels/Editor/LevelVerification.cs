@@ -89,7 +89,16 @@ public static class LevelVerification
 
         foreach (LevelOrderData order in definition.Orders)
         {
-            if (order != null)
+            if (order == null)
+            {
+                continue;
+            }
+
+            if (order.IsBlocks)
+            {
+                state.BlocksOrderRemaining += Mathf.Max(0, order.requiredCount);
+            }
+            else
             {
                 state.OrdersRemaining[(int)order.color] += Mathf.Max(0, order.requiredCount);
             }

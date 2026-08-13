@@ -245,7 +245,8 @@ public sealed class LevelDefinition : ScriptableObject
         foreach (LevelOrderData order in orders)
         {
             if (order == null) continue;
-            builder.Append((int)order.color).Append('x').Append(order.requiredCount).Append(';');
+            builder.Append((int)order.kind).Append(':')
+                   .Append((int)order.color).Append('x').Append(order.requiredCount).Append(';');
         }
 
         builder.Append('|');

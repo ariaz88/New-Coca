@@ -38,6 +38,10 @@ not by inspection.
 - **Solver** — `Levels/Simulation/`. **25/25 levels solvable**, replay-verified.
 - **Orders card redesign** — procedural sprites + runtime skin.
 - **HUD rework** — progress bar hidden, card + level label repositioned.
+- **Block orders** — `OrderKind.Blocks`: "open N locked blocks" as a goal
+  alongside drink orders, on levels 11+ (not 13, which is the frozen tutorial).
+- **All boards are 4x5.** Anything wider fell outside the camera. Do not widen
+  a board without checking the camera framing first.
 
 ### Next, in order
 
@@ -64,6 +68,21 @@ re-author + re-bake. `Tools > Coca Sorting > Levels > Level Designer`.
 **The transfer rule:** a soda may only move into a box that *already contains
 that colour* and has a free slot; neither box may be packed. Boxes are colour
 seeds. This is the game's core and is deeply underexploited.
+
+**A Blocks order still costs sodas.** Blockers are only opened by packing a box
+in an adjacent cell, and a frozen blocker needs two. `ComputeRailNeeds` adds two
+extra boxes of supply per requested block — without that, trading a drink order
+for a block order silently starved the level and the solver could finish every
+drink with nothing left to break anything.
+
+**A cracked frozen blocker has not opened.** Only `Board.UnlockBlockedCell`
+reports to a Blocks order, so half-breaking one cannot advance it. The simulator
+mirrors this.
+
+**Blocks orders raise no flying VFX.** There is no packed box to deliver — the
+block is destroyed in place — so `OrderPanelUI` bypasses the impact presenter for
+those slots and the slot just hops. Its icon is drawn by `OrderPanelTextures`
+because the board's blockers are plain cubes with tape generated at runtime.
 
 **`Soda.SodaColor.Pink` is ordinal 3** (renamed from `Yellow`). The ordinal is
 load-bearing — every scene and asset stores it as an int.

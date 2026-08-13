@@ -36,9 +36,11 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0200000002000000
   orders:
-  - color: 3
+  - kind: 0
+    color: 3
     requiredCount: 3
-  - color: 2
+  - kind: 0
+    color: 2
     requiredCount: 3
   palette: 03000000020000000400000005000000
   railQueue:
@@ -123,10 +125,10 @@ MonoBehaviour:
   mainChallenge: 'Six blockers and a narrow working area: order of operations starts
     to matter.'
   designerNotes: 
-  bakedChecksum: 4bf53993-d3
+  bakedChecksum: 99a5683b-d7
   lastVerification:
-    checksum: 4bf53993-d3
+    checksum: 99a5683b-d7
     solved: 1
     moves: 13
     nodes: 13
-    utcStamp: 2026-08-13 10:09:14Z
+    utcStamp: 2026-08-13 13:07:03Z

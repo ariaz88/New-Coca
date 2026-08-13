@@ -13,58 +13,53 @@ MonoBehaviour:
   m_Name: Level23
   m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
   levelNumber: 23
-  width: 6
+  width: 4
   height: 5
   cellStates:
   - coordinate: {x: 0, y: 4}
     kind: 2
   - coordinate: {x: 1, y: 4}
     kind: 1
-  - coordinate: {x: 4, y: 4}
-    kind: 1
-  - coordinate: {x: 5, y: 4}
+  - coordinate: {x: 3, y: 4}
     kind: 2
   - coordinate: {x: 1, y: 3}
     kind: 3
   - coordinate: {x: 2, y: 3}
     kind: 3
-  - coordinate: {x: 2, y: 2}
-    kind: 2
-  - coordinate: {x: 3, y: 2}
-    kind: 2
-  - coordinate: {x: 3, y: 1}
+  - coordinate: {x: 1, y: 1}
     kind: 3
-  - coordinate: {x: 4, y: 1}
+  - coordinate: {x: 2, y: 1}
     kind: 3
   - coordinate: {x: 0, y: 0}
     kind: 2
   - coordinate: {x: 1, y: 0}
     kind: 1
-  - coordinate: {x: 4, y: 0}
-    kind: 1
-  - coordinate: {x: 5, y: 0}
+  - coordinate: {x: 3, y: 0}
     kind: 2
   initialBoxes:
   - coordinate: {x: 0, y: 3}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0300000003000000
-  - coordinate: {x: 5, y: 1}
+  - coordinate: {x: 3, y: 1}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0500000005000000
   - coordinate: {x: 3, y: 3}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0200000002000000
   orders:
-  - color: 3
+  - kind: 0
+    color: 3
     requiredCount: 3
-  - color: 5
+  - kind: 0
+    color: 5
     requiredCount: 3
-  - color: 2
-    requiredCount: 3
+  - kind: 1
+    color: 0
+    requiredCount: 4
   palette: 030000000500000002000000000000000100000004000000
   railQueue:
   - sodas:
-    - color: 2
+    - color: 3
       count: 1
     - color: 5
       count: 1
@@ -72,7 +67,7 @@ MonoBehaviour:
     - color: 3
       count: 3
   - sodas:
-    - color: 2
+    - color: 5
       count: 2
   - sodas:
     - color: 5
@@ -80,18 +75,18 @@ MonoBehaviour:
     - color: 4
       count: 1
   - sodas:
-    - color: 2
-      count: 3
-  - sodas:
     - color: 3
       count: 3
   - sodas:
     - color: 5
+      count: 3
+  - sodas:
+    - color: 3
       count: 1
     - color: 2
       count: 1
   - sodas:
-    - color: 5
+    - color: 3
       count: 1
     - color: 2
       count: 1
@@ -117,12 +112,12 @@ MonoBehaviour:
     - color: 3
       count: 2
   - sodas:
-    - color: 2
-      count: 2
-  - sodas:
     - color: 5
       count: 2
-    - color: 4
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 3
@@ -130,7 +125,7 @@ MonoBehaviour:
     - color: 0
       count: 1
   - sodas:
-    - color: 2
+    - color: 5
       count: 2
   - sodas:
     - color: 3
@@ -140,11 +135,9 @@ MonoBehaviour:
     - color: 4
       count: 1
   - sodas:
-    - color: 5
-      count: 1
-    - color: 2
-      count: 1
     - color: 3
+      count: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 5
@@ -157,24 +150,52 @@ MonoBehaviour:
     - color: 0
       count: 1
   - sodas:
+    - color: 5
+      count: 2
     - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
       count: 1
     - color: 3
       count: 1
   - sodas:
     - color: 5
-      count: 2
+      count: 3
   - sodas:
-    - color: 0
-      count: 2
+    - color: 3
+      count: 3
   - sodas:
+    - color: 5
+      count: 1
     - color: 1
       count: 1
-    - color: 3
+    - color: 0
       count: 1
   - sodas:
-    - color: 2
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 5
       count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
   - sodas:
     - color: 1
       count: 1
@@ -186,10 +207,10 @@ MonoBehaviour:
   mainChallenge: 'Asymmetric frozen pairs: the two halves of the board open at different
     rates.'
   designerNotes: 
-  bakedChecksum: 27563f3b-161
+  bakedChecksum: 18696388-17d
   lastVerification:
-    checksum: 27563f3b-161
+    checksum: 18696388-17d
     solved: 1
-    moves: 22
-    nodes: 22
-    utcStamp: 2026-08-13 10:09:16Z
+    moves: 13
+    nodes: 13
+    utcStamp: 2026-08-13 13:07:05Z

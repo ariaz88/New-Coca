@@ -45,11 +45,14 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0300000003000000
   orders:
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 3
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
-  - color: 3
+  - kind: 0
+    color: 3
     requiredCount: 2
   palette: 04000000010000000300000005000000
   railQueue:
@@ -137,10 +140,10 @@ MonoBehaviour:
   mainChallenge: 'X-blocker mastery: eight blockers, three orders, very little free
     space.'
   designerNotes: 
-  bakedChecksum: a97b7b55-f8
+  bakedChecksum: 2bae218b-fe
   lastVerification:
-    checksum: a97b7b55-f8
+    checksum: 2bae218b-fe
     solved: 1
     moves: 13
     nodes: 13
-    utcStamp: 2026-08-13 10:09:15Z
+    utcStamp: 2026-08-13 13:07:03Z

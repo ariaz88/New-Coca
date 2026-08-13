@@ -23,6 +23,7 @@ public static class OrderPanelTextures
     private static Sprite pillSprite;
     private static Sprite sheenSprite;
     private static Sprite verticalFadeSprite;
+    private static Sprite blockIconSprite;
 
     /// <summary>Solid rounded rectangle. Tint with Image.color.</summary>
     public static Sprite Card => cardSprite != null
@@ -48,6 +49,17 @@ public static class OrderPanelTextures
     public static Sprite Shadow => shadowSprite != null
         ? shadowSprite
         : shadowSprite = BuildShadow("OrderCardShadow", 30f, 14f);
+
+    /// <summary>
+    /// Icon for a "open N locked blocks" order: a taped crate seen face on.
+    ///
+    /// Drawn rather than baked from the blocker prefab, because the blocker is a
+    /// plain cube with the tape generated onto it at runtime - there is no prefab
+    /// to render that already looks like the thing the player sees.
+    /// </summary>
+    public static Sprite BlockIcon => blockIconSprite != null
+        ? blockIconSprite
+        : blockIconSprite = BuildBlockIcon("OrderBlockIcon");
 
     /// <summary>
     /// Top-down gloss: opaque at the top edge, gone by the middle. Laid over the
@@ -210,6 +222,68 @@ public static class OrderPanelTextures
             0,
             SpriteMeshType.FullRect,
             new Vector4(0f, 8f, 0f, 8f));
+    }
+
+    /// <summary>
+    /// A cardboard crate with a taped cross, matching the blockers on the board.
+    /// Full colour rather than a white mask, so the slot does not have to tint it.
+    /// </summary>
+    private static Sprite BuildBlockIcon(string name)
+    {
+        const int size = 128;
+        Texture2D texture = CreateTexture(name, size);
+        Color[] pixels = new Color[size * size];
+
+        Color cardboard = new Color(0.80f, 0.58f, 0.34f, 1f);
+        Color cardboardDark = new Color(0.66f, 0.45f, 0.25f, 1f);
+        Color tape = new Color(0.95f, 0.88f, 0.72f, 1f);
+
+        float half = size * 0.5f;
+        const float radius = 14f;
+        float inner = half - 8f - radius;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float px = x + 0.5f - half;
+                float py = y + 0.5f - half;
+
+                float dx = Mathf.Abs(px) - inner;
+                float dy = Mathf.Abs(py) - inner;
+                float outside = Mathf.Sqrt(
+                    Mathf.Max(dx, 0f) * Mathf.Max(dx, 0f) + Mathf.Max(dy, 0f) * Mathf.Max(dy, 0f));
+                float distance = outside + Mathf.Min(Mathf.Max(dx, dy), 0f) - radius;
+
+                float coverage = Mathf.Clamp01(0.5f - distance);
+                if (coverage <= 0f)
+                {
+                    pixels[y * size + x] = new Color(0f, 0f, 0f, 0f);
+                    continue;
+                }
+
+                // Vertical shade so the crate reads as a lit solid rather than a
+                // flat brown square.
+                Color body = Color.Lerp(cardboardDark, cardboard, (y / (float)size) * 0.7f + 0.3f);
+
+                // The taped cross: distance to each of the two diagonals.
+                float diagonalA = Mathf.Abs(px - py) * 0.70710678f;
+                float diagonalB = Mathf.Abs(px + py) * 0.70710678f;
+                float tapeDistance = Mathf.Min(diagonalA, diagonalB);
+                float tapeCoverage = Mathf.Clamp01(6f - tapeDistance);
+
+                Color final = Color.Lerp(body, tape, tapeCoverage);
+                final.a = coverage;
+                pixels[y * size + x] = final;
+            }
+        }
+
+        texture.SetPixels(pixels);
+        texture.Apply(false, false);
+
+        return Sprite.Create(
+            texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f,
+            0, SpriteMeshType.FullRect);
     }
 
     private static Texture2D CreateTexture(string name, int size)

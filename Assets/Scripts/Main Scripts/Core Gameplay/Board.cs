@@ -1845,6 +1845,12 @@ public class Board : MonoBehaviour
         }
 
         breakingBlockedCells.Remove(coordinate);
+
+        // Reported only here, at the moment the cell actually becomes playable.
+        // A frozen blocker that has merely cracked never reaches this point, so a
+        // "open N locked blocks" order cannot be advanced by half-breaking one.
+        OrderManager.instance?.TryConsumeOpenedBlock(
+            transform.TransformPoint(GetCellLocalPosition(coordinate.x, coordinate.y)));
     }
 
     private Material GetOrCreateRemovedCellMaterial()

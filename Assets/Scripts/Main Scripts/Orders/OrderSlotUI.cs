@@ -103,6 +103,11 @@ public sealed class OrderSlotUI : MonoBehaviour
 
     public Soda.SodaColor Color { get; private set; }
 
+    public OrderKind Kind { get; private set; } = OrderKind.Soda;
+
+    /// <summary>True when this slot counts opened blocks rather than packed sodas.</summary>
+    public bool IsBlocksSlot => Kind == OrderKind.Blocks;
+
     /// <summary>
     /// World-space point the flying streak should aim at. The icon rather than
     /// the slot root, so the streak lands on the drink and not on empty card.
@@ -122,13 +127,16 @@ public sealed class OrderSlotUI : MonoBehaviour
     }
 
     /// <summary>Fills the slot for one order at level start.</summary>
-    public void Bind(int orderIndex, Soda.SodaColor color, Sprite icon, int remaining)
+    public void Bind(int orderIndex, OrderKind kind, Soda.SodaColor color, Sprite icon, int remaining)
     {
         CaptureRestState();
 
         OrderIndex = orderIndex;
+        Kind = kind;
         Color = color;
-        name = $"OrderSlot_{orderIndex}_{color}";
+        name = kind == OrderKind.Blocks
+            ? $"OrderSlot_{orderIndex}_Blocks"
+            : $"OrderSlot_{orderIndex}_{color}";
 
         if (iconImage != null)
         {

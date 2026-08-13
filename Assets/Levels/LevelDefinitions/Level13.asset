@@ -23,7 +23,8 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 040000000400000004000000
   orders:
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 3
   palette: 0400000001000000020000000300000005000000
   railQueue:
@@ -97,10 +98,10 @@ MonoBehaviour:
   designerNotes: One frozen blocker east of the starting box. The tutorial makes
     the player complete twice next to it and shows the cell is still blocked after
     the first.
-  bakedChecksum: 4a3efb5c-96
+  bakedChecksum: 1758b9ca-98
   lastVerification:
-    checksum: 4a3efb5c-96
+    checksum: 1758b9ca-98
     solved: 1
     moves: 4
     nodes: 4
-    utcStamp: 2026-08-13 10:09:15Z
+    utcStamp: 2026-08-13 13:07:03Z

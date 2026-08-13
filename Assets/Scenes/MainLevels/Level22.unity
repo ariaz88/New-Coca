@@ -2953,29 +2953,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodePref: {fileID: 475741813859870053, guid: d5fc0f1b357893b42bfb26dd663acdec, type: 3}
   boxPref: {fileID: 7247333143549396864, guid: 34fafd3cea28b6e4cbfcf55d9882584a, type: 3}
-  width: 6
+  width: 4
   height: 5
   removedCells: []
   cellStates:
+  - coordinate: {x: 1, y: 4}
+    kind: 2
   - coordinate: {x: 2, y: 4}
     kind: 2
-  - coordinate: {x: 3, y: 4}
-    kind: 2
-  - coordinate: {x: 1, y: 3}
-    kind: 3
-  - coordinate: {x: 4, y: 3}
-    kind: 3
   - coordinate: {x: 0, y: 2}
-    kind: 2
-  - coordinate: {x: 5, y: 2}
-    kind: 2
-  - coordinate: {x: 1, y: 1}
     kind: 3
-  - coordinate: {x: 4, y: 1}
+  - coordinate: {x: 1, y: 2}
+    kind: 2
+  - coordinate: {x: 3, y: 2}
     kind: 3
+  - coordinate: {x: 1, y: 0}
+    kind: 2
   - coordinate: {x: 2, y: 0}
-    kind: 2
-  - coordinate: {x: 3, y: 0}
     kind: 2
   localOrigin: {x: 0.149, y: 0.185, z: 0.16}
   cellSpacing: {x: 0.279, y: 0.279}
@@ -2984,19 +2978,22 @@ MonoBehaviour:
   - coordinate: {x: 2, y: 2}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0000000000000000
-  - coordinate: {x: 3, y: 2}
+  - coordinate: {x: 3, y: 1}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
   - coordinate: {x: 2, y: 3}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0400000004000000
   levelOrders:
-  - color: 0
+  - kind: 0
+    color: 0
     requiredCount: 3
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
-  - color: 4
-    requiredCount: 2
+  - kind: 1
+    color: 0
+    requiredCount: 3
   drawLayoutGizmos: 1
   playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}
   removedCellGizmoColor: {r: 0.38, g: 0.18, b: 0.07, a: 0.75}
@@ -3481,94 +3478,112 @@ MonoBehaviour:
     - color: 5
       count: 1
   - sodas:
-    - color: 4
+    - color: 0
+      count: 1
+    - color: 2
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
       count: 1
     - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
       count: 1
     - color: 2
       count: 1
   - sodas:
-    - color: 0
+    - color: 1
       count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 3
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
     - color: 1
       count: 1
   - sodas:
-    - color: 4
-      count: 2
+    - color: 1
+      count: 3
   - sodas:
     - color: 0
       count: 2
+    - color: 3
+      count: 1
   - sodas:
-    - color: 4
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 1
       count: 3
   - sodas:
     - color: 0
       count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 4
-      count: 1
   - sodas:
     - color: 1
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 4
       count: 1
   - sodas:
     - color: 2
       count: 1
   - sodas:
     - color: 3
-      count: 1
-  - sodas:
-    - color: 5
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 183391

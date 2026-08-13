@@ -11,19 +11,24 @@ public sealed class OrderRuntimeState
     /// <summary>Left-to-right position of this order in the panel.</summary>
     public int Index { get; }
 
+    public OrderKind Kind { get; }
+
+    /// <summary>Meaningless for a Blocks order.</summary>
     public Soda.SodaColor Color { get; }
 
     /// <summary>Authored target. Never changes during a level.</summary>
     public int RequiredCount { get; }
 
-    /// <summary>How many packed boxes of this color are still needed.</summary>
+    /// <summary>How many packed boxes of this color, or locked blocks, are still needed.</summary>
     public int Remaining { get; private set; }
 
     public bool IsFulfilled => Remaining <= 0;
+    public bool IsBlocks => Kind == OrderKind.Blocks;
 
-    public OrderRuntimeState(int index, Soda.SodaColor color, int requiredCount)
+    public OrderRuntimeState(int index, OrderKind kind, Soda.SodaColor color, int requiredCount)
     {
         Index = index;
+        Kind = kind;
         Color = color;
         RequiredCount = Mathf.Max(1, requiredCount);
         Remaining = RequiredCount;
@@ -108,6 +113,9 @@ public sealed class OrderManager : MonoBehaviour
     private readonly Dictionary<Soda.SodaColor, OrderRuntimeState> ordersByColor =
         new Dictionary<Soda.SodaColor, OrderRuntimeState>();
 
+    /// <summary>At most one per level, so it is held directly rather than keyed.</summary>
+    private OrderRuntimeState blocksOrder;
+
     private int pendingImpacts;
     private bool completionRaised;
     private bool initialized;
@@ -186,6 +194,7 @@ public sealed class OrderManager : MonoBehaviour
 
         orders.Clear();
         ordersByColor.Clear();
+        blocksOrder = null;
         pendingImpacts = 0;
         completionRaised = false;
 
@@ -195,6 +204,23 @@ public sealed class OrderManager : MonoBehaviour
             LevelOrderData data = authored[index];
             if (data == null)
             {
+                continue;
+            }
+
+            if (data.IsBlocks)
+            {
+                if (blocksOrder != null)
+                {
+                    Debug.LogWarning(
+                        $"Order {index} is a second Blocks order and was ignored. " +
+                        "A level can only ask for locked blocks once.",
+                        this);
+                    continue;
+                }
+
+                blocksOrder = new OrderRuntimeState(
+                    orders.Count, OrderKind.Blocks, data.color, data.requiredCount);
+                orders.Add(blocksOrder);
                 continue;
             }
 
@@ -210,7 +236,8 @@ public sealed class OrderManager : MonoBehaviour
                 continue;
             }
 
-            OrderRuntimeState state = new OrderRuntimeState(orders.Count, data.color, data.requiredCount);
+            OrderRuntimeState state = new OrderRuntimeState(
+                orders.Count, OrderKind.Soda, data.color, data.requiredCount);
             orders.Add(state);
             ordersByColor.Add(state.Color, state);
         }
@@ -276,6 +303,48 @@ public sealed class OrderManager : MonoBehaviour
             color,
             state.Remaining,
             state.IsFulfilled,
+            sourceWorldPosition));
+
+        return true;
+    }
+
+    /// <summary>True when the level asks for locked blocks and still needs some.</summary>
+    public bool WantsBlocks => blocksOrder != null && !blocksOrder.IsFulfilled;
+
+    /// <summary>
+    /// Called by Board the moment a locked block actually opens. A frozen blocker
+    /// that has only cracked has not opened and must not count.
+    ///
+    /// Unlike a packed box this raises no flying effect: there is nothing to
+    /// deliver, the block simply ceases to exist on the board. The panel reacts
+    /// with the same hop the soda slots use, applied immediately, so the tick and
+    /// the slot update stay in step without a streak in between.
+    /// </summary>
+    public bool TryConsumeOpenedBlock(Vector3 sourceWorldPosition)
+    {
+        if (!initialized)
+        {
+            Initialize();
+        }
+
+        if (blocksOrder == null || blocksOrder.IsFulfilled)
+        {
+            return false;
+        }
+
+        blocksOrder.Consume();
+        pendingImpacts++;
+
+        if (verboseLogging)
+        {
+            Debug.Log($"Blocks order now needs {blocksOrder.Remaining}.", this);
+        }
+
+        OrderConsumed?.Invoke(new OrderConsumedEvent(
+            blocksOrder.Index,
+            blocksOrder.Color,
+            blocksOrder.Remaining,
+            blocksOrder.IsFulfilled,
             sourceWorldPosition));
 
         return true;

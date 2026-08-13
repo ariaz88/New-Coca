@@ -43,11 +43,14 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0300000003000000
   orders:
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
-  - color: 2
+  - kind: 0
+    color: 2
     requiredCount: 3
-  - color: 3
+  - kind: 1
+    color: 0
     requiredCount: 2
   palette: 0100000002000000030000000500000000000000
   railQueue:
@@ -78,9 +81,9 @@ MonoBehaviour:
     - color: 5
       count: 1
   - sodas:
-    - color: 3
-      count: 2
     - color: 1
+      count: 2
+    - color: 2
       count: 1
   - sodas:
     - color: 2
@@ -88,12 +91,12 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 3
+    - color: 1
       count: 1
-    - color: 2
+    - color: 3
       count: 1
   - sodas:
-    - color: 3
+    - color: 2
       count: 2
   - sodas:
     - color: 1
@@ -111,28 +114,28 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 3
+    - color: 2
       count: 3
   - sodas:
-    - color: 2
+    - color: 1
       count: 2
     - color: 0
       count: 1
   - sodas:
-    - color: 1
+    - color: 2
       count: 3
   - sodas:
-    - color: 2
-      count: 1
     - color: 1
       count: 1
-  - sodas:
-    - color: 3
-      count: 1
     - color: 2
       count: 1
   - sodas:
+    - color: 1
+      count: 1
     - color: 3
+      count: 1
+  - sodas:
+    - color: 1
       count: 3
   - sodas:
     - color: 2
@@ -141,7 +144,16 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 2
+      count: 3
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 2
       count: 1
+  - sodas:
+    - color: 3
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
@@ -149,10 +161,10 @@ MonoBehaviour:
   expectedSeconds: 330
   mainChallenge: Every cell type at once, with three orders to satisfy.
   designerNotes: 
-  bakedChecksum: 06267c0e-111
+  bakedChecksum: fea12a2a-126
   lastVerification:
-    checksum: 06267c0e-111
+    checksum: fea12a2a-126
     solved: 1
-    moves: 16
-    nodes: 16
-    utcStamp: 2026-08-13 10:09:16Z
+    moves: 12
+    nodes: 12
+    utcStamp: 2026-08-13 13:07:04Z

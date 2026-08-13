@@ -189,11 +189,15 @@ public sealed class OrderPanelUI : MonoBehaviour
 
             OrderSlotUI slot = Instantiate(slotPrefab, slotContainer);
             slot.gameObject.SetActive(true);
-            slot.Bind(
-                state.Index,
-                state.Color,
-                library != null ? library.GetIcon(state.Color) : null,
-                state.Remaining);
+
+            // A Blocks order shows the crate rather than a drink, and the crate is
+            // generated in code because the board's blockers are plain cubes with
+            // their tape drawn on at runtime - there is no prefab to bake.
+            Sprite icon = state.IsBlocks
+                ? OrderPanelTextures.BlockIcon
+                : library != null ? library.GetIcon(state.Color) : null;
+
+            slot.Bind(state.Index, state.Kind, state.Color, icon, state.Remaining);
             slots.Add(slot);
         }
 
@@ -220,7 +224,11 @@ public sealed class OrderPanelUI : MonoBehaviour
             return;
         }
 
-        if (impactPresenter == null)
+        // A Blocks order has nothing to deliver: the block is destroyed where it
+        // stands, so there is no packed box to fly up to the panel. Flying a
+        // streak from a cell that just exploded would read as the debris being
+        // collected. The slot just hops in place instead.
+        if (impactPresenter == null || slot.IsBlocksSlot)
         {
             ApplyImpact(slot, consumedEvent);
             return;

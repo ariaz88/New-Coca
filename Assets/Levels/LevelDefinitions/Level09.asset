@@ -40,9 +40,11 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0500000005000000
   orders:
-  - color: 0
+  - kind: 0
+    color: 0
     requiredCount: 3
-  - color: 5
+  - kind: 0
+    color: 5
     requiredCount: 3
   palette: 00000000050000000300000004000000
   railQueue:
@@ -121,10 +123,10 @@ MonoBehaviour:
   mainChallenge: 'Work outward from the centre: the corners only open once the ring
     falls.'
   designerNotes: 
-  bakedChecksum: f952a0f3-d5
+  bakedChecksum: 4cb5c007-d9
   lastVerification:
-    checksum: f952a0f3-d5
+    checksum: 4cb5c007-d9
     solved: 1
     moves: 10
     nodes: 10
-    utcStamp: 2026-08-13 10:09:15Z
+    utcStamp: 2026-08-13 13:07:03Z

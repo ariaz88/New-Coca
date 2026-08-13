@@ -2953,7 +2953,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodePref: {fileID: 475741813859870053, guid: d5fc0f1b357893b42bfb26dd663acdec, type: 3}
   boxPref: {fileID: 7247333143549396864, guid: 34fafd3cea28b6e4cbfcf55d9882584a, type: 3}
-  width: 5
+  width: 4
   height: 5
   removedCells: []
   cellStates:
@@ -2961,13 +2961,9 @@ MonoBehaviour:
     kind: 1
   - coordinate: {x: 2, y: 4}
     kind: 2
-  - coordinate: {x: 4, y: 4}
-    kind: 1
   - coordinate: {x: 2, y: 3}
     kind: 3
   - coordinate: {x: 0, y: 2}
-    kind: 2
-  - coordinate: {x: 4, y: 2}
     kind: 2
   - coordinate: {x: 2, y: 1}
     kind: 3
@@ -2975,8 +2971,6 @@ MonoBehaviour:
     kind: 1
   - coordinate: {x: 2, y: 0}
     kind: 2
-  - coordinate: {x: 4, y: 0}
-    kind: 1
   localOrigin: {x: 0.149, y: 0.185, z: 0.16}
   cellSpacing: {x: 0.279, y: 0.279}
   placedBoxYOffset: 0.155
@@ -2991,11 +2985,14 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0200000002000000
   levelOrders:
-  - color: 3
+  - kind: 0
+    color: 3
     requiredCount: 3
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
-  - color: 2
+  - kind: 1
+    color: 0
     requiredCount: 3
   drawLayoutGizmos: 1
   playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}
@@ -3467,33 +3464,27 @@ MonoBehaviour:
     - color: 4
       count: 1
   - sodas:
-    - color: 2
+    - color: 3
       count: 2
+  - sodas:
+    - color: 1
+      count: 3
   - sodas:
     - color: 3
       count: 3
   - sodas:
     - color: 1
-      count: 3
-  - sodas:
-    - color: 2
       count: 1
     - color: 4
       count: 1
-  - sodas:
-    - color: 2
-      count: 2
   - sodas:
     - color: 3
       count: 2
-    - color: 4
-      count: 1
   - sodas:
     - color: 1
       count: 2
-  - sodas:
-    - color: 2
-      count: 3
+    - color: 4
+      count: 1
   - sodas:
     - color: 3
       count: 2
@@ -3504,20 +3495,16 @@ MonoBehaviour:
     - color: 3
       count: 2
   - sodas:
-    - color: 2
-      count: 1
-    - color: 4
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 0
-      count: 1
+    - color: 1
+      count: 3
   - sodas:
     - color: 3
       count: 2
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
     - color: 5
       count: 1
   - sodas:
@@ -3526,10 +3513,20 @@ MonoBehaviour:
     - color: 0
       count: 1
   - sodas:
-    - color: 2
-      count: 3
+    - color: 3
+      count: 2
+    - color: 5
+      count: 1
   - sodas:
     - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
       count: 2
     - color: 0
       count: 1
@@ -3540,18 +3537,38 @@ MonoBehaviour:
     - color: 1
       count: 3
   - sodas:
-    - color: 2
+    - color: 3
       count: 3
   - sodas:
-    - color: 3
+    - color: 1
       count: 1
     - color: 0
       count: 1
   - sodas:
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 2
+      count: 1
     - color: 3
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
       count: 2
   railExhaustionPolicy: 2
   fallbackSeed: 159634

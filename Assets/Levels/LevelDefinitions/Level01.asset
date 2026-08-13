@@ -30,9 +30,11 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
   orders:
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 3
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
   palette: 0400000001000000
   railQueue:
@@ -70,10 +72,10 @@ MonoBehaviour:
   expectedSeconds: 90
   mainChallenge: Place a box, watch matching sodas gather, complete a colour.
   designerNotes: Unchanged from the shipped Level 1. Known-good opener.
-  bakedChecksum: 78cd85f2-6b
+  bakedChecksum: 7c7afb76-6f
   lastVerification:
-    checksum: 78cd85f2-6b
+    checksum: 7c7afb76-6f
     solved: 1
     moves: 7
     nodes: 7
-    utcStamp: 2026-08-13 10:09:14Z
+    utcStamp: 2026-08-13 13:07:02Z

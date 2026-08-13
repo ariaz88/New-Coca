@@ -32,9 +32,11 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
   orders:
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 3
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
   palette: 04000000010000000200000003000000
   railQueue:
@@ -125,10 +127,10 @@ MonoBehaviour:
   expectedSeconds: 180
   mainChallenge: Blockers split the board into lanes until they are broken open.
   designerNotes: 
-  bakedChecksum: 3e789565-d4
+  bakedChecksum: 1ad6b9f1-d8
   lastVerification:
-    checksum: 3e789565-d4
+    checksum: 1ad6b9f1-d8
     solved: 1
     moves: 11
     nodes: 11
-    utcStamp: 2026-08-13 10:09:14Z
+    utcStamp: 2026-08-13 13:07:03Z

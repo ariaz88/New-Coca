@@ -27,11 +27,14 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
   orders:
-  - color: 0
+  - kind: 0
+    color: 0
     requiredCount: 3
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 3
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 2
   palette: 000000000400000001000000
   railQueue:
@@ -112,10 +115,10 @@ MonoBehaviour:
   expectedSeconds: 210
   mainChallenge: 'First mastery test: three orders competing for the same board space.'
   designerNotes: 
-  bakedChecksum: 2ce64ead-b5
+  bakedChecksum: ffdef3af-bb
   lastVerification:
-    checksum: 2ce64ead-b5
+    checksum: ffdef3af-bb
     solved: 1
     moves: 12
     nodes: 12
-    utcStamp: 2026-08-13 10:09:14Z
+    utcStamp: 2026-08-13 13:07:03Z

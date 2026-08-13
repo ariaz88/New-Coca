@@ -2987,11 +2987,14 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0300000003000000
   levelOrders:
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
-  - color: 2
+  - kind: 0
+    color: 2
     requiredCount: 3
-  - color: 3
+  - kind: 1
+    color: 0
     requiredCount: 2
   drawLayoutGizmos: 1
   playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}
@@ -3484,9 +3487,9 @@ MonoBehaviour:
     - color: 5
       count: 1
   - sodas:
-    - color: 3
-      count: 2
     - color: 1
+      count: 2
+    - color: 2
       count: 1
   - sodas:
     - color: 2
@@ -3494,12 +3497,12 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 3
+    - color: 1
       count: 1
-    - color: 2
+    - color: 3
       count: 1
   - sodas:
-    - color: 3
+    - color: 2
       count: 2
   - sodas:
     - color: 1
@@ -3517,28 +3520,28 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 3
+    - color: 2
       count: 3
   - sodas:
-    - color: 2
+    - color: 1
       count: 2
     - color: 0
       count: 1
   - sodas:
-    - color: 1
+    - color: 2
       count: 3
   - sodas:
-    - color: 2
-      count: 1
     - color: 1
       count: 1
-  - sodas:
-    - color: 3
-      count: 1
     - color: 2
       count: 1
   - sodas:
+    - color: 1
+      count: 1
     - color: 3
+      count: 1
+  - sodas:
+    - color: 1
       count: 3
   - sodas:
     - color: 2
@@ -3547,7 +3550,16 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 2
+      count: 3
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 2
       count: 1
+  - sodas:
+    - color: 3
+      count: 2
   railExhaustionPolicy: 2
   fallbackSeed: 143796
   allowedColors: 0100000002000000030000000500000000000000

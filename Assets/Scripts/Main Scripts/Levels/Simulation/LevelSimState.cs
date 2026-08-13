@@ -150,6 +150,9 @@ namespace CocaSorting.Levels.Simulation
 
         public int[] OrdersRemaining = new int[SimBox.ColorCount];
 
+        /// <summary>Locked blocks the level still has to have opened. 0 when unused.</summary>
+        public int BlocksOrderRemaining;
+
         public long PlacementSequence;
         public long PackedSequence;
         public int NextId = 1;
@@ -178,6 +181,11 @@ namespace CocaSorting.Levels.Simulation
 
         public bool IsWon()
         {
+            if (BlocksOrderRemaining > 0)
+            {
+                return false;
+            }
+
             for (int color = 0; color < SimBox.ColorCount; color++)
             {
                 if (OrdersRemaining[color] > 0)
@@ -187,6 +195,32 @@ namespace CocaSorting.Levels.Simulation
             }
 
             return true;
+        }
+
+        /// <summary>Breakable blockers still standing, and the hits they collectively need.</summary>
+        public void CountBreakableBlockers(out int count, out int hitsNeeded)
+        {
+            count = 0;
+            hitsNeeded = 0;
+
+            for (int index = 0; index < Cells.Length; index++)
+            {
+                switch (Cells[index])
+                {
+                    case SimCell.Blocker:
+                        count++;
+                        hitsNeeded += 1;
+                        break;
+                    case SimCell.Frozen:
+                        count++;
+                        hitsNeeded += 2;
+                        break;
+                    case SimCell.FrozenCracked:
+                        count++;
+                        hitsNeeded += 1;
+                        break;
+                }
+            }
         }
 
         /// <summary>Mirrors Board.CheckBoardFill: every playable cell holds a box.</summary>
@@ -266,6 +300,7 @@ namespace CocaSorting.Levels.Simulation
                 Rail = new SimBox[Rail.Length],
                 RailCursor = RailCursor,
                 OrdersRemaining = (int[])OrdersRemaining.Clone(),
+                BlocksOrderRemaining = BlocksOrderRemaining,
                 PlacementSequence = PlacementSequence,
                 PackedSequence = PackedSequence,
                 NextId = NextId,
@@ -368,6 +403,8 @@ namespace CocaSorting.Levels.Simulation
             {
                 builder.Append(OrdersRemaining[color]).Append('.');
             }
+
+            builder.Append('|').Append(BlocksOrderRemaining);
 
             return builder.ToString();
         }

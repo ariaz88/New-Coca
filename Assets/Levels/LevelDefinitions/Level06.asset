@@ -27,7 +27,8 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 040000000400000004000000
   orders:
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 2
   palette: 04000000000000000100000002000000
   railQueue:
@@ -78,10 +79,10 @@ MonoBehaviour:
   mainChallenge: 'TUTORIAL: completing a box breaks the X blockers touching it.'
   designerNotes: The 'G' in the shape row is the starting box cell, kept playable.
     Blockers sit north, west and east of it; only the south cell is free.
-  bakedChecksum: 27664af9-7a
+  bakedChecksum: 6ae3742f-7c
   lastVerification:
-    checksum: 27664af9-7a
+    checksum: 6ae3742f-7c
     solved: 1
     moves: 2
     nodes: 2
-    utcStamp: 2026-08-13 10:09:14Z
+    utcStamp: 2026-08-13 13:07:03Z

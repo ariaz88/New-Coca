@@ -39,11 +39,14 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0400000004000000
   orders:
-  - color: 0
+  - kind: 0
+    color: 0
     requiredCount: 3
-  - color: 3
+  - kind: 0
+    color: 3
     requiredCount: 3
-  - color: 4
+  - kind: 1
+    color: 0
     requiredCount: 2
   palette: 0000000003000000040000000100000002000000
   railQueue:
@@ -64,14 +67,14 @@ MonoBehaviour:
     - color: 0
       count: 2
   - sodas:
-    - color: 4
+    - color: 0
       count: 2
-    - color: 1
+    - color: 2
       count: 1
   - sodas:
-    - color: 0
+    - color: 3
       count: 1
-    - color: 1
+    - color: 0
       count: 1
   - sodas:
     - color: 3
@@ -79,9 +82,9 @@ MonoBehaviour:
     - color: 0
       count: 1
   - sodas:
-    - color: 4
-      count: 1
     - color: 3
+      count: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 0
@@ -89,7 +92,7 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 4
+    - color: 3
       count: 1
     - color: 0
       count: 1
@@ -99,15 +102,15 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 4
-      count: 2
-  - sodas:
     - color: 3
       count: 2
+  - sodas:
     - color: 0
+      count: 2
+    - color: 2
       count: 1
   - sodas:
-    - color: 4
+    - color: 3
       count: 3
   - sodas:
     - color: 0
@@ -118,23 +121,37 @@ MonoBehaviour:
     - color: 0
       count: 2
   - sodas:
-    - color: 3
-      count: 1
     - color: 0
       count: 1
+    - color: 1
+      count: 1
   - sodas:
     - color: 3
       count: 3
   - sodas:
-    - color: 4
+    - color: 0
       count: 3
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
   - sodas:
     - color: 2
       count: 2
-    - color: 0
-      count: 1
   - sodas:
-    - color: 2
+    - color: 4
       count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -143,10 +160,10 @@ MonoBehaviour:
   expectedSeconds: 300
   mainChallenge: Holes and blockers together, on an asymmetric board.
   designerNotes: 
-  bakedChecksum: f73fbc62-101
+  bakedChecksum: 942b854d-11f
   lastVerification:
-    checksum: f73fbc62-101
+    checksum: 942b854d-11f
     solved: 1
-    moves: 16
-    nodes: 16
-    utcStamp: 2026-08-13 10:09:15Z
+    moves: 13
+    nodes: 13
+    utcStamp: 2026-08-13 13:07:03Z

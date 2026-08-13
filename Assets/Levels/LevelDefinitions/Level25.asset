@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level25
   m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
   levelNumber: 25
-  width: 8
+  width: 4
   height: 5
   cellStates:
   - coordinate: {x: 0, y: 4}
@@ -22,58 +22,36 @@ MonoBehaviour:
     kind: 2
   - coordinate: {x: 2, y: 4}
     kind: 3
-  - coordinate: {x: 5, y: 4}
-    kind: 3
-  - coordinate: {x: 6, y: 4}
-    kind: 2
-  - coordinate: {x: 7, y: 4}
-    kind: 1
-  - coordinate: {x: 2, y: 3}
-    kind: 2
-  - coordinate: {x: 5, y: 3}
-    kind: 2
   - coordinate: {x: 0, y: 2}
     kind: 3
-  - coordinate: {x: 7, y: 2}
+  - coordinate: {x: 3, y: 2}
     kind: 3
-  - coordinate: {x: 2, y: 1}
-    kind: 2
-  - coordinate: {x: 5, y: 1}
-    kind: 2
-  - coordinate: {x: 0, y: 0}
-    kind: 1
   - coordinate: {x: 1, y: 0}
-    kind: 2
+    kind: 3
   - coordinate: {x: 2, y: 0}
-    kind: 3
-  - coordinate: {x: 5, y: 0}
-    kind: 3
-  - coordinate: {x: 6, y: 0}
     kind: 2
-  - coordinate: {x: 7, y: 0}
+  - coordinate: {x: 3, y: 0}
     kind: 1
   initialBoxes:
-  - coordinate: {x: 3, y: 2}
+  - coordinate: {x: 0, y: 3}
     boxPrefabOverride: {fileID: 0}
-    startingSodas: 0500000005000000
-  - coordinate: {x: 4, y: 2}
+    startingSodas: 0300000003000000
+  - coordinate: {x: 3, y: 3}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0200000002000000
   - coordinate: {x: 1, y: 2}
     boxPrefabOverride: {fileID: 0}
-    startingSodas: 0300000003000000
-  - coordinate: {x: 6, y: 2}
-    boxPrefabOverride: {fileID: 0}
-    startingSodas: 0400000004000000
+    startingSodas: 0500000005000000
   orders:
-  - color: 5
+  - kind: 0
+    color: 5
     requiredCount: 3
-  - color: 2
+  - kind: 0
+    color: 2
     requiredCount: 3
-  - color: 3
-    requiredCount: 3
-  - color: 4
-    requiredCount: 3
+  - kind: 1
+    color: 0
+    requiredCount: 4
   palette: 050000000200000003000000040000000100000000000000
   railQueue:
   - sodas:
@@ -82,133 +60,139 @@ MonoBehaviour:
     - color: 0
       count: 1
   - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
     - color: 5
       count: 3
   - sodas:
     - color: 2
       count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 4
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 5
-      count: 2
-    - color: 4
-      count: 1
   - sodas:
     - color: 2
       count: 3
   - sodas:
-    - color: 3
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 4
+    - color: 5
       count: 2
     - color: 0
       count: 1
   - sodas:
     - color: 5
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 2
-  - sodas:
-    - color: 3
       count: 2
   - sodas:
     - color: 2
       count: 1
-    - color: 4
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 3
       count: 1
   - sodas:
     - color: 5
+      count: 1
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
       count: 3
   - sodas:
-    - color: 2
+    - color: 5
       count: 1
     - color: 1
       count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
   - sodas:
     - color: 5
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
       count: 2
-  - sodas:
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-  - sodas:
     - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -218,10 +202,10 @@ MonoBehaviour:
   mainChallenge: 'Campaign finale: eight columns, four orders, sixteen blockers.'
   designerNotes: Widest board in the campaign. The four anchors sit on one row, so
     every order has to be grown outward through the blocker lattice.
-  bakedChecksum: a76a7763-1a7
+  bakedChecksum: fcc33acc-170
   lastVerification:
-    checksum: a76a7763-1a7
+    checksum: fcc33acc-170
     solved: 1
-    moves: 22
-    nodes: 22
-    utcStamp: 2026-08-13 10:09:16Z
+    moves: 25
+    nodes: 1684
+    utcStamp: 2026-08-13 13:07:05Z

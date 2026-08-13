@@ -247,14 +247,27 @@ namespace CocaSorting.Levels.Simulation
                 {
                     case SimCell.Blocker:
                         state.Cells[index] = SimCell.Playable;
+                        OnBlockOpened(state);
                         break;
                     case SimCell.Frozen:
+                        // Cracked only. A half-broken blocker has not opened, so it
+                        // must not advance a "open N locked blocks" order - the same
+                        // rule Board applies by reporting only from UnlockBlockedCell.
                         state.Cells[index] = SimCell.FrozenCracked;
                         break;
                     case SimCell.FrozenCracked:
                         state.Cells[index] = SimCell.Playable;
+                        OnBlockOpened(state);
                         break;
                 }
+            }
+        }
+
+        private static void OnBlockOpened(LevelSimState state)
+        {
+            if (state.BlocksOrderRemaining > 0)
+            {
+                state.BlocksOrderRemaining--;
             }
         }
 

@@ -32,14 +32,16 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0300000003000000
   orders:
-  - color: 5
+  - kind: 0
+    color: 5
     requiredCount: 3
-  - color: 3
-    requiredCount: 3
+  - kind: 1
+    color: 0
+    requiredCount: 2
   palette: 0500000003000000040000000000000001000000
   railQueue:
   - sodas:
-    - color: 3
+    - color: 5
       count: 3
   - sodas:
     - color: 5
@@ -50,7 +52,7 @@ MonoBehaviour:
     - color: 5
       count: 3
   - sodas:
-    - color: 3
+    - color: 5
       count: 3
   - sodas:
     - color: 5
@@ -58,22 +60,22 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
-    - color: 3
+    - color: 5
       count: 2
-    - color: 4
+    - color: 3
       count: 1
   - sodas:
     - color: 5
       count: 3
   - sodas:
-    - color: 3
+    - color: 5
       count: 1
     - color: 0
       count: 1
   - sodas:
-    - color: 3
+    - color: 5
       count: 1
-    - color: 4
+    - color: 3
       count: 1
   - sodas:
     - color: 5
@@ -81,33 +83,37 @@ MonoBehaviour:
     - color: 3
       count: 1
   - sodas:
-    - color: 3
+    - color: 5
       count: 3
   - sodas:
     - color: 5
       count: 3
   - sodas:
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
     - color: 3
+      count: 1
+  - sodas:
+    - color: 5
       count: 1
     - color: 1
       count: 1
   - sodas:
     - color: 5
-      count: 2
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
+      count: 3
   - sodas:
     - color: 4
-      count: 2
+      count: 3
   - sodas:
-    - color: 1
+    - color: 0
       count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 2
@@ -115,10 +121,10 @@ MonoBehaviour:
   expectedSeconds: 270
   mainChallenge: 'Both blocker types side by side: one cheap to open, one expensive.'
   designerNotes: 
-  bakedChecksum: 506c01a9-c5
+  bakedChecksum: 1866757f-d1
   lastVerification:
-    checksum: 506c01a9-c5
+    checksum: 1866757f-d1
     solved: 1
-    moves: 12
-    nodes: 12
-    utcStamp: 2026-08-13 10:09:15Z
+    moves: 6
+    nodes: 6
+    utcStamp: 2026-08-13 13:07:04Z

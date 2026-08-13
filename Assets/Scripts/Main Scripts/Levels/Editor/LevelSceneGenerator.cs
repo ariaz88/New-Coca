@@ -294,6 +294,7 @@ public static class LevelSceneGenerator
 
             orders.InsertArrayElementAtIndex(index);
             SerializedProperty element = orders.GetArrayElementAtIndex(index);
+            element.FindPropertyRelative("kind").enumValueIndex = (int)order.kind;
             element.FindPropertyRelative("color").enumValueIndex = (int)order.color;
             element.FindPropertyRelative("requiredCount").intValue = Mathf.Max(1, order.requiredCount);
         }
@@ -536,7 +537,12 @@ public static class LevelSceneGenerator
         {
             if (order != null)
             {
-                clones.Add(new LevelOrderData { color = order.color, requiredCount = order.requiredCount });
+                clones.Add(new LevelOrderData
+                {
+                    kind = order.kind,
+                    color = order.color,
+                    requiredCount = order.requiredCount
+                });
             }
         }
 

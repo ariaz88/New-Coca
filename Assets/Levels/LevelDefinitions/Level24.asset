@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level24
   m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
   levelNumber: 24
-  width: 6
+  width: 4
   height: 5
   cellStates:
   - coordinate: {x: 0, y: 4}
@@ -22,58 +22,51 @@ MonoBehaviour:
     kind: 2
   - coordinate: {x: 2, y: 4}
     kind: 3
-  - coordinate: {x: 4, y: 4}
-    kind: 2
-  - coordinate: {x: 5, y: 4}
-    kind: 1
   - coordinate: {x: 0, y: 2}
     kind: 3
   - coordinate: {x: 2, y: 2}
     kind: 2
   - coordinate: {x: 3, y: 2}
     kind: 2
-  - coordinate: {x: 5, y: 2}
-    kind: 3
   - coordinate: {x: 0, y: 0}
     kind: 1
   - coordinate: {x: 1, y: 0}
     kind: 2
   - coordinate: {x: 3, y: 0}
     kind: 3
-  - coordinate: {x: 4, y: 0}
-    kind: 2
-  - coordinate: {x: 5, y: 0}
-    kind: 1
   initialBoxes:
   - coordinate: {x: 1, y: 3}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0400000004000000
-  - coordinate: {x: 4, y: 1}
+  - coordinate: {x: 3, y: 1}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0000000000000000
   - coordinate: {x: 2, y: 1}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
   orders:
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 3
-  - color: 0
+  - kind: 0
+    color: 0
     requiredCount: 3
-  - color: 1
-    requiredCount: 3
+  - kind: 1
+    color: 0
+    requiredCount: 4
   palette: 040000000000000001000000030000000200000005000000
   railQueue:
   - sodas:
     - color: 0
       count: 3
   - sodas:
-    - color: 1
+    - color: 4
       count: 2
   - sodas:
     - color: 4
       count: 3
   - sodas:
-    - color: 1
+    - color: 0
       count: 1
     - color: 4
       count: 1
@@ -81,7 +74,7 @@ MonoBehaviour:
     - color: 0
       count: 2
   - sodas:
-    - color: 1
+    - color: 0
       count: 2
     - color: 5
       count: 1
@@ -92,14 +85,14 @@ MonoBehaviour:
     - color: 0
       count: 3
   - sodas:
-    - color: 1
+    - color: 4
       count: 1
-    - color: 3
+    - color: 2
       count: 1
     - color: 0
       count: 1
   - sodas:
-    - color: 1
+    - color: 4
       count: 2
   - sodas:
     - color: 4
@@ -114,17 +107,17 @@ MonoBehaviour:
     - color: 0
       count: 1
   - sodas:
-    - color: 1
+    - color: 4
       count: 2
   - sodas:
-    - color: 4
+    - color: 0
       count: 1
     - color: 5
       count: 1
   - sodas:
-    - color: 4
+    - color: 0
       count: 1
-    - color: 1
+    - color: 2
       count: 1
   - sodas:
     - color: 4
@@ -135,16 +128,65 @@ MonoBehaviour:
     - color: 0
       count: 2
   - sodas:
-    - color: 1
-      count: 2
-  - sodas:
     - color: 4
       count: 2
   - sodas:
     - color: 0
+      count: 2
+  - sodas:
+    - color: 4
       count: 1
     - color: 5
       count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 5
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 4
+      count: 1
     - color: 1
       count: 1
   - sodas:
@@ -152,27 +194,10 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 0
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 1
       count: 1
   - sodas:
     - color: 3
       count: 2
-  - sodas:
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 4
@@ -182,10 +207,10 @@ MonoBehaviour:
     space.
   designerNotes: The distractor is supplied as a whole set of four, so it can always
     be packed away - a remainder would permanently poison a cell.
-  bakedChecksum: 28726ce7-156
+  bakedChecksum: feefb8a5-178
   lastVerification:
-    checksum: 28726ce7-156
+    checksum: feefb8a5-178
     solved: 1
-    moves: 23
-    nodes: 23
-    utcStamp: 2026-08-13 10:09:16Z
+    moves: 12
+    nodes: 12
+    utcStamp: 2026-08-13 13:07:05Z

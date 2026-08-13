@@ -13,33 +13,27 @@ MonoBehaviour:
   m_Name: Level21
   m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
   levelNumber: 21
-  width: 6
+  width: 4
   height: 5
   cellStates:
   - coordinate: {x: 0, y: 4}
     kind: 1
   - coordinate: {x: 1, y: 4}
     kind: 2
-  - coordinate: {x: 4, y: 4}
+  - coordinate: {x: 3, y: 4}
     kind: 2
-  - coordinate: {x: 5, y: 4}
-    kind: 1
   - coordinate: {x: 2, y: 3}
     kind: 3
   - coordinate: {x: 0, y: 2}
     kind: 2
-  - coordinate: {x: 5, y: 2}
-    kind: 2
-  - coordinate: {x: 3, y: 1}
+  - coordinate: {x: 1, y: 1}
     kind: 3
   - coordinate: {x: 0, y: 0}
     kind: 1
   - coordinate: {x: 1, y: 0}
     kind: 2
-  - coordinate: {x: 4, y: 0}
+  - coordinate: {x: 3, y: 0}
     kind: 2
-  - coordinate: {x: 5, y: 0}
-    kind: 1
   initialBoxes:
   - coordinate: {x: 1, y: 3}
     boxPrefabOverride: {fileID: 0}
@@ -51,46 +45,49 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
   orders:
-  - color: 2
+  - kind: 0
+    color: 2
     requiredCount: 3
-  - color: 3
+  - kind: 0
+    color: 3
     requiredCount: 3
-  - color: 1
+  - kind: 1
+    color: 0
     requiredCount: 3
   palette: 020000000300000001000000040000000500000000000000
   railQueue:
   - sodas:
-    - color: 1
+    - color: 2
       count: 1
     - color: 4
       count: 1
   - sodas:
-    - color: 2
-      count: 1
     - color: 3
+      count: 1
+    - color: 2
       count: 1
     - color: 0
       count: 1
   - sodas:
+    - color: 3
+      count: 1
     - color: 1
       count: 1
-    - color: 2
-      count: 1
   - sodas:
-    - color: 3
+    - color: 2
       count: 3
   - sodas:
-    - color: 1
-      count: 1
     - color: 3
+      count: 1
+    - color: 2
       count: 1
     - color: 0
       count: 1
   - sodas:
-    - color: 2
+    - color: 3
       count: 2
   - sodas:
-    - color: 1
+    - color: 3
       count: 2
     - color: 0
       count: 1
@@ -100,18 +97,18 @@ MonoBehaviour:
     - color: 5
       count: 1
   - sodas:
-    - color: 1
-      count: 3
-  - sodas:
     - color: 3
       count: 3
   - sodas:
     - color: 2
+      count: 3
+  - sodas:
+    - color: 3
       count: 2
     - color: 5
       count: 1
   - sodas:
-    - color: 1
+    - color: 2
       count: 1
     - color: 0
       count: 1
@@ -126,7 +123,7 @@ MonoBehaviour:
     - color: 2
       count: 1
   - sodas:
-    - color: 1
+    - color: 3
       count: 2
     - color: 5
       count: 1
@@ -134,40 +131,52 @@ MonoBehaviour:
     - color: 3
       count: 3
   - sodas:
-    - color: 1
-      count: 1
     - color: 2
       count: 1
-  - sodas:
     - color: 1
+      count: 1
+  - sodas:
+    - color: 2
       count: 1
     - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 2
       count: 1
   - sodas:
     - color: 2
       count: 2
   - sodas:
     - color: 3
-      count: 1
-    - color: 4
+      count: 2
+    - color: 1
       count: 1
   - sodas:
-    - color: 1
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
       count: 1
   - sodas:
     - color: 3
       count: 1
-  - sodas:
     - color: 4
       count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 4
@@ -175,10 +184,10 @@ MonoBehaviour:
   expectedSeconds: 420
   mainChallenge: A six-wide board where the useful space is a narrow cross.
   designerNotes: 
-  bakedChecksum: d8827a85-14b
+  bakedChecksum: 3b93cb3e-155
   lastVerification:
-    checksum: d8827a85-14b
+    checksum: 3b93cb3e-155
     solved: 1
-    moves: 16
-    nodes: 16
-    utcStamp: 2026-08-13 10:09:16Z
+    moves: 10
+    nodes: 10
+    utcStamp: 2026-08-13 13:07:04Z

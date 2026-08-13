@@ -191,7 +191,10 @@ namespace CocaSorting.Levels.Simulation
                 report.MaxDepthReached = depth;
             }
 
-            int remaining = 0;
+            // Blocks count toward "how far did we get". Leaving them out reported a
+            // level that had finished every drink but could not open a single
+            // blocker as "best left 0", which reads as a near-miss when it is not.
+            int remaining = System.Math.Max(0, state.BlocksOrderRemaining);
             for (int color = 0; color < SimBox.ColorCount; color++)
             {
                 remaining += System.Math.Max(0, state.OrdersRemaining[color]);
@@ -269,6 +272,18 @@ namespace CocaSorting.Levels.Simulation
                 }
 
                 if (state.CountSupply(color, queue) < needed * state.BoxCapacity)
+                {
+                    return true;
+                }
+            }
+
+            // A "open N locked blocks" order cannot be met once fewer than N
+            // breakable blockers are left standing. Admissible: blockers are never
+            // created, only opened.
+            if (state.BlocksOrderRemaining > 0)
+            {
+                state.CountBreakableBlockers(out int blockers, out _);
+                if (blockers < state.BlocksOrderRemaining)
                 {
                     return true;
                 }
@@ -465,7 +480,9 @@ namespace CocaSorting.Levels.Simulation
                 SimCell kind = state.Cells[index];
                 if (kind == SimCell.Blocker || kind == SimCell.Frozen || kind == SimCell.FrozenCracked)
                 {
-                    score += 15;
+                    // Worth far more while a Blocks order is open: on those levels
+                    // breaking blockers IS the goal, not just a way to free space.
+                    score += state.BlocksOrderRemaining > 0 ? 90 : 15;
                 }
             }
 

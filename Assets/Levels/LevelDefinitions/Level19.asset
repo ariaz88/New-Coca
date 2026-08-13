@@ -13,20 +13,16 @@ MonoBehaviour:
   m_Name: Level19
   m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
   levelNumber: 19
-  width: 5
+  width: 4
   height: 5
   cellStates:
   - coordinate: {x: 0, y: 4}
     kind: 1
   - coordinate: {x: 2, y: 4}
     kind: 2
-  - coordinate: {x: 4, y: 4}
-    kind: 1
   - coordinate: {x: 2, y: 3}
     kind: 3
   - coordinate: {x: 0, y: 2}
-    kind: 2
-  - coordinate: {x: 4, y: 2}
     kind: 2
   - coordinate: {x: 2, y: 1}
     kind: 3
@@ -34,8 +30,6 @@ MonoBehaviour:
     kind: 1
   - coordinate: {x: 2, y: 0}
     kind: 2
-  - coordinate: {x: 4, y: 0}
-    kind: 1
   initialBoxes:
   - coordinate: {x: 1, y: 3}
     boxPrefabOverride: {fileID: 0}
@@ -47,11 +41,14 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0200000002000000
   orders:
-  - color: 3
+  - kind: 0
+    color: 3
     requiredCount: 3
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
-  - color: 2
+  - kind: 1
+    color: 0
     requiredCount: 3
   palette: 030000000100000002000000040000000500000000000000
   railQueue:
@@ -61,33 +58,27 @@ MonoBehaviour:
     - color: 4
       count: 1
   - sodas:
-    - color: 2
+    - color: 3
       count: 2
+  - sodas:
+    - color: 1
+      count: 3
   - sodas:
     - color: 3
       count: 3
   - sodas:
     - color: 1
-      count: 3
-  - sodas:
-    - color: 2
       count: 1
     - color: 4
       count: 1
-  - sodas:
-    - color: 2
-      count: 2
   - sodas:
     - color: 3
       count: 2
-    - color: 4
-      count: 1
   - sodas:
     - color: 1
       count: 2
-  - sodas:
-    - color: 2
-      count: 3
+    - color: 4
+      count: 1
   - sodas:
     - color: 3
       count: 2
@@ -98,20 +89,16 @@ MonoBehaviour:
     - color: 3
       count: 2
   - sodas:
-    - color: 2
-      count: 1
-    - color: 4
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 0
-      count: 1
+    - color: 1
+      count: 3
   - sodas:
     - color: 3
       count: 2
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
     - color: 5
       count: 1
   - sodas:
@@ -120,10 +107,20 @@ MonoBehaviour:
     - color: 0
       count: 1
   - sodas:
-    - color: 2
-      count: 3
+    - color: 3
+      count: 2
+    - color: 5
+      count: 1
   - sodas:
     - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
       count: 2
     - color: 0
       count: 1
@@ -134,18 +131,38 @@ MonoBehaviour:
     - color: 1
       count: 3
   - sodas:
-    - color: 2
+    - color: 3
       count: 3
   - sodas:
-    - color: 3
+    - color: 1
       count: 1
     - color: 0
       count: 1
   - sodas:
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 2
+      count: 1
     - color: 3
       count: 1
   - sodas:
-    - color: 5
+    - color: 2
       count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -154,10 +171,10 @@ MonoBehaviour:
   expectedSeconds: 360
   mainChallenge: 'A lattice board: almost every free cell touches a blocker.'
   designerNotes: 
-  bakedChecksum: a9f31b78-11e
+  bakedChecksum: 594e206c-136
   lastVerification:
-    checksum: a9f31b78-11e
+    checksum: 594e206c-136
     solved: 1
-    moves: 15
-    nodes: 15
-    utcStamp: 2026-08-13 10:09:16Z
+    moves: 10
+    nodes: 10
+    utcStamp: 2026-08-13 13:07:04Z

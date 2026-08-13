@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level18
   m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
   levelNumber: 18
-  width: 5
+  width: 4
   height: 5
   cellStates:
   - coordinate: {x: 0, y: 4}
@@ -22,22 +22,16 @@ MonoBehaviour:
     kind: 2
   - coordinate: {x: 3, y: 4}
     kind: 2
-  - coordinate: {x: 4, y: 4}
-    kind: 3
   - coordinate: {x: 0, y: 2}
     kind: 2
   - coordinate: {x: 2, y: 2}
     kind: 3
-  - coordinate: {x: 4, y: 2}
-    kind: 2
   - coordinate: {x: 0, y: 0}
     kind: 3
   - coordinate: {x: 1, y: 0}
     kind: 2
   - coordinate: {x: 3, y: 0}
     kind: 2
-  - coordinate: {x: 4, y: 0}
-    kind: 3
   initialBoxes:
   - coordinate: {x: 2, y: 3}
     boxPrefabOverride: {fileID: 0}
@@ -49,37 +43,40 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0000000000000000
   orders:
-  - color: 5
+  - kind: 0
+    color: 5
     requiredCount: 3
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 3
-  - color: 0
+  - kind: 1
+    color: 0
     requiredCount: 3
   palette: 050000000400000000000000010000000200000003000000
   railQueue:
   - sodas:
+    - color: 4
+      count: 1
     - color: 0
       count: 1
-    - color: 1
-      count: 1
   - sodas:
-    - color: 4
+    - color: 5
       count: 3
   - sodas:
-    - color: 5
-      count: 1
     - color: 4
       count: 1
+    - color: 5
+      count: 1
   - sodas:
-    - color: 0
+    - color: 4
       count: 1
     - color: 5
       count: 1
   - sodas:
-    - color: 0
+    - color: 4
       count: 2
   - sodas:
-    - color: 5
+    - color: 4
       count: 1
     - color: 0
       count: 1
@@ -92,10 +89,10 @@ MonoBehaviour:
     - color: 4
       count: 2
   - sodas:
-    - color: 0
+    - color: 5
       count: 3
   - sodas:
-    - color: 5
+    - color: 4
       count: 2
   - sodas:
     - color: 4
@@ -103,35 +100,35 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
+    - color: 5
+      count: 2
+  - sodas:
     - color: 4
       count: 2
   - sodas:
     - color: 5
-      count: 2
-  - sodas:
-    - color: 0
       count: 3
   - sodas:
     - color: 4
       count: 2
   - sodas:
-    - color: 5
+    - color: 4
       count: 2
   - sodas:
-    - color: 0
+    - color: 5
       count: 2
-    - color: 4
+    - color: 3
       count: 1
   - sodas:
-    - color: 5
+    - color: 4
       count: 2
   - sodas:
-    - color: 4
+    - color: 5
       count: 1
     - color: 1
       count: 1
   - sodas:
-    - color: 0
+    - color: 5
       count: 2
   - sodas:
     - color: 4
@@ -141,31 +138,46 @@ MonoBehaviour:
     - color: 2
       count: 1
   - sodas:
-    - color: 5
+    - color: 4
       count: 2
     - color: 1
       count: 1
   - sodas:
-    - color: 4
-      count: 1
     - color: 5
       count: 1
-  - sodas:
-    - color: 3
-      count: 2
     - color: 4
       count: 1
   - sodas:
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
+    - color: 5
+      count: 2
     - color: 3
       count: 1
   - sodas:
+    - color: 4
+      count: 1
     - color: 2
       count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 5
+      count: 3
+  - sodas:
+    - color: 0
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 4
@@ -173,10 +185,10 @@ MonoBehaviour:
   expectedSeconds: 360
   mainChallenge: 'Frozen mastery: a wider board, nine blockers, five of them frozen.'
   designerNotes: 
-  bakedChecksum: a6db78ab-143
+  bakedChecksum: 68a7bdea-152
   lastVerification:
-    checksum: a6db78ab-143
+    checksum: 68a7bdea-152
     solved: 1
-    moves: 17
-    nodes: 17
-    utcStamp: 2026-08-13 10:09:16Z
+    moves: 10
+    nodes: 10
+    utcStamp: 2026-08-13 13:07:04Z

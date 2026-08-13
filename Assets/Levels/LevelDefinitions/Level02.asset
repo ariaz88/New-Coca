@@ -27,9 +27,11 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000004000000
   orders:
-  - color: 4
+  - kind: 0
+    color: 4
     requiredCount: 3
-  - color: 1
+  - kind: 0
+    color: 1
     requiredCount: 3
   palette: 0400000001000000
   railQueue:
@@ -72,10 +74,10 @@ MonoBehaviour:
     to unpick.
   designerNotes: Redesigned. The shipped Level 2 was a byte-identical copy of Level
     1.
-  bakedChecksum: fec6e00f-6b
+  bakedChecksum: 4318fccb-6f
   lastVerification:
-    checksum: fec6e00f-6b
+    checksum: 4318fccb-6f
     solved: 1
     moves: 7
     nodes: 7
-    utcStamp: 2026-08-13 10:09:14Z
+    utcStamp: 2026-08-13 13:07:02Z

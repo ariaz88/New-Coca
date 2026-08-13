@@ -27,9 +27,11 @@ MonoBehaviour:
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0500000002000000
   orders:
-  - color: 2
+  - kind: 0
+    color: 2
     requiredCount: 3
-  - color: 5
+  - kind: 0
+    color: 5
     requiredCount: 3
   palette: 0200000005000000
   railQueue:
@@ -99,10 +101,10 @@ MonoBehaviour:
   mainChallenge: Fewer starting anchors, so the board has to be built up before it
     pays out.
   designerNotes: 
-  bakedChecksum: 09966a77-9b
+  bakedChecksum: 6b0161bb-9f
   lastVerification:
-    checksum: 09966a77-9b
+    checksum: 6b0161bb-9f
     solved: 1
     moves: 9
     nodes: 9
-    utcStamp: 2026-08-13 10:09:14Z
+    utcStamp: 2026-08-13 13:07:02Z
