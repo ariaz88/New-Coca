@@ -48,7 +48,7 @@ public sealed class OrderPanelSkin : MonoBehaviour
     private float cardTopMargin = 150f;
 
     [SerializeField, Min(0f), Tooltip("Gap between the outermost chip and the edge of the card, in canvas units. The card is sized from its contents plus twice this.")]
-    private float slotEdgeMargin = 5f;
+    private float slotEdgeMargin = 26f;
     [SerializeField] private Vector2 ribbonSize = new Vector2(196f, 56f);
 
     [SerializeField, Tooltip("Taller than it is wide: the drink stands upright, so a square chip left no room between the bottle and its count badge.")]
