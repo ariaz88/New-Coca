@@ -47,6 +47,9 @@ public sealed class SodaIconBaker : EditorWindow
     [SerializeField] private SodaVisualLibrary library;
     [SerializeField] private string outputFolder = DefaultOutputFolder;
     [SerializeField] private int iconSize = 256;
+    [SerializeField, Tooltip("Rotation applied to the model before rendering. Matches the rotation SpawnContoller gives every soda it places, so the icon stands the same way up as the drink on the board.")]
+    private Vector3 modelEuler = new Vector3(-90f, 0f, 0f);
+
     [SerializeField] private Vector3 cameraEuler = new Vector3(12f, 155f, 0f);
     [SerializeField] private float framingPadding = 1.06f;
     [SerializeField] private int supersample = 3;
@@ -431,7 +434,12 @@ public sealed class SodaIconBaker : EditorWindow
             instance.hideFlags = HideFlags.HideAndDontSave;
             instance.transform.SetParent(rig.transform, false);
             instance.transform.localPosition = Vector3.zero;
-            instance.transform.localRotation = Quaternion.identity;
+
+            // The same corrective rotation SpawnContoller.SpawnSodaAtSlot applies
+            // to every soda it places in a box. The model is authored lying down,
+            // so baking it at identity produced icons of a bottle on its side while
+            // the board showed it standing up.
+            instance.transform.localRotation = Quaternion.Euler(modelEuler);
 
             if (!ApplyMaterial(instance, color, out error))
             {

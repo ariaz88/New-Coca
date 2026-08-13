@@ -42,10 +42,14 @@ public sealed class OrderPanelSkin : MonoBehaviour
     [SerializeField] private Color countColor = new Color(1f, 0.94f, 0.82f, 1f);
 
     [Header("Layout")]
-    [SerializeField] private Vector2 cardSize = new Vector2(392f, 168f);
-    [SerializeField] private float cardTopMargin = 54f;
+    [SerializeField] private Vector2 cardSize = new Vector2(392f, 186f);
+
+    [SerializeField, Tooltip("Distance from the top of the screen to the top of the card, in canvas units. Sits below the coin and gem HUD and the level progress bar, in the clear strip above the delivery lane.")]
+    private float cardTopMargin = 350f;
     [SerializeField] private Vector2 ribbonSize = new Vector2(196f, 56f);
-    [SerializeField] private Vector2 chipSize = new Vector2(104f, 104f);
+
+    [SerializeField, Tooltip("Taller than it is wide: the drink stands upright, so a square chip left no room between the bottle and its count badge.")]
+    private Vector2 chipSize = new Vector2(104f, 118f);
 
     private bool applied;
 
@@ -408,8 +412,8 @@ public sealed class OrderPanelSkin : MonoBehaviour
         if (icon != null)
         {
             Centre(icon);
-            icon.sizeDelta = new Vector2(78f, 78f);
-            icon.anchoredPosition = new Vector2(0f, 14f);
+            icon.sizeDelta = new Vector2(76f, 76f);
+            icon.anchoredPosition = new Vector2(0f, 20f);
 
             Image iconImage = icon.GetComponent<Image>();
             if (iconImage != null)
@@ -435,13 +439,13 @@ public sealed class OrderPanelSkin : MonoBehaviour
         badgeImage.raycastTarget = false;
         Centre(badge);
         badge.sizeDelta = new Vector2(56f, 38f);
-        badge.anchoredPosition = new Vector2(0f, -34f);
+        badge.anchoredPosition = new Vector2(0f, -42f);
 
         if (count != null)
         {
             Centre(count.rectTransform);
             count.rectTransform.sizeDelta = new Vector2(56f, 38f);
-            count.rectTransform.anchoredPosition = new Vector2(0f, -34f);
+            count.rectTransform.anchoredPosition = new Vector2(0f, -42f);
             count.rectTransform.SetAsLastSibling();
             count.color = countColor;
             count.fontStyle = FontStyles.Bold;
@@ -454,7 +458,7 @@ public sealed class OrderPanelSkin : MonoBehaviour
         {
             Centre(check);
             check.sizeDelta = new Vector2(34f, 34f);
-            check.anchoredPosition = new Vector2(0f, -34f);
+            check.anchoredPosition = new Vector2(0f, -42f);
             check.SetAsLastSibling();
         }
 
