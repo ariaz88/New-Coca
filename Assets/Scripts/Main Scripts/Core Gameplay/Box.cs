@@ -608,7 +608,13 @@ public class Box : MonoBehaviour, IRailItem
         }
 
         float elapsed = 0f;
-        while (elapsed < sodaMoveDuration && soda != null)
+
+        // "this != null" is not redundant on a MonoBehaviour: the destination Box
+        // can be destroyed while a soda is in flight toward it - a bomb blast does
+        // exactly that - and the re-parent below dereferences this.transform.
+        // Without the check that threw a MissingReferenceException, which killed
+        // the resolve coroutine and left the board unable to match anything again.
+        while (elapsed < sodaMoveDuration && soda != null && this != null)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / sodaMoveDuration);
@@ -620,14 +626,24 @@ public class Box : MonoBehaviour, IRailItem
             yield return null;
         }
 
-        if (soda != null)
+        if (soda == null)
         {
-            sodaTransform.position = end;
-            sodaTransform.SetParent(transform, true);
-            if (sodaCollider != null)
-            {
-                sodaCollider.enabled = colliderWasEnabled;
-            }
+            yield break;
+        }
+
+        if (this == null)
+        {
+            // The box it was heading for is gone. The soda goes with it rather
+            // than being stranded parentless in the middle of the board.
+            Destroy(sodaTransform.gameObject);
+            yield break;
+        }
+
+        sodaTransform.position = end;
+        sodaTransform.SetParent(transform, true);
+        if (sodaCollider != null)
+        {
+            sodaCollider.enabled = colliderWasEnabled;
         }
     }
 

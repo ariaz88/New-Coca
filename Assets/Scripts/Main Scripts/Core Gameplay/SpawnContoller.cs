@@ -19,6 +19,31 @@ public class SpawnContoller : MonoBehaviour
     [SerializeField] private List<Transform> spawnPositions;
     [SerializeField] private Transform[] startPos;
     [SerializeField] private Transform[] endPos;
+
+    /// <summary>
+    /// Where the rail's boxes come to rest. Exposed so anything that has to line
+    /// up with the rail can read its real positions rather than guessing a world
+    /// offset - the first Defuser dock was a hand-written offset from the board
+    /// origin and landed off screen on the portrait camera.
+    /// </summary>
+    public IReadOnlyList<Transform> RailRestPositions => endPos;
+
+    /// <summary>
+    /// Asked, once per batch, which slots something other than a Box wants.
+    ///
+    /// This is how Defusers arrive on the rail instead of at a dock of their own.
+    /// A claimed slot does NOT draw from the authored queue - the cursor only
+    /// advances for boxes - so a level's supply is delayed by a batch rather than
+    /// reduced, and the queue is still consumed in exactly the authored order,
+    /// which is what lets the headless solver model the rail as a flat index.
+    /// </summary>
+    public System.Func<int, List<int>> RailSlotClaim { get; set; }
+
+    /// <summary>
+    /// Builds whatever occupies a claimed slot, at the given spawn position.
+    /// Returning null leaves the slot empty and the batch simply runs short.
+    /// </summary>
+    public System.Func<int, Vector3, GameObject> RailSlotFactory { get; set; }
     [SerializeField, Min(0f)] private float spawnDelay = 0.03f;
     [SerializeField, Min(0.01f)] private float moveDuration = 0.5f;
 
@@ -195,22 +220,61 @@ public class SpawnContoller : MonoBehaviour
     /// </summary>
     private IEnumerator SpawnBatchInternal(
         IReadOnlyList<Dictionary<Soda.SodaColor, int>> recipes,
-        Action<List<Box>> onCompleted)
+        Action<List<Box>> onCompleted,
+        IReadOnlyList<int> claimedSlots = null)
     {
         List<Box> result = new List<Box>();
+        List<GameObject> arrivals = new List<GameObject>();
+        List<int> arrivalSlots = new List<int>();
 
-        for (int i = 0; i < recipes.Count; i++)
+        // A set, not List.Contains: on IReadOnlyList<int> that binds to the
+        // MemoryExtensions span overload rather than the one you expect.
+        HashSet<int> claimed = null;
+        if (claimedSlots != null && claimedSlots.Count > 0)
         {
-            Vector3 spawnWorld = startPos[i].position + new Vector3(0f, 0.2965f, 0f);
-            Box box = CreateConfiguredBox(spawnWorld, recipes[i], true);
-            if (box == null)
+            claimed = new HashSet<int>();
+            for (int i = 0; i < claimedSlots.Count; i++)
             {
-                Debug.LogWarning($"Configured rail box {i} could not be created.", this);
-                onCompleted?.Invoke(new List<Box>());
-                yield break;
+                claimed.Add(claimedSlots[i]);
+            }
+        }
+
+        int slotCount = recipes.Count + (claimed != null ? claimed.Count : 0);
+        int recipeCursor = 0;
+
+        for (int slot = 0; slot < slotCount; slot++)
+        {
+            Vector3 spawnWorld = startPos[slot].position + new Vector3(0f, 0.2965f, 0f);
+
+            if (claimed != null && claimed.Contains(slot))
+            {
+                GameObject claimedItem = RailSlotFactory?.Invoke(slot, spawnWorld);
+                if (claimedItem != null)
+                {
+                    // Claimed items join the live rail list like any box. That is
+                    // safe because the prune asks IRailItem.IsConsumed rather than
+                    // "is this a Box" - the test that used to make an unused
+                    // Defuser pin the rail forever.
+                    spawnedBoxes.Add(claimedItem);
+                    arrivals.Add(claimedItem);
+                    arrivalSlots.Add(slot);
+                }
+            }
+            else if (recipeCursor < recipes.Count)
+            {
+                Box box = CreateConfiguredBox(spawnWorld, recipes[recipeCursor++], true);
+                if (box == null)
+                {
+                    Debug.LogWarning($"Configured rail box {slot} could not be created.", this);
+                    onCompleted?.Invoke(new List<Box>());
+                    yield break;
+                }
+
+                result.Add(box);
+                arrivals.Add(box.gameObject);
+                arrivalSlots.Add(slot);
             }
 
-            result.Add(box);
             SoundManager.instance?.PlayBoxSpawn();
 
             if (spawnDelay > 0f)
@@ -220,9 +284,9 @@ public class SpawnContoller : MonoBehaviour
         }
 
         List<Coroutine> movement = new List<Coroutine>();
-        for (int i = 0; i < result.Count; i++)
+        for (int i = 0; i < arrivals.Count; i++)
         {
-            movement.Add(StartCoroutine(MoveBox(result[i].gameObject, endPos[i].position)));
+            movement.Add(StartCoroutine(MoveBox(arrivals[i], endPos[arrivalSlots[i]].position)));
         }
 
         foreach (Coroutine coroutine in movement)
@@ -313,8 +377,16 @@ public class SpawnContoller : MonoBehaviour
 
         if (railMode == RailMode.AuthoredQueue)
         {
-            List<Dictionary<Soda.SodaColor, int>> queued = DrawFromQueue(count);
-            if (queued.Count == 0)
+            // Claims come first: a slot taken by a Defuser must not pull a recipe
+            // off the queue, or that box would be lost rather than delayed.
+            List<int> claimed = RailSlotClaim != null ? RailSlotClaim(count) : null;
+            int boxSlots = count - (claimed != null ? claimed.Count : 0);
+
+            List<Dictionary<Soda.SodaColor, int>> queued = boxSlots > 0
+                ? DrawFromQueue(boxSlots)
+                : new List<Dictionary<Soda.SodaColor, int>>();
+
+            if (queued.Count == 0 && (claimed == null || claimed.Count == 0))
             {
                 // Queue spent under StopSpawning. LevelSpawnRoutine's WaitUntil
                 // then parks on an empty rail, and Board.CheckBoardFill ends the
@@ -322,7 +394,7 @@ public class SpawnContoller : MonoBehaviour
                 yield break;
             }
 
-            yield return SpawnBatchInternal(queued, null);
+            yield return SpawnBatchInternal(queued, null, claimed);
             yield break;
         }
 

@@ -275,6 +275,19 @@ public class Board : MonoBehaviour
     /// <summary>Mirrors the live entries of <see cref="bombs"/> for the placement hot path.</summary>
     private readonly HashSet<Vector2Int> liveBombLookup = new HashSet<Vector2Int>();
 
+    /// <summary>
+    /// Bombs that are going off, held until the current resolution has finished.
+    ///
+    /// They cannot fire during resolution. A blast destroys boxes, and the
+    /// transfer system is at that moment animating sodas INTO those boxes -
+    /// AnimateSodaToSlot ends with sodaTransform.SetParent(transform), so
+    /// destroying the destination mid-flight threw a MissingReferenceException,
+    /// killed the resolve coroutine, and left the board unable to match anything
+    /// ever again. Deferring is what makes the blast safe.
+    /// </summary>
+    private readonly List<BombRuntime> pendingDetonations = new List<BombRuntime>();
+    private bool pendingDetonationIsFatal;
+
     private Material generatedRemovedCellMaterial;
     private object placementConstraintOwner;
     private System.Func<Box, int, int, bool> placementConstraint;
@@ -1073,6 +1086,11 @@ public class Board : MonoBehaviour
             yield return null;
         }
 
+        // Only now is it safe to blow boxes off the board: every soda has landed
+        // and been re-parented, so nothing is still animating into a box a blast
+        // is about to destroy.
+        yield return ProcessPendingDetonations();
+
         CleanupBoardList();
         CheckBoardFill();
 
@@ -1735,9 +1753,14 @@ public class Board : MonoBehaviour
     }
 
     /// <summary>
-    /// The defuse animation plus its energy pulse: any live bomb orthogonally
-    /// adjacent to the one just defused is briefly shown. That reward is what
-    /// makes spending a Defuser on a known bomb worth more than the bomb itself.
+    /// The defuse animation and its green pulse.
+    ///
+    /// It shows the bomb that was defused and NOTHING else. An earlier version
+    /// briefly revealed any live bomb in an adjacent cell as a reward, which
+    /// sounds generous and is actually corrosive: every defuse handed out free
+    /// information the player was supposed to be remembering, and on a 4x5 board
+    /// almost every cell is adjacent to another, so two defuses mapped the level.
+    /// Nothing but the defused cell may become visible here.
     /// </summary>
     private IEnumerator DefuseRoutine(BombRuntime bomb)
     {
@@ -1749,40 +1772,7 @@ public class Board : MonoBehaviour
             transform, localPosition, Mathf.Abs(cellSpacing.x),
             new Color(0.30f, 0.95f, 0.50f, 0.65f)));
 
-        List<BombRuntime> neighbours = new List<BombRuntime>();
-        foreach (Vector2Int offset in DirectOffsets)
-        {
-            Vector2Int probe = bomb.Coordinate + offset;
-            if (bombs.TryGetValue(probe, out BombRuntime neighbour) && neighbour.IsLive)
-            {
-                neighbours.Add(neighbour);
-            }
-        }
-
-        if (neighbours.Count == 0)
-        {
-            BombCellVisuals.SetVisible(bomb, false);
-            yield break;
-        }
-
-        foreach (BombRuntime neighbour in neighbours)
-        {
-            BombCellVisuals.SetVisible(neighbour, true);
-            StartCoroutine(BombCellVisuals.PulseRoutine(neighbour, 0.9f));
-        }
-
-        yield return new WaitForSeconds(0.9f);
-
-        foreach (BombRuntime neighbour in neighbours)
-        {
-            // An armed bomb stays on screen: its fuse is the player's problem now
-            // and hiding it again would be hiding a timer they cannot see.
-            if (!neighbour.IsArmed)
-            {
-                BombCellVisuals.SetVisible(neighbour, false);
-            }
-        }
-
+        yield return new WaitForSeconds(0.25f);
         BombCellVisuals.SetVisible(bomb, false);
     }
 
@@ -1856,12 +1846,11 @@ public class Board : MonoBehaviour
     }
 
     /// <summary>
-    /// Sets a bomb off.
+    /// Marks a bomb as going off and hands it to the post-resolution queue.
     ///
-    /// A fatal detonation ends the level. A non-fatal one clears the bomb's cell
-    /// and its four orthogonal neighbours, which costs the player the material
-    /// standing there but leaves the level playable - that asymmetry is the whole
-    /// difference between the two modes.
+    /// The bomb stops being a threat immediately - it is off the live lookup the
+    /// moment this runs, so nothing can arm or defuse it in the gap - but the
+    /// visible blast and its consequences wait for ResolvePlacement to finish.
     /// </summary>
     private void Detonate(BombRuntime bomb, bool fatal)
     {
@@ -1870,34 +1859,96 @@ public class Board : MonoBehaviour
         bomb.MovesUntilDetonation = 0;
         liveBombLookup.Remove(bomb.Coordinate);
 
-        Vector3 worldPosition = transform.TransformPoint(GetCellLocalPosition(
-            bomb.Coordinate.x, bomb.Coordinate.y));
-        BombCellVisuals.PlayExplosion(worldPosition, Mathf.Abs(cellSpacing.x));
+        pendingDetonations.Add(bomb);
+        pendingDetonationIsFatal |= fatal;
+        BombStateChanged?.Invoke();
+    }
 
-        Vector3 localPosition = GetCellLocalPosition(bomb.Coordinate.x, bomb.Coordinate.y);
-        localPosition.y += removedCellVisualYOffset;
-        StartCoroutine(BombCellVisuals.ShockwaveRoutine(
-            transform, localPosition, Mathf.Abs(cellSpacing.x),
-            new Color(1f, 0.55f, 0.15f, 0.75f), 0.5f, 3f));
-
-        CameraShaker.Shake(fatal ? 1f : 0.55f);
-
-        if (bomb.Visual != null)
+    /// <summary>
+    /// Plays every queued blast, then applies what it costs.
+    ///
+    /// The order here is the whole point of the feature reading correctly: the
+    /// explosion plays and is allowed to finish BEFORE the level is declared
+    /// lost. Calling LoseLevel first put the revive panel on screen and left the
+    /// player watching the explosion happen behind it, which made the panel look
+    /// like the cause rather than the consequence.
+    /// </summary>
+    private IEnumerator ProcessPendingDetonations()
+    {
+        if (pendingDetonations.Count == 0)
         {
-            Destroy(bomb.Visual);
-            bomb.Visual = null;
+            yield break;
         }
+
+        List<BombRuntime> detonating = new List<BombRuntime>(pendingDetonations);
+        bool fatal = pendingDetonationIsFatal;
+        pendingDetonations.Clear();
+        pendingDetonationIsFatal = false;
+
+        float cellSize = Mathf.Abs(cellSpacing.x);
+
+        foreach (BombRuntime bomb in detonating)
+        {
+            Vector3 worldPosition = transform.TransformPoint(
+                GetCellLocalPosition(bomb.Coordinate.x, bomb.Coordinate.y));
+
+            if (bomb.Visual != null)
+            {
+                Destroy(bomb.Visual);
+                bomb.Visual = null;
+            }
+
+            BombExplosionVfx.Play(worldPosition, cellSize, fatal);
+        }
+
+        CameraShaker.Shake(fatal ? 1f : 0.6f);
+
+        // Long enough for the flash and fireball to register before the board
+        // changes underneath them, short enough not to feel like a cutscene.
+        yield return new WaitForSeconds(0.35f);
+
+        if (!fatal)
+        {
+            foreach (BombRuntime bomb in detonating)
+            {
+                DestroyBlastArea(bomb.Coordinate);
+            }
+
+            CleanupBoardList();
+        }
+
+        yield return new WaitForSeconds(fatal ? 0.55f : 0.15f);
+
+        // A detonation must never expose the rest of the field. This is a hard
+        // reset rather than a promise that nothing above revealed anything,
+        // because "one bomb going off shows you where the others are" turns a
+        // mistake into a reward and quietly cancels the scanner economy.
+        HideConcealableBombs();
+        BombStateChanged?.Invoke();
 
         if (fatal)
         {
-            BombStateChanged?.Invoke();
             GameManager.instance?.LoseLevel();
-            return;
         }
+    }
 
-        DestroyBlastArea(bomb.Coordinate);
-        CleanupBoardList();
-        BombStateChanged?.Invoke();
+    /// <summary>
+    /// Hides every bomb that is allowed to be hidden.
+    ///
+    /// An ARMED bomb is excluded on purpose: its fuse is already burning and the
+    /// player is being asked to defuse it in time, so concealing it would be
+    /// hiding a timer they are being judged on.
+    /// </summary>
+    public void HideConcealableBombs()
+    {
+        foreach (BombRuntime bomb in bombs.Values)
+        {
+            if (bomb.IsLive && !bomb.IsArmed)
+            {
+                bomb.IsRevealed = false;
+                BombCellVisuals.SetVisible(bomb, false);
+            }
+        }
     }
 
     private void DestroyBlastArea(Vector2Int centre)

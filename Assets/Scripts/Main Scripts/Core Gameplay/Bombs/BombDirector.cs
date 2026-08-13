@@ -50,6 +50,14 @@ public sealed class BombDirector : MonoBehaviour
             instance = null;
         }
 
+        // The spawner outlives this component on a scene change, and a stale
+        // delegate would keep claiming slots for a director that no longer exists.
+        if (SpawnContoller.instance != null)
+        {
+            SpawnContoller.instance.RailSlotClaim = null;
+            SpawnContoller.instance.RailSlotFactory = null;
+        }
+
         // A level that ends mid-preview must not leave the board refusing drops.
         ThawInput();
     }
@@ -92,7 +100,12 @@ public sealed class BombDirector : MonoBehaviour
             yield break;
         }
 
-        SpawnNextDefuser();
+        if (SpawnContoller.instance != null)
+        {
+            SpawnContoller.instance.RailSlotClaim = ClaimRailSlots;
+            SpawnContoller.instance.RailSlotFactory = CreateRailDefuser;
+        }
+
         StateChanged?.Invoke();
 
         yield return PreviewRoutine();
@@ -244,27 +257,72 @@ public sealed class BombDirector : MonoBehaviour
     // ---------------------------------------------------------------- defusers
 
     /// <summary>
-    /// Keeps exactly one Defuser available at the dock.
+    /// Decides how many of this batch's rail slots become Defusers, and which.
     ///
-    /// The dock is deliberately NOT a rail slot. SpawnContoller only refills the
-    /// rail once spawnedBoxes is empty, so an unused Defuser sitting in that list
-    /// would stop every further box arriving - the soft-lock the plan flagged.
-    /// Giving defusers their own dock removes the failure mode rather than
-    /// managing it, and keeps the authored queue's flat cursor intact, which is
-    /// what lets the solver model the rail as a plain index.
+    /// Defusers ride the rail in place of a box rather than sitting at a dock of
+    /// their own. The dock was safe but inert: it was always there, always the
+    /// same, and it read as a permanent button rather than as a resource. Coming
+    /// down the rail means a Defuser arrives when it arrives, sometimes two or
+    /// three together, sometimes not for several batches - so holding one back
+    /// for a bomb you have not found yet is an actual decision.
+    ///
+    /// A claimed slot does not draw from the authored queue, so the box that
+    /// would have filled it is delayed, never lost, and the level's supply is
+    /// unchanged.
     /// </summary>
-    private void SpawnNextDefuser()
+    private List<int> ClaimRailSlots(int slotCount)
     {
-        if (defusersRemaining <= 0 || liveDefusers.Count > 0)
+        List<int> claimed = new List<int>();
+        if (defusersRemaining <= 0 || slotCount <= 0 || board.LiveBombCount == 0)
         {
-            return;
+            return claimed;
         }
 
-        Vector3 position = ResolveDockPosition();
-        Defuser defuser = DefuserFactory.Create(position);
+        // Never the whole batch. A batch of nothing but Defusers stalls the level,
+        // because the board can only progress when boxes arrive.
+        int most = Mathf.Min(defusersRemaining, slotCount - 1, 3);
+        if (most <= 0)
+        {
+            return claimed;
+        }
+
+        // Weighted low: one is the common case, two occasional, three rare.
+        int roll = Random.Range(0, 100);
+        int wanted = roll < 45 ? 0 : roll < 82 ? 1 : roll < 95 ? 2 : 3;
+        wanted = Mathf.Min(wanted, most);
+        if (wanted <= 0)
+        {
+            return claimed;
+        }
+
+        List<int> pool = new List<int>();
+        for (int slot = 0; slot < slotCount; slot++)
+        {
+            pool.Add(slot);
+        }
+
+        for (int i = 0; i < wanted && pool.Count > 0; i++)
+        {
+            int index = Random.Range(0, pool.Count);
+            claimed.Add(pool[index]);
+            pool.RemoveAt(index);
+        }
+
+        return claimed;
+    }
+
+    /// <summary>Builds the Defuser that fills a claimed rail slot.</summary>
+    private GameObject CreateRailDefuser(int slot, Vector3 spawnPosition)
+    {
+        if (defusersRemaining <= 0)
+        {
+            return null;
+        }
+
+        Defuser defuser = DefuserFactory.Create(spawnPosition);
         if (defuser == null)
         {
-            return;
+            return null;
         }
 
         defusersRemaining--;
@@ -272,24 +330,25 @@ public sealed class BombDirector : MonoBehaviour
         defuser.Consumed += HandleDefuserConsumed;
         liveDefusers.Add(defuser);
         StateChanged?.Invoke();
-    }
-
-    private void HandleDefuserConsumed(Defuser defuser)
-    {
-        defuser.Consumed -= HandleDefuserConsumed;
-        liveDefusers.Remove(defuser);
-        StateChanged?.Invoke();
-        SpawnNextDefuser();
+        return defuser.gameObject;
     }
 
     /// <summary>
-    /// Sits the dock just left of the board, on the board's own plane, so the
-    /// item is dragged in the same space it will be dropped in.
+    /// A spent Defuser leaves the pool. When the level forgives a miss the charge
+    /// comes back instead, so a fresh one can ride down with a later batch - the
+    /// item itself never returns to the rail once it has touched the board.
     /// </summary>
-    private Vector3 ResolveDockPosition()
+    private void HandleDefuserConsumed(Defuser defuser, bool refund)
     {
-        Vector3 origin = board.transform.position;
-        return origin + new Vector3(-0.32f, 0.35f, 0.45f);
+        defuser.Consumed -= HandleDefuserConsumed;
+        liveDefusers.Remove(defuser);
+
+        if (refund)
+        {
+            defusersRemaining++;
+        }
+
+        StateChanged?.Invoke();
     }
 
     // ------------------------------------------------------------ input gates

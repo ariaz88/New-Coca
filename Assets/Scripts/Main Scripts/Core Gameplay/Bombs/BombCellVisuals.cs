@@ -193,27 +193,6 @@ public static class BombCellVisuals
     }
 
     /// <summary>
-    /// Grey-box explosion: a fast expanding shell plus a debris spray. Reuses the
-    /// blocker break burst for the debris so the two events share a visual
-    /// language, with a hotter palette.
-    /// </summary>
-    public static void PlayExplosion(Vector3 worldPosition, float cellSize)
-    {
-        BlockedCellVisuals.PlayBreakBurst(
-            worldPosition,
-            cellSize * 1.6f,
-            new Color(0.35f, 0.33f, 0.30f, 1f),
-            new[]
-            {
-                new Color(1f, 0.85f, 0.25f, 1f),
-                new Color(1f, 0.45f, 0.10f, 1f),
-                new Color(0.85f, 0.15f, 0.10f, 1f)
-            },
-            34,
-            30);
-    }
-
-    /// <summary>
     /// The expanding ring an explosion or a defuse pulse leaves behind. Runs on a
     /// caller-supplied runner and destroys itself, so nothing is left in the scene
     /// if the level ends mid-animation.

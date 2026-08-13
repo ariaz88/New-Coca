@@ -40,16 +40,23 @@ public sealed class Defuser : MonoBehaviour, IRailItem
     private Func<Defuser, bool> dragConstraint;
     private object dragConstraintOwner;
 
-    /// <summary>Raised when this Defuser is spent, so the pool can count it.</summary>
-    public event Action<Defuser> Consumed;
+    /// <summary>
+    /// Raised when this Defuser is spent. The bool says whether the charge should
+    /// be refunded - true when it was wasted on a cell with no bomb on a level
+    /// that forgives that.
+    /// </summary>
+    public event Action<Defuser, bool> Consumed;
 
     public bool IsConsumed => isConsumed;
 
     /// <summary>
-    /// Whether a Defuser dropped on a cell with no bomb is spent anyway. Set from
-    /// the level's bomb settings when the item is created.
+    /// Whether missing costs the charge. When false the item still disappears -
+    /// it never flies back to the rail - but the director grants a replacement.
+    /// Set from the level's bomb settings when the item is created.
     /// </summary>
     public bool ConsumeOnWrongCell { get; set; }
+
+    private bool refundOnConsume;
 
     /// <summary>
     /// Installs one owner-scoped rule that can block dragging, mirroring
@@ -145,18 +152,13 @@ public sealed class Defuser : MonoBehaviour, IRailItem
             transform.position = pointer + dragOffset;
         }
 
-        Node node = board.GetDropTargetNode(GetPlacementReferencePosition());
-        if (node == currentHighlightedNode)
-        {
-            return;
-        }
-
-        ClearCurrentHighlight();
-        if (node != null && CanTarget(board, node))
-        {
-            currentHighlightedNode = node;
-            currentHighlightedNode.Highlight();
-        }
+        // Deliberately NO cell highlight, in any state.
+        //
+        // Highlighting the valid target told the player exactly where a bomb was
+        // the moment they picked the Defuser up - dragging it slowly across the
+        // board was a free scan of every cell, which defeats the entire memory
+        // mechanic and makes the scanner charges worthless. The Defuser is aimed
+        // from memory or not at all.
     }
 
     private void OnMouseUp()
@@ -174,25 +176,32 @@ public sealed class Defuser : MonoBehaviour, IRailItem
             ? board.GetDropTargetNode(GetPlacementReferencePosition())
             : null;
 
-        ClearCurrentHighlight();
+        // The Defuser never highlights anything, but a Box dragged earlier might
+        // have left one behind, and this is a cheap place to be sure.
         RailDragSupport.ClearAllHighlights();
 
-        if (board != null && node != null && CanTarget(board, node) &&
-            board.TryDefuse(node.column, node.row))
+        if (board != null && node != null && board.TryDefuse(node.column, node.row))
         {
             Consume();
             return;
         }
 
-        // A wrong drop is a real event, not a no-op: on the harder levels it costs
-        // the charge, which is what makes guessing expensive.
-        if (ConsumeOnWrongCell && node != null)
+        if (node == null)
         {
-            StartCoroutine(FailAndConsumeRoutine());
+            // Released off the board entirely - it never committed to a cell, so
+            // it goes back to its slot. Only a drop ONTO the board is a decision.
+            ReturnToRail();
             return;
         }
 
-        ReturnToRail();
+        // Dropped on the board and there was no bomb there. It is spent either
+        // way: a Defuser that flew home after a miss let the player sweep the
+        // whole board with a single charge, one cell at a time, for free.
+        //
+        // On the easier levels the charge itself is refunded - a fresh Defuser
+        // arrives - so the mistake costs a turn rather than a resource. On the
+        // harder ones it is simply gone.
+        StartCoroutine(FailAndConsumeRoutine());
     }
 
     /// <summary>
@@ -252,23 +261,28 @@ public sealed class Defuser : MonoBehaviour, IRailItem
         returnRoutine = null;
     }
 
+    /// <summary>
+    /// Shakes where it was dropped and fades out. It stays on the cell it failed
+    /// on rather than snapping home, so the failure reads as happening there.
+    /// </summary>
     private IEnumerator FailAndConsumeRoutine()
     {
-        // Shake in place, then vanish. Consuming immediately would read as the
-        // item never having existed.
-        Vector3 basePosition = startPosition;
-        transform.position = basePosition;
+        refundOnConsume = !ConsumeOnWrongCell;
 
+        Vector3 basePosition = transform.position;
         float elapsed = 0f;
-        while (elapsed < 0.25f)
+        const float duration = 0.35f;
+
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float offset = Mathf.Sin(elapsed * 60f) * 0.02f * (1f - elapsed / 0.25f);
+            float remaining = 1f - elapsed / duration;
+            float offset = Mathf.Sin(elapsed * 55f) * 0.022f * remaining;
             transform.position = basePosition + new Vector3(offset, 0f, 0f);
+            transform.localScale = Vector3.one * Mathf.Max(0.01f, remaining);
             yield return null;
         }
 
-        transform.position = basePosition;
         Consume();
     }
 
@@ -290,7 +304,7 @@ public sealed class Defuser : MonoBehaviour, IRailItem
             SpawnContoller.instance.spawnedBoxes.Remove(gameObject);
         }
 
-        Consumed?.Invoke(this);
+        Consumed?.Invoke(this, refundOnConsume);
         Destroy(gameObject, 0.05f);
     }
 
