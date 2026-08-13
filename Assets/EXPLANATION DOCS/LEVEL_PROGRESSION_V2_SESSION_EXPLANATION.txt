@@ -1,0 +1,408 @@
+LEVEL PROGRESSION V2 - SESSION RECORD
+=====================================
+
+What this document is
+---------------------
+A record of the work that turned five levels into a 25-level campaign, added
+the blocker mechanics, the level pipeline and the solvability solver, and
+reworked the Orders UI.
+
+It is written to be read by someone picking the project up cold. The sections
+that matter most are not the feature lists - they are "Bugs found" and "Rules
+that must not be broken", because those cost the most time to discover and are
+the easiest to undo by accident.
+
+A shorter, machine-facing version of the same material lives in CLAUDE.md at
+the project root.
+
+
+Branches
+--------
+    main                          untouched original
+    archive/pre-level-redesign    archive branch
+    pre-level-redesign-v1         baseline tag
+    feature/level-progression-v2  all of this work
+
+To go back to the original:   git checkout archive/pre-level-redesign
+To return to the new version: git checkout feature/level-progression-v2
+
+Each branch carries its own EditorBuildSettings.asset, so switching branches
+switches the campaign. Nothing has been pushed to origin.
+
+
+================================================================================
+PART 1 - WHAT WAS BUILT
+================================================================================
+
+Level naming
+------------
+Assets/Scripts/Main Scripts/Levels/LevelNaming.cs
+
+Six separate files each re-implemented the same StartsWith("Level") plus
+int.TryParse pair and each formatted the next scene name itself, so renaming
+the level scenes would have needed six independently-wrong edits. LevelNaming
+parses both Level7 and Level07, and TryResolveLoadableSceneName probes the
+padded name first and the unpadded one second against Build Settings, which is
+what let the rename land without breaking progression.
+
+Incidental fix: parsing now rejects non-digit suffixes, so scenes like
+Level2-test no longer read as level 2.
+
+
+Cell kinds - holes, X blockers, frozen blockers
+-----------------------------------------------
+Assets/Scripts/Main Scripts/Core Gameplay/BoardCellState.cs
+
+Board.removedCells used to conflate three different things. Every coordinate
+in it drew a taped-X crate AND dissolved on the first adjacent packed match,
+so there was no way to carve a permanent hole: every hole was a blocker
+waiting to disappear. They are now separate:
+
+    Playable    ordinary cell
+    Removed     permanent hole. No Node, no visual, immune, never placeable
+    Blocker     taped-X crate. One adjacent packed match opens it
+    Frozen      iced crate. Two matches: the first cracks, the second opens
+
+Legacy removedCells data is migrated to Blocker entries, but only from
+OnValidate and only when the list is non-empty. RebuildLayoutCache reads both
+lists without writing to either, so a scene not yet opened in the editor still
+plays correctly.
+
+BoardEditor's shape grid gained a brush toolbar with click-and-drag painting
+plus a Cycle mode (shift reverses, alt clears).
+
+
+Level pipeline
+--------------
+Assets/Scripts/Main Scripts/Levels/LevelDefinition.cs
+Assets/Scripts/Main Scripts/Levels/Editor/LevelSceneGenerator.cs
+Assets/Scripts/Main Scripts/Levels/Editor/CampaignAuthoring.cs
+Assets/Scripts/Main Scripts/Levels/Editor/LevelDesignerWindow.cs
+
+Levels are still scenes. LevelDefinition assets are the authored source of
+truth and are BAKED into the scenes; Board never reads a definition at
+runtime. That was a deliberate choice:
+
+  - one runtime source of truth, so there is never a "which one wins" question
+  - the existing 786-line Board inspector keeps working
+  - no level data has to load on device
+  - QA can open a scene and press Play
+  - scene YAML diffs stay reviewable
+
+The cost is that editing a level means editing CampaignAuthoring.cs and
+re-baking. The Level Designer window exists to make that one click.
+
+Board shapes are written as text pictures, top row first:
+
+    '.' playable    '#' hole    'X' X blocker    'F' frozen
+
+Starting-box contents use one letter per soda:
+
+    R red   B blue   O orange   K pink   G green   P purple
+
+Pink is K because P was already purple.
+
+
+Deterministic rail
+------------------
+SpawnContoller gained RailMode.AuthoredQueue: boxes are drawn in order from a
+queue baked into the scene, so a level is a designed puzzle rather than a dice
+roll. SpawnBatchInternal was extracted so the tutorial path and the level path
+share one spawn routine instead of diverging.
+
+Levels are designed and verified against the authored queue alone. The shipped
+exhaustion policy is a seeded random fallback, so solvability never depends on
+it - it exists only so a player who squanders the queue is not left staring at
+an empty rail.
+
+Rail queues are generated from the orders rather than hand-listed, because
+supply is the one thing a level cannot get wrong: an order for three packed
+boxes needs exactly twelve sodas. Every colour is supplied in whole multiples
+of the box capacity, including colours no order wants - a full single-colour
+box always packs and clears its cell, so a stray remainder would permanently
+poison one.
+
+
+Headless solver
+---------------
+Assets/Scripts/Main Scripts/Levels/Simulation/LevelSimState.cs
+Assets/Scripts/Main Scripts/Levels/Simulation/LevelSimulator.cs
+Assets/Scripts/Main Scripts/Levels/Simulation/LevelSolver.cs
+
+LevelSimulator mirrors the runtime pipeline statement for statement, minus the
+animation waits, and calls the REAL TransferAlgorithm rather than
+reimplementing it - so the part most likely to drift is shared, not copied.
+
+Four details in the runtime loop are reproduced deliberately, because getting
+any of them wrong changes the outcome silently:
+
+  1. the visited-signature set passed to TrySelectMove is the SAME set the
+     loop uses as its ping-pong guard - it is both, and the planner reads it
+  2. the signature is tested BEFORE a move is chosen, and breaks
+  3. RetireTerminalBoxes iterates a COPY and retires packed and empty boxes;
+     that order assigns packedMatchSequence, which blocker damage keys on
+  4. there is a final retire pass after the loop ends
+
+The search is ordered greedy DFS with a node budget and seeded restarts, not
+IDA*: every move costs the same and the binding resource is board space, so an
+admissible heuristic is near zero. Winning lines are replayed from scratch,
+because the transposition signature folds placement order down to a rank and
+that step is lossy.
+
+
+Order kinds - drinks and blocks
+-------------------------------
+From level 11 one drink order is replaced by "open N locked blocks".
+
+OrderKind is deliberately the FIRST field on LevelOrderData and defaults to
+Soda, so every order already serialized in the 25 scenes keeps meaning exactly
+what it meant before the field existed.
+
+Only Board.UnlockBlockedCell reports one, so a frozen blocker that has merely
+cracked cannot advance the order. The simulator mirrors that rule.
+
+A blocks order raises no flying effect. There is no packed box to deliver -
+the block is destroyed where it stands - so OrderPanelUI bypasses the impact
+presenter for those slots and the slot simply hops, the same motion the drink
+slots use. The crate icon is drawn in code, because the board's blockers are
+plain cubes with their tape generated at runtime and there is no prefab to
+bake.
+
+
+Orders card
+-----------
+Assets/Scripts/Main Scripts/Orders/OrderPanelTextures.cs
+Assets/Scripts/Main Scripts/Orders/OrderPanelSkin.cs
+Assets/Scripts/Main Scripts/UI/LevelHudLayout.cs
+
+The card shipped with the placeholder art its builder generated - Unity's flat
+built-in sprites, a hard red rectangle round a cream fill - and that
+placeholder had been baked into all 25 scenes.
+
+Rather than hand-editing 25 scenes, the look is generated at runtime.
+OrderPanelSkin is added by OrderPanelUI.Awake and LevelHudLayout by
+UIManager.Awake, so one change reaches every scene and the panel builder is
+untouched. The skin only changes appearance: layout structure, the slot
+template and every serialized reference OrderPanelUI and OrderVfxDirector
+depend on are left in place, so the delivery VFX still lands pixel-exact on
+each icon.
+
+The progress bar is deactivated, never destroyed. Its component, references
+and artwork all survive and re-enabling it is one flag on LevelHudLayout.
+
+
+================================================================================
+PART 2 - BUGS FOUND AND FIXED
+================================================================================
+
+These were all real defects in the project, most of them invisible in normal
+play. They are recorded because each one is easy to reintroduce.
+
+1. Blocker breaks dirtied the scene asset
+   UnlockBlockedCell removed the coordinate from the SERIALIZED removedCells
+   list, so every blocker opened in Play Mode edited the level layout on disk.
+   Blocker state now lives only in a private runtime table.
+
+2. The one-hit-per-match guard was inert
+   RetireBox incremented packedMatchSequence AFTER the damage pass, so every
+   packed box in a level shared one identity and the counter was useless as a
+   damage key. Sequence now precedes damage.
+
+3. ClearBoard left stale damage ids
+   The clear powerup reset packedMatchSequence to 0 while blockers still held
+   damage ids from before the sweep, so a later packed box reusing an id would
+   be wrongly ignored. Those ids are reset too. Note blockers deliberately
+   SURVIVE ClearBoard - it sweeps boxes, it does not restart the level.
+
+4. Drag needed a large overshoot before a cell highlighted
+   Box.GetPlacementReferencePosition returned inputCollider.bounds.center. The
+   collider sits at local Y +0.32 and boxes are rotated -90 degrees about X,
+   so that is a world Z shift of -0.32 - a 1.15 CELL error against a cell
+   spacing of 0.279. It now returns transform.position, which is what
+   placement actually moves, so the cell that highlights and the cell the box
+   lands in are the same cell by construction.
+
+5. The pink drink showed as yellow in the Orders panel
+   The gameplay material for enum slot 3 (Mat003 on Bottle.prefab) is
+   RGB(1.00, 0.38, 0.66) and always has been. The icon was wrong because
+   SodaIconBaker rendered Soda.prefab - an older model whose material list has
+   drifted and whose slot 3 is still yellow - while every level scene
+   instantiates Bottle.prefab. The enum member was renamed Yellow -> Pink; its
+   ORDINAL IS UNCHANGED, which is load-bearing.
+
+6. Pink's trail was violet
+   OrderVfxSettings.CoolWarmHue rotates warm hues into the violet band so a
+   warm drink cannot turn the halo gold. Its wrap point at 0.92 caught pink
+   (hue ~0.925) and rotated it to ~0.75, making pink's trail almost identical
+   to purple's. The wrap moved to 0.96, which still guards deep reds.
+
+7. The order icons lay on their side
+   SpawnContoller.SpawnSodaAtSlot instantiates every soda with
+   Quaternion.Euler(-90, 0, 0) - the model is authored lying down and that
+   rotation is what stands it up - but the icon baker rendered at
+   Quaternion.identity. The baker now applies the same correction.
+
+8. The Orders card was exactly twice as wide as it should be
+   It sized itself by walking the slot container. OrderPanelUI rebuilds its
+   slots during start-up and Destroy is DEFERRED to the end of frame, so the
+   walk counted the outgoing slots alongside the incoming ones - six slots for
+   a three-order level. It now counts from OrderPanelUI.Slots.
+
+9. Frozen blockers rendered as pale ghosts
+   The frost shell was serialized at alpha 0.72, which hid the cardboard crate
+   underneath completely, so the cell read as an empty square with a faint X
+   rather than as a frozen crate. Lower alpha now lets the crate read through.
+
+10. The crack damage state read as a scribble
+    Five dark navy strips at random angles and offsets, aiming for a shattered
+    pane. At the size a cell occupies on a phone it looked like someone had
+    drawn on the box. Cracks are now pale ice spokes radiating symmetrically
+    from the centre of the lid.
+
+11. Level 19 was unwinnable
+    It was a checkerboard lattice in which 8 of 13 open cells had no open
+    neighbour, and TWO STARTING BOXES sat on such cells. Those boxes could
+    never receive a soda, never reach four of a colour, never pack, and so
+    could never break the blockers penning them in. The solver found it after
+    45 seconds and 312,000 nodes. LevelValidator gained ISOLATED_START and
+    MOSTLY_ISOLATED so this class of fault is now caught in microseconds.
+
+12. Level 22 stalled one pack short
+    Two anchors was not enough material for its most-blocked board; the solver
+    reached 7 of the 8 required packs and no further.
+
+13. Block orders were under-supplied
+    Blockers are opened by packing a box beside them, and a frozen blocker
+    needs two. Sizing the rail from the DRINK orders alone meant every level
+    that traded a drink order for a block order silently ran out of material:
+    levels 14 and 25 could finish every drink and then had nothing left to
+    break a blocker with. ComputeRailNeeds now adds two boxes of supply per
+    requested block.
+
+14. Nine starting boxes sat on blockers
+    Caught by LevelValidator the first time it ran, across five levels.
+    Board.OnValidate had been silently pruning them, so the scenes were
+    quietly losing anchor boxes with no error reported anywhere.
+
+
+================================================================================
+PART 3 - RULES THAT MUST NOT BE BROKEN
+================================================================================
+
+Serialized fields do NOT update in already-generated scenes.
+    Changing a C# default changes nothing in the 25 baked scenes - they keep
+    whatever the default was the day they were baked. This is what caused the
+    frozen frost bug. LevelSceneGenerator.ApplyBlockerStyle now propagates
+    blocker style; anything similar needs the same treatment plus a re-bake.
+
+Every board is 4x5.
+    Anything wider falls outside the camera framing. Do not widen a board
+    without checking the camera first.
+
+breakingBlockedCells gates ResolvePlacement.
+    ResolvePlacement spins on "while (count > 0)". Anything added to that set
+    without a guaranteed UnlockBlockedCell hangs resolution forever. The crack
+    path deliberately never touches it. A future mechanic must use its own set.
+
+Blocker and hole cells have no Node.
+    GetDropTargetNode returns grid[c,r], so it returns null there. Anything
+    that must be a drop target has to sit on a real playable cell.
+
+Never set node.isOccupied = true for a non-box occupant.
+    It feeds IsPositionOccupied and CheckBoardFill and fires a false
+    board-full loss.
+
+The drag reference position must stay transform.position.
+    See bug 4. Using the collider centre reintroduces a full-cell offset.
+
+Post-processing is force-disabled every scene load.
+    VisualStyleRuntime.ConfigureSceneRendering sets renderPostProcessing =
+    false on every camera. Nothing may rely on bloom; glow comes from the
+    blend mode in UIGlow.shader.
+
+The Main Camera is driven by a CinemachineBrain.
+    It overwrites the transform every LateUpdate, so DOShakePosition on it
+    does nothing. Use CinemachineImpulseSource (Cinemachine 2.10.7 installed).
+
+Haptics are hard-disabled.
+    VibrationSettings.Awake forces IsVibrationEnabled = false and never
+    persists the toggle. The CandyCoded calls in ButtonVibrationHandler are
+    commented out although the package IS installed.
+
+Soda.SodaColor.Pink is ordinal 3.
+    The ordinal is load-bearing - every scene and asset stores it as an int.
+    The member was renamed from Yellow; the position must not move.
+
+A blanket AssetDatabase.SaveAssets() fails.
+    It hits read-only AdMob package assets and buries the real output. Use
+    SaveAssetIfDirty per asset. The "Saving Prefab to immutable folder"
+    console error during a scene save is pre-existing and harmless.
+
+Large translucent gradient overlays do not work on a rounded card.
+    The gradient sprite has square corners and paints straight over them, so
+    the whole panel renders as a hard-edged rectangle. Use thin rounded
+    highlight lines instead. A soft shadow's shape must be inset by its own
+    softness, or 9-slicing stretches an opaque edge into a hard rectangle.
+
+
+================================================================================
+PART 4 - TOOLS ADDED
+================================================================================
+
+    Tools > Coca Sorting > Levels > Level Designer
+        One row per level: scene, build status, sync, validation. Bake, Pull,
+        Open, Validate. Copy Design Table puts the full 25-row table on the
+        clipboard as markdown.
+
+    Tools > Coca Sorting > Levels > Author Campaign Definitions
+        Rebuilds the 25 LevelDefinition assets from CampaignAuthoring.cs.
+
+    Tools > Coca Sorting > Levels > Verify All Levels Are Solvable
+        Runs the solver over every level in parallel. Must stay 25/25.
+
+    Tools > Coca Sorting > Tests > Run Blocker Rules Tests
+        24 checks: per-kind hit costs, hole immunity, crack-then-break, the
+        one-hit-per-match guard, that a crack never enters the set gating
+        ResolvePlacement, and that legacy migration is idempotent.
+
+    Tools > Coca Sorting > Preview Orders Panel
+        Renders the Orders card to Builds/Previews without entering Play Mode.
+        Use it - do not tune UI blind. It uses a WORLD-SPACE canvas because a
+        manual Camera.Render() outside Play Mode does not draw screen-space
+        canvases.
+
+    Tools > Coca Sorting > Bake Soda Icons (No Window)
+        Headless re-bake of all six order icons from Bottle.prefab.
+
+
+================================================================================
+PART 5 - STATE AT THE END OF THE SESSION
+================================================================================
+
+Verified
+--------
+    25 levels, all 4x5, all in Build Settings in campaign order
+    Validation: 0 errors, 0 warnings
+    Solvability: 25/25, each with a replay-verified winning line
+    Blocker rules: 24/24 checks pass
+    Play Mode on Level 11 and Level 22: HUD layout, order slots, frozen crates
+
+Not verified
+------------
+    The Orders card IN MOTION - impact punch, glow flash, tick pop
+    The frozen CRACKED state in play - only the intact state has been seen
+    The block-order slot hop at the moment a block actually opens
+    Level DIFFICULTY. Solvable is not the same as fun, and no amount of
+    solver output substitutes for a human playing the campaign.
+
+Known separate bug, not yet addressed
+-------------------------------------
+    The win panel reports "LVL.1 COMPLETED" and "1/25" regardless of the
+    actual level. WinPanel reads a counter that is not tracking the scene.
+
+Next
+----
+    Hidden Bombs - core mechanic, grey-box, before any VFX work
+    Then tuning against a real playthrough
+    Then polish plus all three tutorials together (X blocker L6, bombs L10,
+    frozen L13) - they share TutorialManager, so batching them is cheaper
