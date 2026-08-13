@@ -27,6 +27,19 @@ public class SpawnContoller : MonoBehaviour
     [Tooltip("How many boxes this level spawns per rail batch. Clamped by the number of Start/End rail Transforms.")]
     private int maxBoxCount = 6;
 
+    [Header("Per-Level Rail Source")]
+    [SerializeField, Tooltip("Authored Queue makes the level a designed puzzle and lets the solver verify it. Random Per Batch is the original behaviour and stays the default for legacy scenes.")]
+    private RailMode railMode = RailMode.RandomPerBatch;
+
+    [SerializeField, Tooltip("Boxes delivered to the rail in order, used only in Authored Queue mode. Baked from the level's LevelDefinition asset.")]
+    private List<TutorialBoxRecipe> railQueue = new List<TutorialBoxRecipe>();
+
+    [SerializeField, Tooltip("What happens once the authored queue is spent.")]
+    private RailExhaustionPolicy railExhaustionPolicy = RailExhaustionPolicy.RandomFallback;
+
+    [SerializeField, Tooltip("Seed for the random fallback, so an exhausted queue still replays identically. 0 uses an unseeded roll.")]
+    private int fallbackSeed;
+
     [Header("Per-Level Soda Palette")]
     [Tooltip("Colors that may spawn on this level's rail boxes. Leave empty to allow every Soda.SodaColor.")]
     [SerializeField] private List<Soda.SodaColor> allowedColors = new List<Soda.SodaColor>();
@@ -72,6 +85,29 @@ public class SpawnContoller : MonoBehaviour
     public bool stopSpawn;
     private Coroutine spawnRoutine;
     public bool isTutorialState;
+
+    private int railQueueCursor;
+    private int fallbackDrawCount;
+
+    /// <summary>
+    /// True once an authored queue has been fully consumed on a level that does
+    /// not fall back. Board.CheckBoardFill reads this to end a level whose
+    /// material has run out, which is otherwise an unloseable stalemate.
+    /// </summary>
+    public bool IsQueueExhausted =>
+        railMode == RailMode.AuthoredQueue &&
+        railExhaustionPolicy == RailExhaustionPolicy.StopSpawning &&
+        railQueueCursor >= (railQueue != null ? railQueue.Count : 0);
+
+    /// <summary>Recipes not yet delivered. Used by the level tooling.</summary>
+    public int RemainingQueuedBoxes =>
+        railMode == RailMode.AuthoredQueue && railQueue != null
+            ? Mathf.Max(0, railQueue.Count - railQueueCursor)
+            : 0;
+
+    public RailMode RailMode => railMode;
+    public IReadOnlyList<TutorialBoxRecipe> RailQueue => railQueue;
+    public RailExhaustionPolicy RailExhaustionPolicy => railExhaustionPolicy;
 
     private void Awake()
     {
@@ -145,18 +181,35 @@ public class SpawnContoller : MonoBehaviour
             yield break;
         }
 
+        yield return SpawnBatchInternal(recipes, onCompleted);
+    }
+
+    /// <summary>
+    /// Spawns one batch of exactly-specified boxes and animates them onto the
+    /// rail. Shared by the tutorial batches and the authored level queue, which
+    /// differ only in where their recipes come from and in the guards they apply
+    /// before getting here.
+    /// </summary>
+    private IEnumerator SpawnBatchInternal(
+        IReadOnlyList<Dictionary<Soda.SodaColor, int>> recipes,
+        Action<List<Box>> onCompleted)
+    {
+        List<Box> result = new List<Box>();
+
         for (int i = 0; i < recipes.Count; i++)
         {
             Vector3 spawnWorld = startPos[i].position + new Vector3(0f, 0.2965f, 0f);
             Box box = CreateConfiguredBox(spawnWorld, recipes[i], true);
             if (box == null)
             {
-                Debug.LogWarning($"Tutorial box {i} could not be created.", this);
+                Debug.LogWarning($"Configured rail box {i} could not be created.", this);
                 onCompleted?.Invoke(new List<Box>());
                 yield break;
             }
 
             result.Add(box);
+            SoundManager.instance?.PlayBoxSpawn();
+
             if (spawnDelay > 0f)
             {
                 yield return new WaitForSeconds(spawnDelay);
@@ -229,7 +282,7 @@ public class SpawnContoller : MonoBehaviour
 
         while (!stopSpawn && !IsGameEnded())
         {
-            yield return SpawnRandomRailBatch();
+            yield return SpawnRailBatch();
             yield return new WaitUntil(() => stopSpawn || IsGameEnded() || NoBoxInList());
 
             if (!stopSpawn && !IsGameEnded() && respawnDelay > 0f)
@@ -239,7 +292,7 @@ public class SpawnContoller : MonoBehaviour
         }
     }
 
-    private IEnumerator SpawnRandomRailBatch()
+    private IEnumerator SpawnRailBatch()
     {
         CleanupLiveRailList();
         if (stopSpawn || IsGameEnded() || spawnedBoxes.Count > 0)
@@ -251,7 +304,22 @@ public class SpawnContoller : MonoBehaviour
             endPos != null ? endPos.Length : 0);
         if (!ValidateSpawnConfiguration(count, out string reason))
         {
-            Debug.LogWarning($"Normal rail batch was not spawned: {reason}", this);
+            Debug.LogWarning($"Rail batch was not spawned: {reason}", this);
+            yield break;
+        }
+
+        if (railMode == RailMode.AuthoredQueue)
+        {
+            List<Dictionary<Soda.SodaColor, int>> queued = DrawFromQueue(count);
+            if (queued.Count == 0)
+            {
+                // Queue spent under StopSpawning. LevelSpawnRoutine's WaitUntil
+                // then parks on an empty rail, and Board.CheckBoardFill ends the
+                // level rather than leaving an unloseable stalemate.
+                yield break;
+            }
+
+            yield return SpawnBatchInternal(queued, null);
             yield break;
         }
 
@@ -283,6 +351,153 @@ public class SpawnContoller : MonoBehaviour
         {
             yield return coroutine;
         }
+    }
+
+    /// <summary>
+    /// Takes the next batch of authored recipes off the queue and applies the
+    /// exhaustion policy when the queue cannot fill it.
+    ///
+    /// Because the rail only ever refills once it is completely empty, the cursor
+    /// advances in lockstep with play and the queue is consumed in exactly the
+    /// authored order. That is what lets the headless solver model the rail as a
+    /// flat index rather than having to predict a spawner.
+    /// </summary>
+    private List<Dictionary<Soda.SodaColor, int>> DrawFromQueue(int count)
+    {
+        List<Dictionary<Soda.SodaColor, int>> batch = new List<Dictionary<Soda.SodaColor, int>>();
+        int queueLength = railQueue != null ? railQueue.Count : 0;
+
+        while (batch.Count < count && queueLength > 0 && railQueueCursor < queueLength)
+        {
+            TutorialBoxRecipe recipe = railQueue[railQueueCursor];
+            railQueueCursor++;
+
+            // A malformed empty recipe would spawn an empty box that instantly
+            // retires on placement, so it is skipped rather than shipped. The
+            // level validator reports these at authoring time.
+            if (recipe == null || recipe.TotalCount <= 0)
+            {
+                continue;
+            }
+
+            batch.Add(recipe.ToDictionary());
+        }
+
+        if (batch.Count >= count)
+        {
+            return batch;
+        }
+
+        switch (railExhaustionPolicy)
+        {
+            case RailExhaustionPolicy.LoopQueue:
+                if (queueLength > 0)
+                {
+                    railQueueCursor = 0;
+                    while (batch.Count < count)
+                    {
+                        TutorialBoxRecipe recipe = railQueue[railQueueCursor];
+                        railQueueCursor = (railQueueCursor + 1) % queueLength;
+
+                        if (recipe != null && recipe.TotalCount > 0)
+                        {
+                            batch.Add(recipe.ToDictionary());
+                        }
+                        else if (AllQueuedRecipesAreEmpty())
+                        {
+                            // Every entry is unusable; looping would spin forever.
+                            break;
+                        }
+                    }
+                }
+
+                break;
+
+            case RailExhaustionPolicy.RandomFallback:
+                int capacity = GetPrefabBoxCapacity();
+                while (batch.Count < count)
+                {
+                    Dictionary<Soda.SodaColor, int> generated = BuildSeededFallbackRecipe(capacity);
+                    if (generated == null || generated.Count == 0)
+                    {
+                        break;
+                    }
+
+                    batch.Add(generated);
+                }
+
+                break;
+
+            case RailExhaustionPolicy.StopSpawning:
+            default:
+                // Deliberately returns a short or empty batch: the authored queue
+                // is the whole of this level's material.
+                break;
+        }
+
+        return batch;
+    }
+
+    private bool AllQueuedRecipesAreEmpty()
+    {
+        foreach (TutorialBoxRecipe recipe in railQueue)
+        {
+            if (recipe != null && recipe.TotalCount > 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// One fallback box, drawn from the level's normal random settings but with a
+    /// per-level seed so an exhausted queue still replays identically between
+    /// attempts. Levels are never designed to need this - it exists so a player
+    /// who wastes the authored queue is not left staring at an empty rail.
+    /// </summary>
+    private Dictionary<Soda.SodaColor, int> BuildSeededFallbackRecipe(int capacity)
+    {
+        // BuildRandomRecipe reads UnityEngine.Random, which is global. Saving and
+        // restoring the state around the call keeps the seeding local to the rail
+        // instead of quietly re-seeding every other system's rolls.
+        UnityEngine.Random.State previousState = default;
+        bool seeded = fallbackSeed != 0;
+        if (seeded)
+        {
+            previousState = UnityEngine.Random.state;
+            UnityEngine.Random.InitState(fallbackSeed + fallbackDrawCount);
+        }
+
+        fallbackDrawCount++;
+
+        List<Soda.SodaColor> colors = BuildRandomRecipe(capacity);
+
+        if (seeded)
+        {
+            UnityEngine.Random.state = previousState;
+        }
+
+        Dictionary<Soda.SodaColor, int> recipe = new Dictionary<Soda.SodaColor, int>();
+        foreach (Soda.SodaColor color in colors)
+        {
+            recipe.TryGetValue(color, out int existing);
+            recipe[color] = existing + 1;
+        }
+
+        return recipe;
+    }
+
+    /// <summary>
+    /// Box capacity read off the prefab, so a fallback recipe can be sized before
+    /// any box exists. Falls back to the project's four-slot box.
+    /// </summary>
+    private int GetPrefabBoxCapacity()
+    {
+        Box prefabBox = boxPrefab != null ? boxPrefab.GetComponent<Box>() : null;
+        int capacity = prefabBox != null ? prefabBox.DiscoverableCapacity : 0;
+        return capacity > 0 ? capacity : 4;
     }
 
     private bool PopulateConfiguredSodas(

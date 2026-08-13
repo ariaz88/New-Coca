@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d79b6ee9484a78d47b20bc4dac25609e, type: 3}
+  m_Name: Level06
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  levelNumber: 6
+  width: 4
+  height: 5
+  cellStates:
+  - coordinate: {x: 1, y: 3}
+    kind: 2
+  - coordinate: {x: 0, y: 2}
+    kind: 2
+  - coordinate: {x: 2, y: 2}
+    kind: 2
+  initialBoxes:
+  - coordinate: {x: 1, y: 2}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 040000000400000004000000
+  orders:
+  - color: 4
+    requiredCount: 2
+  palette: 04000000
+  railQueue:
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  railBatchSize: 3
+  railExhaustionPolicy: 2
+  difficulty: 0
+  difficultyRating: 2
+  expectedSeconds: 120
+  mainChallenge: 'TUTORIAL: completing a box breaks the X blockers touching it.'
+  designerNotes: The 'G' in the shape row is the starting box cell, kept playable.
+    Blockers sit north, west and east of it; only the south cell is free.
+  bakedChecksum: 870bd040-4a
+  lastVerification:
+    checksum: 
+    solved: 0
+    moves: 0
+    nodes: 0
+    utcStamp: 

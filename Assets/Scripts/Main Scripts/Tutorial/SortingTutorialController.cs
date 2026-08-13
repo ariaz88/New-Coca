@@ -59,6 +59,16 @@ public sealed class TutorialSodaAmount
     [SerializeField] private Soda.SodaColor color;
     [SerializeField, Min(0)] private int count = 1;
 
+    public TutorialSodaAmount()
+    {
+    }
+
+    public TutorialSodaAmount(Soda.SodaColor color, int count)
+    {
+        this.color = color;
+        this.count = Mathf.Max(0, count);
+    }
+
     public Soda.SodaColor Color => color;
     public int Count => Mathf.Max(0, count);
 }
@@ -67,6 +77,74 @@ public sealed class TutorialSodaAmount
 public sealed class TutorialBoxRecipe
 {
     [SerializeField] private List<TutorialSodaAmount> sodas = new List<TutorialSodaAmount>();
+
+    public TutorialBoxRecipe()
+    {
+    }
+
+    /// <summary>
+    /// Builds a recipe from colour/count pairs. Used by the level authoring tools
+    /// to write rail queues in code; the tutorial stages still author theirs in
+    /// the inspector.
+    /// </summary>
+    public TutorialBoxRecipe(params (Soda.SodaColor color, int count)[] amounts)
+    {
+        if (amounts == null)
+        {
+            return;
+        }
+
+        foreach ((Soda.SodaColor color, int count) amount in amounts)
+        {
+            if (amount.count > 0)
+            {
+                sodas.Add(new TutorialSodaAmount(amount.color, amount.count));
+            }
+        }
+    }
+
+    /// <summary>Convenience for the common single-colour rail box.</summary>
+    public TutorialBoxRecipe(Soda.SodaColor color, int count)
+        : this(new[] { (color, count) })
+    {
+    }
+
+    public IReadOnlyList<TutorialSodaAmount> Sodas => sodas;
+
+    /// <summary>Total sodas in the recipe, across every colour.</summary>
+    public int TotalCount
+    {
+        get
+        {
+            int total = 0;
+            foreach (TutorialSodaAmount amount in sodas)
+            {
+                if (amount != null)
+                {
+                    total += amount.Count;
+                }
+            }
+
+            return total;
+        }
+    }
+
+    /// <summary>Compact form for tooling output, e.g. "Green x2, Blue x1".</summary>
+    public string Describe()
+    {
+        if (sodas == null || sodas.Count == 0)
+        {
+            return "(empty)";
+        }
+
+        List<string> parts = new List<string>();
+        foreach (KeyValuePair<Soda.SodaColor, int> pair in ToDictionary())
+        {
+            parts.Add($"{pair.Key} x{pair.Value}");
+        }
+
+        return string.Join(", ", parts);
+    }
 
     public Dictionary<Soda.SodaColor, int> ToDictionary()
     {

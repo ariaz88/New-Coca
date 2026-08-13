@@ -1312,6 +1312,7 @@ public class Board : MonoBehaviour
         }
 
         bool foundPlayableCell = false;
+        bool hasFreeCell = false;
         for (int column = 0; column < width; column++)
         {
             for (int row = 0; row < height; row++)
@@ -1324,15 +1325,49 @@ public class Board : MonoBehaviour
                 foundPlayableCell = true;
                 if (allBoxes[column, row] == null)
                 {
-                    return;
+                    hasFreeCell = true;
                 }
             }
         }
 
-        if (foundPlayableCell)
+        if (foundPlayableCell && !hasFreeCell)
         {
             GameManager.instance?.CheckLoseCondition(true);
+            return;
         }
+
+        CheckRailExhausted();
+    }
+
+    /// <summary>
+    /// Ends a level whose authored rail queue is spent while orders remain open.
+    ///
+    /// Without this, a StopSpawning level reaches a state with free cells, an
+    /// empty rail, and nothing left to deliver - the player can neither win nor
+    /// lose, and the only way out is the menu. Only StopSpawning levels can reach
+    /// it; the shipped default falls back to random boxes instead.
+    /// </summary>
+    private void CheckRailExhausted()
+    {
+        SpawnContoller spawner = SpawnContoller.instance;
+        if (spawner == null || !spawner.IsQueueExhausted || IsResolving)
+        {
+            return;
+        }
+
+        // Both guards are load-bearing: boxes still animating onto the rail are
+        // playable material, and a box the player is holding has not been spent.
+        if (spawner.spawnedBoxes != null && spawner.spawnedBoxes.Count > 0)
+        {
+            return;
+        }
+
+        if (OrderManager.instance == null || OrderManager.instance.AllOrdersLogicallyFulfilled)
+        {
+            return;
+        }
+
+        GameManager.instance?.CheckLoseCondition(true);
     }
 
     private void GenerateBoard()

@@ -1,0 +1,121 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d79b6ee9484a78d47b20bc4dac25609e, type: 3}
+  m_Name: Level05
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  levelNumber: 5
+  width: 4
+  height: 5
+  cellStates: []
+  initialBoxes:
+  - coordinate: {x: 0, y: 4}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 0000000000000000
+  - coordinate: {x: 3, y: 4}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 0400000004000000
+  - coordinate: {x: 1, y: 2}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 0100000001000000
+  orders:
+  - color: 0
+    requiredCount: 3
+  - color: 4
+    requiredCount: 3
+  - color: 1
+    requiredCount: 2
+  palette: 000000000400000001000000
+  railQueue:
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+  railBatchSize: 3
+  railExhaustionPolicy: 2
+  difficulty: 2
+  difficultyRating: 5
+  expectedSeconds: 210
+  mainChallenge: 'First mastery test: three orders competing for the same board space.'
+  designerNotes: 
+  bakedChecksum: 2ce64ead-b5
+  lastVerification:
+    checksum: 
+    solved: 0
+    moves: 0
+    nodes: 0
+    utcStamp: 

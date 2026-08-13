@@ -1,0 +1,148 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d79b6ee9484a78d47b20bc4dac25609e, type: 3}
+  m_Name: Level17
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  levelNumber: 17
+  width: 4
+  height: 5
+  cellStates:
+  - coordinate: {x: 0, y: 4}
+    kind: 1
+  - coordinate: {x: 1, y: 4}
+    kind: 3
+  - coordinate: {x: 3, y: 4}
+    kind: 2
+  - coordinate: {x: 0, y: 2}
+    kind: 2
+  - coordinate: {x: 3, y: 2}
+    kind: 3
+  - coordinate: {x: 0, y: 0}
+    kind: 3
+  - coordinate: {x: 2, y: 0}
+    kind: 2
+  - coordinate: {x: 3, y: 0}
+    kind: 1
+  initialBoxes:
+  - coordinate: {x: 1, y: 3}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 0100000001000000
+  - coordinate: {x: 2, y: 1}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 0200000002000000
+  - coordinate: {x: 2, y: 3}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 0300000003000000
+  orders:
+  - color: 1
+    requiredCount: 3
+  - color: 2
+    requiredCount: 3
+  - color: 3
+    requiredCount: 2
+  palette: 010000000200000003000000
+  railQueue:
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+  railBatchSize: 3
+  railExhaustionPolicy: 2
+  difficulty: 3
+  difficultyRating: 7
+  expectedSeconds: 330
+  mainChallenge: Every cell type at once, with three orders to satisfy.
+  designerNotes: 
+  bakedChecksum: 8016973d-fb
+  lastVerification:
+    checksum: 
+    solved: 0
+    moves: 0
+    nodes: 0
+    utcStamp: 
