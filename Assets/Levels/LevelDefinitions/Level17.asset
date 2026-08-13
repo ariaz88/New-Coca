@@ -151,8 +151,8 @@ MonoBehaviour:
   designerNotes: 
   bakedChecksum: 06267c0e-111
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: 06267c0e-111
+    solved: 1
+    moves: 16
+    nodes: 16
+    utcStamp: 2026-08-13 10:09:16Z

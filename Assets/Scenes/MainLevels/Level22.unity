@@ -2957,14 +2957,10 @@ MonoBehaviour:
   height: 5
   removedCells: []
   cellStates:
-  - coordinate: {x: 0, y: 4}
-    kind: 1
   - coordinate: {x: 2, y: 4}
     kind: 2
   - coordinate: {x: 3, y: 4}
     kind: 2
-  - coordinate: {x: 5, y: 4}
-    kind: 1
   - coordinate: {x: 1, y: 3}
     kind: 3
   - coordinate: {x: 4, y: 3}
@@ -2977,14 +2973,10 @@ MonoBehaviour:
     kind: 3
   - coordinate: {x: 4, y: 1}
     kind: 3
-  - coordinate: {x: 0, y: 0}
-    kind: 1
   - coordinate: {x: 2, y: 0}
     kind: 2
   - coordinate: {x: 3, y: 0}
     kind: 2
-  - coordinate: {x: 5, y: 0}
-    kind: 1
   localOrigin: {x: 0.149, y: 0.185, z: 0.16}
   cellSpacing: {x: 0.279, y: 0.279}
   placedBoxYOffset: 0.155
@@ -2995,6 +2987,9 @@ MonoBehaviour:
   - coordinate: {x: 3, y: 2}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
+  - coordinate: {x: 2, y: 3}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 0400000004000000
   levelOrders:
   - color: 0
     requiredCount: 3

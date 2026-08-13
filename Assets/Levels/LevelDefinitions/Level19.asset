@@ -22,17 +22,13 @@ MonoBehaviour:
     kind: 2
   - coordinate: {x: 4, y: 4}
     kind: 1
-  - coordinate: {x: 1, y: 3}
-    kind: 3
-  - coordinate: {x: 3, y: 3}
+  - coordinate: {x: 2, y: 3}
     kind: 3
   - coordinate: {x: 0, y: 2}
     kind: 2
   - coordinate: {x: 4, y: 2}
     kind: 2
-  - coordinate: {x: 1, y: 1}
-    kind: 3
-  - coordinate: {x: 3, y: 1}
+  - coordinate: {x: 2, y: 1}
     kind: 3
   - coordinate: {x: 0, y: 0}
     kind: 1
@@ -41,10 +37,10 @@ MonoBehaviour:
   - coordinate: {x: 4, y: 0}
     kind: 1
   initialBoxes:
-  - coordinate: {x: 1, y: 4}
+  - coordinate: {x: 1, y: 3}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0300000003000000
-  - coordinate: {x: 3, y: 0}
+  - coordinate: {x: 3, y: 1}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
   - coordinate: {x: 2, y: 2}
@@ -158,10 +154,10 @@ MonoBehaviour:
   expectedSeconds: 360
   mainChallenge: 'A lattice board: almost every free cell touches a blocker.'
   designerNotes: 
-  bakedChecksum: 18dac042-12a
+  bakedChecksum: a9f31b78-11e
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: a9f31b78-11e
+    solved: 1
+    moves: 15
+    nodes: 15
+    utcStamp: 2026-08-13 10:09:16Z

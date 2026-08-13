@@ -72,8 +72,8 @@ MonoBehaviour:
   designerNotes: Unchanged from the shipped Level 1. Known-good opener.
   bakedChecksum: 78cd85f2-6b
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: 78cd85f2-6b
+    solved: 1
+    moves: 7
+    nodes: 7
+    utcStamp: 2026-08-13 10:09:14Z

@@ -101,8 +101,8 @@ MonoBehaviour:
   designerNotes: 
   bakedChecksum: 09966a77-9b
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: 09966a77-9b
+    solved: 1
+    moves: 9
+    nodes: 9
+    utcStamp: 2026-08-13 10:09:14Z

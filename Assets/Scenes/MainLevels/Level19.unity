@@ -2963,17 +2963,13 @@ MonoBehaviour:
     kind: 2
   - coordinate: {x: 4, y: 4}
     kind: 1
-  - coordinate: {x: 1, y: 3}
-    kind: 3
-  - coordinate: {x: 3, y: 3}
+  - coordinate: {x: 2, y: 3}
     kind: 3
   - coordinate: {x: 0, y: 2}
     kind: 2
   - coordinate: {x: 4, y: 2}
     kind: 2
-  - coordinate: {x: 1, y: 1}
-    kind: 3
-  - coordinate: {x: 3, y: 1}
+  - coordinate: {x: 2, y: 1}
     kind: 3
   - coordinate: {x: 0, y: 0}
     kind: 1
@@ -2985,10 +2981,10 @@ MonoBehaviour:
   cellSpacing: {x: 0.279, y: 0.279}
   placedBoxYOffset: 0.155
   initialBoxes:
-  - coordinate: {x: 1, y: 4}
+  - coordinate: {x: 1, y: 3}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0300000003000000
-  - coordinate: {x: 3, y: 0}
+  - coordinate: {x: 3, y: 1}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
   - coordinate: {x: 2, y: 2}

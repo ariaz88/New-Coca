@@ -16,14 +16,10 @@ MonoBehaviour:
   width: 6
   height: 5
   cellStates:
-  - coordinate: {x: 0, y: 4}
-    kind: 1
   - coordinate: {x: 2, y: 4}
     kind: 2
   - coordinate: {x: 3, y: 4}
     kind: 2
-  - coordinate: {x: 5, y: 4}
-    kind: 1
   - coordinate: {x: 1, y: 3}
     kind: 3
   - coordinate: {x: 4, y: 3}
@@ -36,14 +32,10 @@ MonoBehaviour:
     kind: 3
   - coordinate: {x: 4, y: 1}
     kind: 3
-  - coordinate: {x: 0, y: 0}
-    kind: 1
   - coordinate: {x: 2, y: 0}
     kind: 2
   - coordinate: {x: 3, y: 0}
     kind: 2
-  - coordinate: {x: 5, y: 0}
-    kind: 1
   initialBoxes:
   - coordinate: {x: 2, y: 2}
     boxPrefabOverride: {fileID: 0}
@@ -51,6 +43,9 @@ MonoBehaviour:
   - coordinate: {x: 3, y: 2}
     boxPrefabOverride: {fileID: 0}
     startingSodas: 0100000001000000
+  - coordinate: {x: 2, y: 3}
+    boxPrefabOverride: {fileID: 0}
+    startingSodas: 0400000004000000
   orders:
   - color: 0
     requiredCount: 3
@@ -177,10 +172,10 @@ MonoBehaviour:
   mainChallenge: 'Only two anchors on a heavily blocked board: the opening is the
     whole puzzle.'
   designerNotes: 
-  bakedChecksum: f7da2264-14c
+  bakedChecksum: 45518700-13d
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: 45518700-13d
+    solved: 1
+    moves: 13
+    nodes: 13
+    utcStamp: 2026-08-13 10:09:16Z

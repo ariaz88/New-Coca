@@ -220,8 +220,8 @@ MonoBehaviour:
     every order has to be grown outward through the blocker lattice.
   bakedChecksum: a76a7763-1a7
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: a76a7763-1a7
+    solved: 1
+    moves: 22
+    nodes: 22
+    utcStamp: 2026-08-13 10:09:16Z

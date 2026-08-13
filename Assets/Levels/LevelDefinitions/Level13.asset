@@ -99,8 +99,8 @@ MonoBehaviour:
     the first.
   bakedChecksum: 4a3efb5c-96
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: 4a3efb5c-96
+    solved: 1
+    moves: 4
+    nodes: 4
+    utcStamp: 2026-08-13 10:09:15Z

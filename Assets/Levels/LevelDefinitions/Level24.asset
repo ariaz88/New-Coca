@@ -184,8 +184,8 @@ MonoBehaviour:
     be packed away - a remainder would permanently poison a cell.
   bakedChecksum: 28726ce7-156
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: 28726ce7-156
+    solved: 1
+    moves: 23
+    nodes: 23
+    utcStamp: 2026-08-13 10:09:16Z

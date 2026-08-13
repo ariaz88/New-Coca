@@ -128,8 +128,8 @@ MonoBehaviour:
   designerNotes: Teaches the hole/blocker distinction before both appear together.
   bakedChecksum: 32132f07-de
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: 32132f07-de
+    solved: 1
+    moves: 11
+    nodes: 11
+    utcStamp: 2026-08-13 10:09:15Z

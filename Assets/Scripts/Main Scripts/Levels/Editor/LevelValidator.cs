@@ -200,6 +200,88 @@ public static class LevelValidator
                 }
             }
         }
+
+        ValidateIsolatedCells(definition, issues);
+    }
+
+    /// <summary>
+    /// Flags cells that start with no OPEN neighbour - only holes and blockers.
+    ///
+    /// This is survivable for an empty cell, because blockers do open. It is fatal
+    /// for a starting box: that box can never receive a soda, can never reach four
+    /// of a colour, and so can never pack - which also means it can never break the
+    /// very blockers penning it in. Level 19's first draft had two of them and the
+    /// solver spent 45 seconds and 312,000 nodes proving it could not be finished.
+    /// Catching it here costs microseconds.
+    /// </summary>
+    private static void ValidateIsolatedCells(LevelDefinition definition, List<ValidationIssue> issues)
+    {
+        HashSet<Vector2Int> boxCells = new HashSet<Vector2Int>();
+        foreach (InitialBoardBoxData box in definition.InitialBoxes)
+        {
+            if (box != null)
+            {
+                boxCells.Add(box.coordinate);
+            }
+        }
+
+        int isolated = 0;
+
+        for (int x = 0; x < definition.Width; x++)
+        {
+            for (int y = 0; y < definition.Height; y++)
+            {
+                Vector2Int cell = new Vector2Int(x, y);
+                if (definition.GetCellKind(cell) != BoardCellKind.Playable)
+                {
+                    continue;
+                }
+
+                bool hasOpenNeighbour = false;
+                foreach (Vector2Int offset in Orthogonal)
+                {
+                    Vector2Int neighbour = cell + offset;
+                    if (neighbour.x < 0 || neighbour.x >= definition.Width ||
+                        neighbour.y < 0 || neighbour.y >= definition.Height)
+                    {
+                        continue;
+                    }
+
+                    if (definition.GetCellKind(neighbour) == BoardCellKind.Playable)
+                    {
+                        hasOpenNeighbour = true;
+                        break;
+                    }
+                }
+
+                if (hasOpenNeighbour)
+                {
+                    continue;
+                }
+
+                isolated++;
+
+                if (boxCells.Contains(cell))
+                {
+                    issues.Add(new ValidationIssue(
+                        IssueSeverity.Error, "ISOLATED_START",
+                        "Starting box sits on a cell with no open neighbour, so it can never receive a " +
+                        "soda, never pack, and never break the blockers penning it in.",
+                        cell));
+                }
+            }
+        }
+
+        // A few sealed cells are a legitimate design - they open as blockers break.
+        // A board that is mostly sealed is a checkerboard the player cannot work in.
+        int playable = definition.PlayableCellCount;
+        if (playable > 0 && isolated * 2 >= playable)
+        {
+            issues.Add(new ValidationIssue(
+                IssueSeverity.Warning, "MOSTLY_ISOLATED",
+                $"{isolated} of {playable} open cells start with no open neighbour. Boxes placed there " +
+                "do nothing until a blocker breaks, so the board fills faster than it can be worked."));
+        }
     }
 
     // ---------------------------------------------------------------- orders

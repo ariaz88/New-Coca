@@ -123,8 +123,8 @@ MonoBehaviour:
   designerNotes: 
   bakedChecksum: f952a0f3-d5
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: f952a0f3-d5
+    solved: 1
+    moves: 10
+    nodes: 10
+    utcStamp: 2026-08-13 10:09:15Z

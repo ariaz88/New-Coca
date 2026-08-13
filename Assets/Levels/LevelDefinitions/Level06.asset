@@ -80,8 +80,8 @@ MonoBehaviour:
     Blockers sit north, west and east of it; only the south cell is free.
   bakedChecksum: 27664af9-7a
   lastVerification:
-    checksum: 
-    solved: 0
-    moves: 0
-    nodes: 0
-    utcStamp: 
+    checksum: 27664af9-7a
+    solved: 1
+    moves: 2
+    nodes: 2
+    utcStamp: 2026-08-13 10:09:14Z

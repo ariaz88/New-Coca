@@ -496,15 +496,21 @@ public static class CampaignAuthoring
         levels.Add(new LevelSpec
         {
             Number = 19,
+            // The first draft of this board was a true checkerboard lattice, and
+            // the solver proved it unplayable: 8 of its 13 open cells had no open
+            // neighbour at all, and two of the starting boxes sat on such cells,
+            // so they could never receive a soda or grow toward a match. The
+            // vertical blocker pairs are now single blockers, which keeps the
+            // woven look while leaving every open cell connected to the rest.
             Shape = new[]
             {
                 "#.X.#",
-                ".F.F.",
+                "..F..",
                 "X...X",
-                ".F.F.",
+                "..F..",
                 "#.X.#"
             },
-            Starts = new[] { new Start(1, 4, "KK"), new Start(3, 0, "BB"), new Start(2, 2, "OO") },
+            Starts = new[] { new Start(1, 3, "KK"), new Start(3, 1, "BB"), new Start(2, 2, "OO") },
             Orders = new[] { new Order(K, 3), new Order(B, 3), new Order(O, 3) },
             Palette = new[] { K, B, O },
             SlackSets = 1,
@@ -564,15 +570,19 @@ public static class CampaignAuthoring
         levels.Add(new LevelSpec
         {
             Number = 22,
+            // The corner holes were removed and a third anchor added: with only two
+            // anchors on a board this blocked, the solver could reach 7 of the 8
+            // required packs and no further. The blocker pattern is unchanged, so
+            // the level still reads as the tightest board so far.
             Shape = new[]
             {
-                "#.XX.#",
+                "..XX..",
                 ".F..F.",
                 "X....X",
                 ".F..F.",
-                "#.XX.#"
+                "..XX.."
             },
-            Starts = new[] { new Start(2, 2, "RR"), new Start(3, 2, "BB") },
+            Starts = new[] { new Start(2, 2, "RR"), new Start(3, 2, "BB"), new Start(2, 3, "GG") },
             Orders = new[] { new Order(R, 3), new Order(B, 3), new Order(G, 2) },
             Palette = new[] { R, B, G },
             SlackSets = 1,
