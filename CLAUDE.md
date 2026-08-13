@@ -50,13 +50,19 @@ not by inspection.
   drink order, so every level from 14 up is a three-slot card. Counts stay at 3
   packed boxes per drink.
 
+- **Hidden Bombs — built and playable (grey-box).** Bombs, level-start preview,
+  Defuser, Scanner, both failure modes, per-level config, solver-verified layout
+  pools. See the section below.
+
 ### Next, in order
 
-1. **Hidden Bombs — core, grey-box.** User's own design; full spec is in the plan
-   file. Build it playable with placeholder art *before* any VFX.
-2. **Tune** with the user playing 10–25.
-3. **Polish + all three tutorials together** (X-blocker L6, bombs L10,
-   frozen L13) — they share `TutorialManager`, so batch them.
+1. **Tune** with the user playing 10–25. Bomb counts, defuser economy, preview
+   length, and whether Immediate mode is fair at all.
+2. **Polish + all three tutorials together** (X-blocker L6, bombs L10,
+   frozen L13) — they share `TutorialManager`, so batch them. The bomb tutorial
+   is the only part of the bomb brief not yet built.
+3. **Bomb VFX**: wire-cut defuse, sparks, smoke, scanner beam art. The grey-box
+   shapes are primitives.
 
 Plan file: `C:\Users\Arash\.claude\plans\unity-mobile-puzzle-breezy-wind.md`
 
@@ -116,6 +122,54 @@ were sideways).
 
 **The game uses `Bottle.prefab`, not `Soda.prefab`.** `Soda.prefab` is stale and
 its material list has drifted.
+
+---
+
+## Hidden Bombs
+
+**The trigger is dropping a Box on the bomb's cell.** There is no timer that
+runs on its own. `Countdown` mode arms a fuse measured in placements and a blast
+clears the bomb's cell plus its four neighbours; `Immediate` mode ends the level.
+Levels 22–25 are Immediate.
+
+**Bombs go only on plain empty playable cells** — `Board.CanHostBomb`. Blocker,
+frozen and hole cells have no `Node`, so a bomb there could never be dropped on
+or defused, and a starting-box cell would hide it under something immovable.
+
+**Bombs never touch `breakingBlockedCells`.** That set gates `ResolvePlacement`'s
+`while (count > 0)` spin and a bomb has no guaranteed `UnlockBlockedCell`. Bombs
+use `bombs` + `liveBombLookup`.
+
+**`HandleBombsAfterPlacement` runs before `ResolvePlacement`,** synchronously.
+A blast firing mid-resolution would destroy boxes the transfer system is moving
+sodas into. Already-burning fuses tick *before* the new bomb arms, so a bomb
+does not lose a move to its own arrival.
+
+**Layouts are picked from a solver-verified pool,** `pool[attempt % count]`.
+`Tools > Coca Sorting > Levels > Generate Bomb Layouts` draws candidates and
+solves each with the bomb cells modelled as holes — conservative, because it
+assumes the player never defuses. `GameDataManager.LevelAttempt` increments in
+`BeginLevel`, so Play Again re-rolls; a revive does not reload the scene, so it
+keeps its layout.
+
+**Bomb count is capped at 45% of a level's legal cells.** The late boards are
+the most blocked, so the highest number on the curve lands on the level with the
+least room — level 24 has 8 legal cells and the curve wanted 6 bombs, and every
+layout was unwinnable.
+
+**Defusers are not rail items.** They dock beside the board. `spawnedBoxes` must
+be empty before the rail refills, so an unused Defuser in that list would stop
+every further box arriving. `IRailItem` still exists and `RemoveSpawnerList`
+prunes by `IsConsumed` (null-guarded), which is what removes the Box coupling.
+
+**The bomb HUD and director are added at runtime** by `BombHud`, off
+`sceneLoaded`, only when `Board.BombSettings.IsActive`. Nothing was added to the
+25 baked scenes.
+
+**Input freezes use the owner-scoped constraints** — `TrySetPlacementConstraint`
+plus `TrySetDragConstraint` on every rail item. Not `IsResolving` (also gates
+win/lose), not `gameEnded` (kills them permanently), not `timeScale = 0` (stops
+our own coroutines and not `OnMouseDown`).
 
 ---
 

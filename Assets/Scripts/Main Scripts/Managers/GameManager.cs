@@ -129,7 +129,25 @@ public class GameManager : MonoBehaviour
     }
     public void CheckLoseCondition(bool isBoardFilled)
     {
-        if (!isBoardFilled || endSequenceStarted || gameEnded || gameOver)
+        if (!isBoardFilled)
+        {
+            return;
+        }
+
+        LoseLevel();
+    }
+
+    /// <summary>
+    /// The single entry point into the lose flow, mirroring BeginWinSequence.
+    ///
+    /// It exists because a full board is no longer the only way to lose: an
+    /// Immediate-mode bomb ends the level with the board half empty, and routing
+    /// that through CheckLoseCondition(true) would have meant passing a flag that
+    /// says something untrue about the board.
+    /// </summary>
+    public void LoseLevel()
+    {
+        if (endSequenceStarted || gameEnded || gameOver)
         {
             return;
         }

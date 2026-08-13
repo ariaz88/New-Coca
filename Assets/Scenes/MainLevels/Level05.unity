@@ -3019,6 +3019,16 @@ MonoBehaviour:
   frozenCellCrackCount: 3
   frozenCellCrackShardCount: 12
   frozenCellCrackPunchDuration: 0.32
+  bombSettings:
+    enabled: 0
+    bombCount: 0
+    defuserCount: 0
+    previewSeconds: 2.5
+    scannerCharges: 0
+    detonationMode: 0
+    fuseMoves: 2
+    wrongDefuserIsConsumed: 0
+  bombLayoutPool: []
   awardPackedBoxRewards: 1
   coinsPerPackedBox: 10
   swapAnimationDuration: 0.35

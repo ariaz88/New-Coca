@@ -112,7 +112,22 @@ public class GameDataManager : MonoBehaviour
         {
             SetLevel(logicalLevel);
         }
+
+        LevelAttempt++;
     }
+
+    /// <summary>
+    /// How many times a level scene has been entered this session. Bombs pick
+    /// their layout from this, so every Play Again shows a different arrangement.
+    ///
+    /// It lives here because BeginLevel is called on every level load including
+    /// the Play Again reload, and this object is DontDestroyOnLoad so the count
+    /// survives the scene change. RevivePanel.ReviveLevel deliberately does NOT
+    /// reload the scene, so a revive keeps the layout the player was learning -
+    /// re-rolling bombs under someone who just paid to continue would be a
+    /// straightforward betrayal.
+    /// </summary>
+    public int LevelAttempt { get; private set; }
     public int GetGameplayCoins()
     {
         return boxNum;

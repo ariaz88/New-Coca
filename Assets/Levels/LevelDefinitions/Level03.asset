@@ -83,6 +83,16 @@ MonoBehaviour:
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
+  bombs:
+    enabled: 0
+    bombCount: 0
+    defuserCount: 0
+    previewSeconds: 2.5
+    scannerCharges: 0
+    detonationMode: 0
+    fuseMoves: 2
+    wrongDefuserIsConsumed: 0
+  bombLayoutPool: []
   difficulty: 1
   difficultyRating: 3
   expectedSeconds: 150

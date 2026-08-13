@@ -828,8 +828,112 @@ public static class CampaignAuthoring
         }
 
         definition.EditorSetRail(palette, queue, 3, RailExhaustionPolicy.RandomFallback);
+        int legalBombCells = BombLayoutGenerator.GetLegalCells(width, height, cells, boxes).Count;
+        definition.EditorSetBombs(GetBombSettings(spec.Number, legalBombCells));
         definition.EditorSetDesignNotes(
             spec.Difficulty, spec.Rating, spec.Seconds, spec.Challenge, spec.Notes);
+    }
+
+    /// <summary>
+    /// The Hidden Bombs curve.
+    ///
+    /// Bombs start at level 10, once the player has met every cell type and has
+    /// had four levels of X blockers - a hidden hazard is only a memory test if
+    /// the visible board is already understood, otherwise it is just noise.
+    ///
+    /// The three dials move in opposite directions on purpose: bomb count climbs
+    /// while preview length, scanner charges and defusers fall, so the same board
+    /// asks for more memory and offers less insurance as the campaign goes on.
+    /// Immediate mode - where a single wrong drop ends the run - is held back to
+    /// the last four levels, and those get the most defusers per bomb to match.
+    /// </summary>
+    private static BombLevelSettings GetBombSettings(int levelNumber, int legalBombCells)
+    {
+        // 13 is the frozen-blocker tutorial. A level whose whole job is teaching
+        // one rule cannot also be hiding bombs under the board - the player would
+        // have no way to tell which mechanic just beat them.
+        if (levelNumber < 10 || levelNumber == 13)
+        {
+            return BombLevelSettings.Disabled;
+        }
+
+        BombLevelSettings settings = BombLevelSettings.Disabled;
+        settings.enabled = true;
+        settings.detonationMode = BombDetonationMode.Countdown;
+        settings.fuseMoves = 2;
+
+        if (levelNumber == 10)
+        {
+            // The teaching level: two bombs, a long look, and enough defusers to
+            // recover from getting it wrong twice.
+            settings.bombCount = CapBombCount(2, legalBombCells);
+            settings.defuserCount = 2;
+            settings.previewSeconds = 3.5f;
+            settings.scannerCharges = 2;
+            settings.wrongDefuserIsConsumed = false;
+            return settings;
+        }
+
+        if (levelNumber <= 12)
+        {
+            settings.bombCount = CapBombCount(2, legalBombCells);
+            settings.defuserCount = 2;
+            settings.previewSeconds = 3f;
+            settings.scannerCharges = 1;
+            settings.wrongDefuserIsConsumed = false;
+            return settings;
+        }
+
+        if (levelNumber <= 17)
+        {
+            settings.bombCount = CapBombCount(levelNumber <= 15 ? 3 : 4, legalBombCells);
+            settings.defuserCount = 2;
+            settings.previewSeconds = 2.5f;
+            settings.scannerCharges = 1;
+            settings.wrongDefuserIsConsumed = false;
+            return settings;
+        }
+
+        if (levelNumber <= 21)
+        {
+            settings.bombCount = CapBombCount(levelNumber <= 19 ? 4 : 5, legalBombCells);
+            settings.defuserCount = 2;
+            settings.previewSeconds = 2f;
+            settings.scannerCharges = 1;
+            settings.fuseMoves = 1;
+
+            // From here a wasted Defuser is gone. Guessing has to cost something
+            // or the scanner has no job.
+            settings.wrongDefuserIsConsumed = true;
+            return settings;
+        }
+
+        // 22-25: one wrong drop ends the run.
+        settings.bombCount = CapBombCount(levelNumber >= 24 ? 6 : 5, legalBombCells);
+        settings.defuserCount = 3;
+        settings.previewSeconds = 2f;
+        settings.scannerCharges = 1;
+        settings.detonationMode = BombDetonationMode.Immediate;
+        settings.wrongDefuserIsConsumed = true;
+        return settings;
+    }
+
+    /// <summary>
+    /// Trims a bomb count to what the board can actually carry.
+    ///
+    /// The late boards are the most blocked ones, so the level with the highest
+    /// number on the curve is often the one with the least room: level 24 has
+    /// nine non-playable cells and three anchors, leaving eight cells a bomb may
+    /// legally occupy. Six bombs there left two usable cells and the solver
+    /// proved every single layout unwinnable.
+    ///
+    /// Bombs may take at most 45% of the legal cells, which keeps a working
+    /// majority of the board free whatever shape the level is.
+    /// </summary>
+    private static int CapBombCount(int desired, int legalBombCells)
+    {
+        int ceiling = Mathf.FloorToInt(legalBombCells * 0.45f);
+        return Mathf.Clamp(desired, 0, Mathf.Max(1, ceiling));
     }
 
     /// <summary>

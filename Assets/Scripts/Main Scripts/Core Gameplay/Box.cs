@@ -11,8 +11,15 @@ using DG.Tweening;
 /// for 4, 5, 6, or any other slot count without changing transfer cases.
 /// </summary>
 [DisallowMultipleComponent]
-public class Box : MonoBehaviour
+public class Box : MonoBehaviour, IRailItem
 {
+    /// <summary>
+    /// A Box is done with its rail slot the moment it is placed. See IRailItem -
+    /// the rail prune used to hard-code this test, which is why a Defuser could
+    /// never be pruned.
+    /// </summary>
+    public bool IsConsumed => IsOnBoard;
+
     [Header("Box")]
     [SerializeField] private GameObject topBox;
 
@@ -1069,52 +1076,12 @@ public class Box : MonoBehaviour
         return int.TryParse(suffix, out int number) ? number : int.MaxValue;
     }
 
+    // Both pointer helpers moved to RailDragSupport when the Defuser arrived, so
+    // the two rail item types resolve the pointer identically by construction
+    // rather than by two copies staying in step.
     private static bool TryGetPointerOnPlane(Plane plane, out Vector3 point)
     {
-        point = default;
-        Camera camera = GetPointerCamera();
-        if (camera == null)
-        {
-            return false;
-        }
-
-        Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-        if (!plane.Raycast(ray, out float distance))
-        {
-            return false;
-        }
-
-        point = ray.GetPoint(distance);
-        return true;
-    }
-
-    /// <summary>
-    /// Uses the topmost camera viewport under the pointer. In a normal scene this
-    /// resolves to Camera.main; in a split-view scene it lets rail boxes use the
-    /// dedicated lower camera and board boxes use the upper camera.
-    /// </summary>
-    private static Camera GetPointerCamera()
-    {
-        Vector3 pointer = Input.mousePosition;
-        Camera selected = null;
-        float selectedDepth = float.NegativeInfinity;
-
-        foreach (Camera camera in Camera.allCameras)
-        {
-            if (camera == null || !camera.isActiveAndEnabled ||
-                !camera.pixelRect.Contains(new Vector2(pointer.x, pointer.y)))
-            {
-                continue;
-            }
-
-            if (selected == null || camera.depth > selectedDepth)
-            {
-                selected = camera;
-                selectedDepth = camera.depth;
-            }
-        }
-
-        return selected != null ? selected : Camera.main;
+        return RailDragSupport.TryGetPointerOnPlane(plane, out point);
     }
 }
 

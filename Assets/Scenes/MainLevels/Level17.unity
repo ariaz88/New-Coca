@@ -3035,6 +3035,56 @@ MonoBehaviour:
   frozenCellCrackCount: 3
   frozenCellCrackShardCount: 12
   frozenCellCrackPunchDuration: 0.32
+  bombSettings:
+    enabled: 1
+    bombCount: 4
+    defuserCount: 2
+    previewSeconds: 2.5
+    scannerCharges: 1
+    detonationMode: 0
+    fuseMoves: 2
+    wrongDefuserIsConsumed: 0
+  bombLayoutPool:
+  - cells:
+    - {x: 1, y: 2}
+    - {x: 2, y: 2}
+    - {x: 3, y: 1}
+    - {x: 3, y: 3}
+  - cells:
+    - {x: 1, y: 1}
+    - {x: 1, y: 2}
+    - {x: 2, y: 2}
+    - {x: 2, y: 4}
+  - cells:
+    - {x: 0, y: 3}
+    - {x: 1, y: 0}
+    - {x: 1, y: 2}
+    - {x: 3, y: 3}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 1, y: 2}
+    - {x: 2, y: 4}
+    - {x: 3, y: 1}
+  - cells:
+    - {x: 1, y: 1}
+    - {x: 1, y: 2}
+    - {x: 2, y: 4}
+    - {x: 3, y: 1}
+  - cells:
+    - {x: 0, y: 3}
+    - {x: 1, y: 1}
+    - {x: 1, y: 2}
+    - {x: 2, y: 4}
+  - cells:
+    - {x: 0, y: 3}
+    - {x: 1, y: 0}
+    - {x: 1, y: 1}
+    - {x: 2, y: 2}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 1, y: 2}
+    - {x: 2, y: 2}
+    - {x: 3, y: 3}
   awardPackedBoxRewards: 1
   coinsPerPackedBox: 10
   swapAnimationDuration: 0.35

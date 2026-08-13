@@ -204,6 +204,48 @@ MonoBehaviour:
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
+  bombs:
+    enabled: 1
+    bombCount: 3
+    defuserCount: 2
+    previewSeconds: 2
+    scannerCharges: 1
+    detonationMode: 0
+    fuseMoves: 1
+    wrongDefuserIsConsumed: 1
+  bombLayoutPool:
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 3, y: 1}
+    - {x: 3, y: 3}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 2, y: 2}
+    - {x: 3, y: 3}
+  - cells:
+    - {x: 0, y: 3}
+    - {x: 2, y: 0}
+    - {x: 2, y: 4}
+  - cells:
+    - {x: 2, y: 0}
+    - {x: 2, y: 4}
+    - {x: 3, y: 3}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 2, y: 0}
+    - {x: 3, y: 3}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 2, y: 0}
+    - {x: 2, y: 4}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 2, y: 4}
+    - {x: 3, y: 3}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 3, y: 2}
+    - {x: 3, y: 3}
   difficulty: 4
   difficultyRating: 8
   expectedSeconds: 420

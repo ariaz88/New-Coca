@@ -193,6 +193,12 @@ public class Board : MonoBehaviour
     [SerializeField, Min(0f), Tooltip("Seconds for the punch that plays when a frozen blocker cracks.")]
     private float frozenCellCrackPunchDuration = 0.32f;
 
+    [Header("Hidden Bombs")]
+    [SerializeField, Tooltip("Bomb rules for this level. Baked from LevelDefinition; nothing reads the definition at runtime.")]
+    private BombLevelSettings bombSettings = BombLevelSettings.Disabled;
+    [SerializeField, Tooltip("Solver-verified bomb layouts. One is chosen per attempt, so a restart re-rolls the board without ever picking an unwinnable arrangement.")]
+    private List<BombLayout> bombLayoutPool = new List<BombLayout>();
+
     [Header("Rewards")]
     [SerializeField] private bool awardPackedBoxRewards = true;
     [SerializeField, Min(0)] private int coinsPerPackedBox = 10;
@@ -252,6 +258,23 @@ public class Board : MonoBehaviour
     /// path must never touch this set or resolution deadlocks.
     /// </summary>
     private readonly HashSet<Vector2Int> breakingBlockedCells = new HashSet<Vector2Int>();
+
+    /// <summary>
+    /// Live bombs, keyed by cell. Mirrors the blocker table deliberately, but the
+    /// two must never share a set: breakingBlockedCells gates ResolvePlacement's
+    /// spin loop, and a bomb has no guaranteed UnlockBlockedCell to end it, so
+    /// putting a bomb coordinate in there would hang resolution forever.
+    ///
+    /// Not serialized, for the same reason BlockerRuntime is not: a layout that
+    /// survived into the scene asset would make every restart show the same bombs,
+    /// which is the one thing the mechanic must not do.
+    /// </summary>
+    private readonly Dictionary<Vector2Int, BombRuntime> bombs =
+        new Dictionary<Vector2Int, BombRuntime>();
+
+    /// <summary>Mirrors the live entries of <see cref="bombs"/> for the placement hot path.</summary>
+    private readonly HashSet<Vector2Int> liveBombLookup = new HashSet<Vector2Int>();
+
     private Material generatedRemovedCellMaterial;
     private object placementConstraintOwner;
     private System.Func<Box, int, int, bool> placementConstraint;
@@ -498,6 +521,12 @@ public class Board : MonoBehaviour
         }
 
         currentBox = null;
+
+        // Before resolution, not after. A blast that fires mid-resolution would be
+        // destroying boxes the transfer system is part-way through moving sodas
+        // into; running it here keeps the board consistent for the whole resolve.
+        HandleBombsAfterPlacement(column, row);
+
         StartCoroutine(ResolvePlacement(placedBox));
     }
 
@@ -1571,6 +1600,332 @@ public class Board : MonoBehaviour
         box.transform.position = GetPlacementWorldPosition(column, row);
         box.MarkPlaced(column, row, nextStableId++, ++placementSequence);
         boardBoxes.Add(box);
+    }
+
+    // ------------------------------------------------------------------ bombs
+
+    /// <summary>This level's authored bomb rules, baked in by LevelSceneGenerator.</summary>
+    public BombLevelSettings BombSettings => bombSettings;
+
+    /// <summary>Solver-verified layouts. Empty on a level without bombs.</summary>
+    public IReadOnlyList<BombLayout> BombLayoutPool => bombLayoutPool;
+
+    /// <summary>Raised whenever a bomb is defused, detonates, or arms.</summary>
+    public event System.Action BombStateChanged;
+
+    /// <summary>Live bombs left, defused ones excluded.</summary>
+    public int LiveBombCount => liveBombLookup.Count;
+
+    /// <summary>Every bomb the level placed, defused ones included.</summary>
+    public IEnumerable<BombRuntime> AllBombs => bombs.Values;
+
+    /// <summary>
+    /// True when this cell hides a bomb that has not been defused. Deliberately
+    /// does NOT consider whether the bomb is revealed - the board knows where the
+    /// bombs are, the player is the one who has to remember.
+    /// </summary>
+    public bool HasLiveBombAt(int column, int row)
+    {
+        return liveBombLookup.Contains(new Vector2Int(column, row));
+    }
+
+    public bool TryGetBomb(int column, int row, out BombRuntime bomb)
+    {
+        return bombs.TryGetValue(new Vector2Int(column, row), out bomb);
+    }
+
+    /// <summary>
+    /// Whether a cell is a legal home for a bomb.
+    ///
+    /// Bombs go only on plain playable cells that are empty at level start. A
+    /// blocker or hole has no Node at all - GetDropTargetNode returns grid[c,r] -
+    /// so a bomb there could never be dropped on, never be defused, and never be
+    /// resolved; and a cell holding a starting box would hide the bomb under
+    /// something the player cannot move.
+    /// </summary>
+    public bool CanHostBomb(int column, int row)
+    {
+        return IsInside(column, row) &&
+               grid != null && grid[column, row] != null &&
+               allBoxes != null && allBoxes[column, row] == null &&
+               !grid[column, row].isOccupied &&
+               !bombs.ContainsKey(new Vector2Int(column, row));
+    }
+
+    /// <summary>
+    /// Installs a layout, replacing anything already there. Called once per
+    /// attempt by BombDirector after Board.Start has built the grid.
+    /// </summary>
+    public void InstallBombLayout(IReadOnlyList<Vector2Int> coordinates)
+    {
+        ClearBombs();
+
+        if (coordinates == null)
+        {
+            return;
+        }
+
+        foreach (Vector2Int coordinate in coordinates)
+        {
+            if (!CanHostBomb(coordinate.x, coordinate.y))
+            {
+                Debug.LogWarning($"Bomb at {coordinate} skipped: not a legal bomb cell.", this);
+                continue;
+            }
+
+            Vector3 localPosition = GetCellLocalPosition(coordinate.x, coordinate.y);
+            localPosition.y += removedCellVisualYOffset;
+
+            BombRuntime bomb = new BombRuntime
+            {
+                Coordinate = coordinate,
+                Visual = BombCellVisuals.CreateMarker(transform, localPosition, cellSpacing)
+            };
+
+            bombs[coordinate] = bomb;
+            liveBombLookup.Add(coordinate);
+        }
+
+        BombStateChanged?.Invoke();
+    }
+
+    /// <summary>Destroys every bomb and its marker. Used when a layout is replaced.</summary>
+    public void ClearBombs()
+    {
+        foreach (BombRuntime bomb in bombs.Values)
+        {
+            if (bomb.Visual != null)
+            {
+                Destroy(bomb.Visual);
+            }
+        }
+
+        bombs.Clear();
+        liveBombLookup.Clear();
+    }
+
+    /// <summary>
+    /// Neutralises the bomb on a cell. This is the Defuser's commit path.
+    ///
+    /// Deliberately does not route through UpdateBoxPosition: that registers the
+    /// mover in allBoxes, assigns it a StableId, raises PlacementAccepted with a
+    /// hard Box payload and starts the resolver. A defuse is none of those things.
+    /// RegisterInitialBox is the existing precedent for a board change that
+    /// bypasses resolution.
+    /// </summary>
+    public bool TryDefuse(int column, int row)
+    {
+        Vector2Int coordinate = new Vector2Int(column, row);
+        if (!bombs.TryGetValue(coordinate, out BombRuntime bomb) || bomb.IsDefused)
+        {
+            return false;
+        }
+
+        bomb.IsDefused = true;
+        bomb.IsArmed = false;
+        bomb.IsRevealed = true;
+        bomb.MovesUntilDetonation = 0;
+        liveBombLookup.Remove(coordinate);
+
+        BombCellVisuals.SetVisible(bomb, true);
+        StartCoroutine(DefuseRoutine(bomb));
+
+        BombStateChanged?.Invoke();
+        return true;
+    }
+
+    /// <summary>
+    /// The defuse animation plus its energy pulse: any live bomb orthogonally
+    /// adjacent to the one just defused is briefly shown. That reward is what
+    /// makes spending a Defuser on a known bomb worth more than the bomb itself.
+    /// </summary>
+    private IEnumerator DefuseRoutine(BombRuntime bomb)
+    {
+        yield return BombCellVisuals.DefuseRoutine(bomb);
+
+        Vector3 localPosition = GetCellLocalPosition(bomb.Coordinate.x, bomb.Coordinate.y);
+        localPosition.y += removedCellVisualYOffset;
+        StartCoroutine(BombCellVisuals.ShockwaveRoutine(
+            transform, localPosition, Mathf.Abs(cellSpacing.x),
+            new Color(0.30f, 0.95f, 0.50f, 0.65f)));
+
+        List<BombRuntime> neighbours = new List<BombRuntime>();
+        foreach (Vector2Int offset in DirectOffsets)
+        {
+            Vector2Int probe = bomb.Coordinate + offset;
+            if (bombs.TryGetValue(probe, out BombRuntime neighbour) && neighbour.IsLive)
+            {
+                neighbours.Add(neighbour);
+            }
+        }
+
+        if (neighbours.Count == 0)
+        {
+            BombCellVisuals.SetVisible(bomb, false);
+            yield break;
+        }
+
+        foreach (BombRuntime neighbour in neighbours)
+        {
+            BombCellVisuals.SetVisible(neighbour, true);
+            StartCoroutine(BombCellVisuals.PulseRoutine(neighbour, 0.9f));
+        }
+
+        yield return new WaitForSeconds(0.9f);
+
+        foreach (BombRuntime neighbour in neighbours)
+        {
+            // An armed bomb stays on screen: its fuse is the player's problem now
+            // and hiding it again would be hiding a timer they cannot see.
+            if (!neighbour.IsArmed)
+            {
+                BombCellVisuals.SetVisible(neighbour, false);
+            }
+        }
+
+        BombCellVisuals.SetVisible(bomb, false);
+    }
+
+    /// <summary>
+    /// Runs the bomb consequences of one accepted placement.
+    ///
+    /// Order matters and is deliberate: fuses that were already burning tick
+    /// FIRST, so a bomb armed by this very placement gets its full fuse rather
+    /// than losing a move to its own arrival. Called synchronously from
+    /// UpdateBoxPosition, before ResolvePlacement starts, so a blast can never
+    /// destroy a box the resolver is mid-way through moving sodas into.
+    /// </summary>
+    private void HandleBombsAfterPlacement(int column, int row)
+    {
+        if (bombs.Count == 0)
+        {
+            return;
+        }
+
+        TickArmedFuses();
+
+        Vector2Int coordinate = new Vector2Int(column, row);
+        if (!bombs.TryGetValue(coordinate, out BombRuntime bomb) || !bomb.IsLive || bomb.IsArmed)
+        {
+            return;
+        }
+
+        bomb.IsRevealed = true;
+        BombCellVisuals.SetVisible(bomb, true);
+
+        if (bombSettings.detonationMode == BombDetonationMode.Immediate)
+        {
+            Detonate(bomb, fatal: true);
+            return;
+        }
+
+        bomb.IsArmed = true;
+        bomb.MovesUntilDetonation = bombSettings.SafeFuseMoves;
+        BombCellVisuals.ApplyState(bomb);
+        StartCoroutine(BombCellVisuals.PulseRoutine(bomb, 1.2f));
+        BombStateChanged?.Invoke();
+    }
+
+    private void TickArmedFuses()
+    {
+        List<BombRuntime> expired = null;
+
+        foreach (BombRuntime bomb in bombs.Values)
+        {
+            if (!bomb.IsArmed || !bomb.IsLive)
+            {
+                continue;
+            }
+
+            bomb.MovesUntilDetonation--;
+            if (bomb.MovesUntilDetonation <= 0)
+            {
+                (expired ??= new List<BombRuntime>()).Add(bomb);
+            }
+        }
+
+        if (expired == null)
+        {
+            return;
+        }
+
+        foreach (BombRuntime bomb in expired)
+        {
+            Detonate(bomb, fatal: false);
+        }
+    }
+
+    /// <summary>
+    /// Sets a bomb off.
+    ///
+    /// A fatal detonation ends the level. A non-fatal one clears the bomb's cell
+    /// and its four orthogonal neighbours, which costs the player the material
+    /// standing there but leaves the level playable - that asymmetry is the whole
+    /// difference between the two modes.
+    /// </summary>
+    private void Detonate(BombRuntime bomb, bool fatal)
+    {
+        bomb.IsArmed = false;
+        bomb.IsDefused = true;          // spent: it is no longer a threat either way
+        bomb.MovesUntilDetonation = 0;
+        liveBombLookup.Remove(bomb.Coordinate);
+
+        Vector3 worldPosition = transform.TransformPoint(GetCellLocalPosition(
+            bomb.Coordinate.x, bomb.Coordinate.y));
+        BombCellVisuals.PlayExplosion(worldPosition, Mathf.Abs(cellSpacing.x));
+
+        Vector3 localPosition = GetCellLocalPosition(bomb.Coordinate.x, bomb.Coordinate.y);
+        localPosition.y += removedCellVisualYOffset;
+        StartCoroutine(BombCellVisuals.ShockwaveRoutine(
+            transform, localPosition, Mathf.Abs(cellSpacing.x),
+            new Color(1f, 0.55f, 0.15f, 0.75f), 0.5f, 3f));
+
+        CameraShaker.Shake(fatal ? 1f : 0.55f);
+
+        if (bomb.Visual != null)
+        {
+            Destroy(bomb.Visual);
+            bomb.Visual = null;
+        }
+
+        if (fatal)
+        {
+            BombStateChanged?.Invoke();
+            GameManager.instance?.LoseLevel();
+            return;
+        }
+
+        DestroyBlastArea(bomb.Coordinate);
+        CleanupBoardList();
+        BombStateChanged?.Invoke();
+    }
+
+    private void DestroyBlastArea(Vector2Int centre)
+    {
+        DestroyBoxAt(centre);
+        foreach (Vector2Int offset in DirectOffsets)
+        {
+            DestroyBoxAt(centre + offset);
+        }
+    }
+
+    private void DestroyBoxAt(Vector2Int coordinate)
+    {
+        if (!IsInside(coordinate.x, coordinate.y) || allBoxes == null)
+        {
+            return;
+        }
+
+        Box box = allBoxes[coordinate.x, coordinate.y];
+        if (box == null || box.IsRetired)
+        {
+            return;
+        }
+
+        // NotifyBoxRemoved is the existing single-box removal path: it clears the
+        // grid slot AND node.isOccupied, which a bare Destroy would not, leaving a
+        // cell that looks free and refuses every drop.
+        NotifyBoxRemoved(box, true);
     }
 
     /// <summary>

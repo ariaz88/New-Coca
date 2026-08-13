@@ -299,10 +299,57 @@ public static class LevelSceneGenerator
             element.FindPropertyRelative("requiredCount").intValue = Mathf.Max(1, order.requiredCount);
         }
 
+        ApplyBombSettings(serialized, definition);
         ApplyBlockerStyle(serialized);
 
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(board);
+    }
+
+    /// <summary>
+    /// Bakes the level's bomb rules and its verified layout pool into the Board.
+    ///
+    /// The pool is copied wholesale rather than referenced, because nothing reads
+    /// a LevelDefinition at runtime - the scene has to carry everything the level
+    /// needs on its own.
+    /// </summary>
+    private static void ApplyBombSettings(SerializedObject serialized, LevelDefinition definition)
+    {
+        BombLevelSettings bombs = definition.Bombs;
+        SerializedProperty settings = serialized.FindProperty("bombSettings");
+
+        settings.FindPropertyRelative("enabled").boolValue = bombs.enabled;
+        settings.FindPropertyRelative("bombCount").intValue = Mathf.Max(0, bombs.bombCount);
+        settings.FindPropertyRelative("defuserCount").intValue = Mathf.Max(0, bombs.defuserCount);
+        settings.FindPropertyRelative("previewSeconds").floatValue = Mathf.Max(0f, bombs.previewSeconds);
+        settings.FindPropertyRelative("scannerCharges").intValue = Mathf.Max(0, bombs.scannerCharges);
+        settings.FindPropertyRelative("detonationMode").enumValueIndex = (int)bombs.detonationMode;
+        settings.FindPropertyRelative("fuseMoves").intValue = Mathf.Max(1, bombs.fuseMoves);
+        settings.FindPropertyRelative("wrongDefuserIsConsumed").boolValue = bombs.wrongDefuserIsConsumed;
+
+        SerializedProperty pool = serialized.FindProperty("bombLayoutPool");
+        pool.ClearArray();
+
+        IReadOnlyList<BombLayout> layouts = definition.BombLayoutPool;
+        for (int index = 0; index < layouts.Count; index++)
+        {
+            BombLayout layout = layouts[index];
+            if (layout == null)
+            {
+                continue;
+            }
+
+            pool.InsertArrayElementAtIndex(index);
+            SerializedProperty element = pool.GetArrayElementAtIndex(index);
+            SerializedProperty cells = element.FindPropertyRelative("cells");
+            cells.ClearArray();
+
+            for (int cellIndex = 0; cellIndex < layout.Cells.Count; cellIndex++)
+            {
+                cells.InsertArrayElementAtIndex(cellIndex);
+                cells.GetArrayElementAtIndex(cellIndex).vector2IntValue = layout.Cells[cellIndex];
+            }
+        }
     }
 
     /// <summary>
