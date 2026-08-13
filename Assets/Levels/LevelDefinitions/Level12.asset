@@ -48,24 +48,29 @@ MonoBehaviour:
   - kind: 1
     color: 0
     requiredCount: 2
-  palette: 0000000003000000040000000100000002000000
+  palette: 000000000300000004000000010000000200000005000000
   railQueue:
   - sodas:
     - color: 0
-      count: 2
-    - color: 3
+      count: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 3
-      count: 1
+      count: 2
     - color: 0
       count: 1
+  - sodas:
+    - color: 0
+      count: 2
   - sodas:
     - color: 3
       count: 3
   - sodas:
     - color: 0
-      count: 2
+      count: 1
+    - color: 2
+      count: 1
   - sodas:
     - color: 0
       count: 2
@@ -79,80 +84,90 @@ MonoBehaviour:
   - sodas:
     - color: 3
       count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 3
-      count: 1
     - color: 4
       count: 1
   - sodas:
     - color: 0
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 3
       count: 1
     - color: 1
       count: 1
   - sodas:
     - color: 3
       count: 2
+    - color: 1
+      count: 1
   - sodas:
     - color: 0
       count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 3
+      count: 1
     - color: 2
       count: 1
   - sodas:
-    - color: 3
-      count: 3
-  - sodas:
     - color: 0
       count: 1
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
-    - color: 0
+    - color: 3
       count: 2
   - sodas:
     - color: 0
-      count: 1
-    - color: 1
+      count: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 3
-      count: 3
-  - sodas:
+      count: 1
     - color: 0
-      count: 3
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 1
       count: 1
   - sodas:
-    - color: 0
-      count: 2
+    - color: 5
+      count: 1
     - color: 4
       count: 1
   - sodas:
     - color: 3
-      count: 2
-  - sodas:
-    - color: 0
       count: 1
   - sodas:
     - color: 2
-      count: 2
+      count: 1
   - sodas:
-    - color: 4
-      count: 2
+    - color: 5
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
@@ -160,7 +175,7 @@ MonoBehaviour:
   expectedSeconds: 300
   mainChallenge: Holes and blockers together, on an asymmetric board.
   designerNotes: 
-  bakedChecksum: 942b854d-11f
+  bakedChecksum: 77b9243d-13c
   lastVerification:
     checksum: 942b854d-11f
     solved: 1

@@ -42,6 +42,13 @@ not by inspection.
   alongside drink orders, on levels 11+ (not 13, which is the frozen tutorial).
 - **All boards are 4x5.** Anything wider fell outside the camera. Do not widen
   a board without checking the camera framing first.
+- **Holes are drawn.** `#` cells now get a `Hole Cover` — see below. Before this
+  they were invisible and read as free cells.
+- **Difficulty ramp pass** — all six drinks on the rail from L11; ordered-colour
+  arrival bias fell from a flat 2.0 to 1.30→1.05 across L10–25; mixed rail boxes
+  55%→90% and three-colour boxes 40%→75% from L18/L20; L14–16 gained a second
+  drink order, so every level from 14 up is a three-slot card. Counts stay at 3
+  packed boxes per drink.
 
 ### Next, in order
 
@@ -64,6 +71,21 @@ re-author + re-bake. `Tools > Coca Sorting > Levels > Level Designer`.
 **Board shapes are text pictures** in `CampaignAuthoring`, top row first:
 `.` playable, `#` hole, `X` blocker, `F` frozen. Soda letters:
 `R B O K G P` — **K is pink**, because P is purple.
+
+**The blue cell tiles are painted into the `Platform` mesh**, not spawned per
+cell — `Node.prefab`'s own MeshRenderer is *disabled*, and in edit mode the whole
+scene holds five renderers. So the platform always draws a full 4x5 grid whatever
+shape the level has, and a `#` hole used to show a tile identical to a free cell
+while silently refusing every drop. `Board.GenerateHoleVisual` +
+`BlockedCellVisuals.CreateHoleCover` now cover them. Its colours are **constants,
+not serialized fields**, so it reached all 25 baked scenes without a re-bake.
+
+**A palette colour with no order gets no rail supply** unless it also starts on
+the board or is listed in `Distractors`. `ResolveDistractors` now promotes such
+colours automatically; before that, level 25 named green in its palette and
+shipped a five-colour rail. Adding green back made the finale unsolvable at four
+blocks, so **L25 is three blocks now** — twelve playable cells will not carry
+eight packs.
 
 **The transfer rule:** a soda may only move into a box that *already contains
 that colour* and has a free slot; neither box may be packed. Boxes are colour

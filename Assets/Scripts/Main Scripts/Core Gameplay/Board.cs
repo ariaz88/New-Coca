@@ -1385,8 +1385,8 @@ public class Board : MonoBehaviour
                 BoardCellKind kind = GetRuntimeCellKind(column, row);
 
                 // A Removed cell is a hole in the board, not an obstacle sitting on
-                // it, so it gets no Node and no visual at all. Only the breakable
-                // kinds put a physical box in the cell.
+                // it, so it gets no Node and nothing that can be damaged. Only the
+                // breakable kinds put a physical box in the cell.
                 if (BoardCellRules.HasVisual(kind))
                 {
                     GenerateBlockerVisual(column, row, kind);
@@ -1395,6 +1395,11 @@ public class Board : MonoBehaviour
 
                 if (BoardCellRules.BlocksPlacement(kind))
                 {
+                    // It still needs a cover. The cell tiles are painted into the
+                    // Platform art as a fixed 4x5 grid, so a hole left undrawn shows
+                    // a tile identical to a free cell and every drop on it fails
+                    // silently.
+                    GenerateHoleVisual(column, row);
                     continue;
                 }
 
@@ -1566,6 +1571,28 @@ public class Board : MonoBehaviour
         box.transform.position = GetPlacementWorldPosition(column, row);
         box.MarkPlaced(column, row, nextStableId++, ++placementSequence);
         boardBoxes.Add(box);
+    }
+
+    /// <summary>
+    /// Draws the cover for a permanent hole.
+    ///
+    /// Lifted by the same offset the blocker boxes use, which is what clears the
+    /// platform surface the cell tiles are painted on. Anything lower is hidden
+    /// by the platform itself.
+    /// </summary>
+    private void GenerateHoleVisual(int column, int row)
+    {
+        // Scene editing uses Gizmos only, matching GenerateBlockerVisual.
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        Vector3 localPosition = GetCellLocalPosition(column, row);
+        localPosition.y += removedCellVisualYOffset;
+
+        GameObject visual = BlockedCellVisuals.CreateHoleCover(transform, localPosition, cellSpacing);
+        visual.name = $"Hole Cell ({column}, {row})";
     }
 
     private void GenerateBlockerVisual(int column, int row, BoardCellKind kind)

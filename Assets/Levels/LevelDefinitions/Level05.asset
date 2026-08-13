@@ -40,11 +40,6 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 0
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
       count: 2
     - color: 4
       count: 1
@@ -55,13 +50,8 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 0
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
       count: 2
-    - color: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 4
@@ -70,17 +60,8 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 0
-      count: 2
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
+      count: 1
     - color: 1
-      count: 3
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 4
       count: 1
   - sodas:
     - color: 0
@@ -91,22 +72,44 @@ MonoBehaviour:
     - color: 0
       count: 3
   - sodas:
-    - color: 1
-      count: 3
-  - sodas:
     - color: 4
-      count: 3
-  - sodas:
-    - color: 0
       count: 3
   - sodas:
     - color: 1
       count: 2
   - sodas:
+    - color: 0
+      count: 2
     - color: 4
-      count: 3
+      count: 1
   - sodas:
     - color: 1
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -115,7 +118,7 @@ MonoBehaviour:
   expectedSeconds: 210
   mainChallenge: 'First mastery test: three orders competing for the same board space.'
   designerNotes: 
-  bakedChecksum: ffdef3af-bb
+  bakedChecksum: 2704702c-c0
   lastVerification:
     checksum: ffdef3af-bb
     solved: 1

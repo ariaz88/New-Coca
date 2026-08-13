@@ -3448,83 +3448,69 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
       count: 2
-  - sodas:
     - color: 4
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 3
       count: 1
   - sodas:
     - color: 4
       count: 2
+    - color: 3
+      count: 1
   - sodas:
     - color: 1
       count: 3
   - sodas:
     - color: 4
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
       count: 1
     - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 1
       count: 1
   - sodas:
     - color: 4
       count: 3
   - sodas:
     - color: 1
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 4
       count: 2
   - sodas:
     - color: 1
-      count: 1
-  - sodas:
-    - color: 2
       count: 1
     - color: 3
       count: 1
   - sodas:
     - color: 4
-      count: 1
+      count: 2
   - sodas:
     - color: 2
-      count: 1
+      count: 2
   - sodas:
-    - color: 3
+    - color: 1
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 64606

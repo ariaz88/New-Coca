@@ -50,34 +50,15 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 0
-      count: 1
+      count: 2
     - color: 5
       count: 1
-  - sodas:
-    - color: 0
-      count: 2
   - sodas:
     - color: 5
       count: 3
   - sodas:
     - color: 0
       count: 2
-  - sodas:
-    - color: 5
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 5
-      count: 3
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 4
-      count: 1
   - sodas:
     - color: 0
       count: 3
@@ -86,6 +67,12 @@ MonoBehaviour:
       count: 1
     - color: 4
       count: 1
+  - sodas:
+    - color: 5
+      count: 3
+  - sodas:
+    - color: 0
+      count: 2
   - sodas:
     - color: 5
       count: 2
@@ -93,7 +80,7 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 0
-      count: 3
+      count: 2
   - sodas:
     - color: 5
       count: 2
@@ -102,6 +89,24 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
     - color: 5
       count: 1
   - sodas:
@@ -114,7 +119,7 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 3
-      count: 2
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 2
@@ -123,7 +128,7 @@ MonoBehaviour:
   mainChallenge: 'Work outward from the centre: the corners only open once the ring
     falls.'
   designerNotes: 
-  bakedChecksum: 4cb5c007-d9
+  bakedChecksum: f043b446-e2
   lastVerification:
     checksum: 4cb5c007-d9
     solved: 1

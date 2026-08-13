@@ -404,14 +404,18 @@ public static class CampaignAuthoring
                 "...."
             },
             Starts = new[] { new Start(0, 4, "BB"), new Start(3, 0, "OO") },
-            Orders = new[] { new Order(B, 3) },
+
+            // Two drink colours from here on. A card of one drink plus one block
+            // order let the player treat the whole board as a single pipeline;
+            // a second colour means the two goals compete for the same cells.
+            Orders = new[] { new Order(B, 3), new Order(O, 3) },
             BlocksOrder = 2,
             Palette = new[] { B, O },
             SlackSets = 1,
             Difficulty = LevelDifficulty.Medium,
-            Rating = 5,
-            Seconds = 240f,
-            Challenge = "Four frozen blockers. Plan to complete twice beside each one.",
+            Rating = 6,
+            Seconds = 300f,
+            Challenge = "Four frozen blockers, and two drinks competing for the space between them.",
         });
 
         levels.Add(new LevelSpec
@@ -426,14 +430,14 @@ public static class CampaignAuthoring
                 "...."
             },
             Starts = new[] { new Start(0, 3, "PP"), new Start(3, 1, "KK") },
-            Orders = new[] { new Order(P, 3) },
+            Orders = new[] { new Order(P, 3), new Order(K, 3) },
             BlocksOrder = 2,
             Palette = new[] { P, K },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
-            Difficulty = LevelDifficulty.Medium,
-            Rating = 5,
-            Seconds = 270f,
+            Difficulty = LevelDifficulty.Hard,
+            Rating = 6,
+            Seconds = 330f,
             Challenge = "Both blocker types side by side: one cheap to open, one expensive.",
         });
 
@@ -449,14 +453,14 @@ public static class CampaignAuthoring
                 "F..F"
             },
             Starts = new[] { new Start(1, 2, "RR"), new Start(2, 2, "GG") },
-            Orders = new[] { new Order(R, 3) },
+            Orders = new[] { new Order(R, 3), new Order(G, 3) },
             BlocksOrder = 2,
             Palette = new[] { R, G },
             SlackSets = 1,
             MaxColorsPerRailBox = 2,
             Difficulty = LevelDifficulty.Hard,
-            Rating = 6,
-            Seconds = 300f,
+            Rating = 7,
+            Seconds = 360f,
             Challenge = "The cheap blockers are inside, the expensive ones out at the corners.",
         });
 
@@ -683,7 +687,13 @@ public static class CampaignAuthoring
             // to manoeuvre at all - the difficulty came from having nowhere to put
             // anything, which is not the same as being hard.
             Orders = new[] { new Order(P, 3), new Order(O, 3) },
-            BlocksOrder = 4,
+
+            // Three blocks, not four. The finale has only twelve playable cells and
+            // now carries all six drinks; with four blocks on top of two drink
+            // orders the solver stalled one goal short however much slack it was
+            // given, and a level that needs eight packs on twelve cells is not
+            // hard so much as airless.
+            BlocksOrder = 3,
             Palette = new[] { P, O, K, G },
             SlackSets = 1,
             MaxColorsPerRailBox = 3,
@@ -806,7 +816,7 @@ public static class CampaignAuthoring
 
         Dictionary<Soda.SodaColor, int> railNeeds = ComputeRailNeeds(spec, boxes, distractors);
         List<TutorialBoxRecipe> queue = BuildRailQueue(
-            railNeeds, maxColorsPerBox, 7717 + spec.Number * 131, OrderColors(spec));
+            railNeeds, maxColorsPerBox, 7717 + spec.Number * 131, OrderColors(spec), spec.Number);
 
         List<Soda.SodaColor> palette = new List<Soda.SodaColor>(spec.Palette);
         foreach (Soda.SodaColor distractor in distractors)
@@ -829,14 +839,15 @@ public static class CampaignAuthoring
     /// Levels 1-5 stay on their order colours alone: while the player is still
     /// learning that a box packs when it holds four of one drink, a rail full of
     /// colours that cannot pay off just reads as noise. From level 6 the rail
-    /// widens to four colours, then five, then all six, so the same board size
-    /// keeps getting harder to keep tidy.
+    /// widens, and from level 11 it carries ALL SIX drinks - past that point the
+    /// difficulty is meant to come from sorting pressure, not from board shape,
+    /// and a rail missing two colours is a much tidier board than a full one.
     /// </summary>
     private static int GetTargetRailColors(int levelNumber)
     {
         if (levelNumber <= 5) return 0;      // orders only
-        if (levelNumber <= 10) return 4;
-        if (levelNumber <= 17) return 5;
+        if (levelNumber <= 9) return 4;
+        if (levelNumber == 10) return 5;
         return 6;
     }
 
@@ -852,6 +863,59 @@ public static class CampaignAuthoring
         if (levelNumber <= 2) return 1;
         if (levelNumber <= 13) return 2;
         return 3;
+    }
+
+    /// <summary>
+    /// How strongly the queue front-loads the colours an order actually wants.
+    ///
+    /// This is an ARRIVAL ORDER bias, not a quantity: the totals are fixed by
+    /// ComputeRailNeeds, and this only decides how early each colour shows up.
+    /// It used to be a flat 2.0, which meant ordered drinks arrived roughly twice
+    /// as often as everything else all the way to level 25 - the distractors were
+    /// pushed into a tail the player had already made room for, so a full rail
+    /// never actually felt full. The bias now starts modest and tightens toward
+    /// even odds, so by the finale the useful drinks are barely more common than
+    /// the useless ones.
+    /// </summary>
+    private static float GetOrderColorBias(int levelNumber)
+    {
+        if (levelNumber <= 9) return 1.6f;
+
+        // 1.30 at level 10 down to 1.05 at level 25.
+        float t = Mathf.InverseLerp(10f, 25f, levelNumber);
+        return Mathf.Lerp(1.30f, 1.05f, t);
+    }
+
+    /// <summary>
+    /// Percent chance that a rail box carries more than one colour.
+    ///
+    /// A single-colour box is the easy case: it can only ever help, because every
+    /// drink in it wants the same destination. Once the player is fluent, most
+    /// boxes should be mixed, so placing one always costs something somewhere.
+    /// </summary>
+    private static int GetMixedBoxChance(int levelNumber)
+    {
+        if (levelNumber <= 17) return 55;
+        if (levelNumber <= 19) return 78;
+        return 90;
+    }
+
+    /// <summary>
+    /// Percent chance that an already-mixed three-slot box takes a THIRD colour,
+    /// and how often a box is three slots wide rather than two. Both are needed:
+    /// a three-colour box is only possible in a three-slot box, so raising the
+    /// colour chance alone leaves the level barely changed.
+    /// </summary>
+    private static int GetThirdColorChance(int levelNumber)
+    {
+        if (levelNumber <= 19) return 40;
+        return 75;
+    }
+
+    private static int GetWideBoxChance(int levelNumber)
+    {
+        if (levelNumber <= 19) return 50;    // the historic uniform 2-or-3 split
+        return 75;
     }
 
     private static List<Soda.SodaColor> OrderColors(LevelSpec spec)
@@ -877,6 +941,21 @@ public static class CampaignAuthoring
     private static List<Soda.SodaColor> ResolveDistractors(LevelSpec spec)
     {
         List<Soda.SodaColor> distractors = new List<Soda.SodaColor>(spec.Distractors);
+
+        // A palette colour with no order of its own is a distractor whether or not
+        // the spec calls it one, and it needs the same whole-box supply. Without
+        // this it was listed in the level's palette, counted toward the colour
+        // target, and then never appeared on the rail at all: ComputeRailNeeds only
+        // supplies ordered colours, explicit distractors, and colours already on
+        // the board. Level 25 named green in its palette and shipped five colours.
+        List<Soda.SodaColor> ordered = OrderColors(spec);
+        foreach (Soda.SodaColor color in spec.Palette)
+        {
+            if (!ordered.Contains(color) && !distractors.Contains(color))
+            {
+                distractors.Add(color);
+            }
+        }
 
         int target = GetTargetRailColors(spec.Number);
         if (target <= 0)
@@ -1010,9 +1089,14 @@ public static class CampaignAuthoring
         Dictionary<Soda.SodaColor, int> needs,
         int maxColorsPerBox,
         int seed,
-        List<Soda.SodaColor> orderColors)
+        List<Soda.SodaColor> orderColors,
+        int levelNumber)
     {
         System.Random random = new System.Random(seed);
+        float orderBias = GetOrderColorBias(levelNumber);
+        int mixedChance = GetMixedBoxChance(levelNumber);
+        int thirdColorChance = GetThirdColorChance(levelNumber);
+        int wideBoxChance = GetWideBoxChance(levelNumber);
         List<TutorialBoxRecipe> queue = new List<TutorialBoxRecipe>();
 
         Dictionary<Soda.SodaColor, int> remaining = new Dictionary<Soda.SodaColor, int>(needs);
@@ -1022,9 +1106,9 @@ public static class CampaignAuthoring
         while (true)
         {
             // Drain the largest pool first so no colour is stranded in a tail of
-            // single-soda boxes, but weight ordered colours up so they arrive
-            // roughly twice as often as the distractors rather than being
-            // back-loaded behind them.
+            // single-soda boxes, but weight ordered colours up so they are not
+            // back-loaded behind the distractors. How far up is level-dependent -
+            // see GetOrderColorBias.
             Soda.SodaColor primary = default;
             int best = 0;
             float bestScore = 0f;
@@ -1035,7 +1119,7 @@ public static class CampaignAuthoring
                     continue;
                 }
 
-                float score = count * (orderColors != null && orderColors.Contains(color) ? 2f : 1f);
+                float score = count * (orderColors != null && orderColors.Contains(color) ? orderBias : 1f);
                 if (score > bestScore)
                 {
                     bestScore = score;
@@ -1049,10 +1133,14 @@ public static class CampaignAuthoring
                 break;
             }
 
-            int boxSize = Mathf.Min(best, random.Next(2, BoxCapacity));   // 2 or 3
+            // 2 or 3, weighted toward 3 on the late levels: a third colour can
+            // only fit in a three-slot box, so the wide-box roll has to move with
+            // the third-colour roll or the late rail stays two-colour in practice.
+            int preferredSize = random.Next(0, 100) < wideBoxChance ? 3 : 2;
+            int boxSize = Mathf.Min(best, preferredSize);
             List<(Soda.SodaColor, int)> amounts = new List<(Soda.SodaColor, int)>();
 
-            if (maxColorsPerBox > 1 && boxSize >= 2 && random.Next(0, 100) < 55)
+            if (maxColorsPerBox > 1 && boxSize >= 2 && random.Next(0, 100) < mixedChance)
             {
                 // Mixed box: split between the primary colour and another that
                 // still owes sodas.
@@ -1070,7 +1158,8 @@ public static class CampaignAuthoring
                     Soda.SodaColor secondary = others[random.Next(0, others.Count)];
                     int secondaryCount = 1;
 
-                    if (maxColorsPerBox > 2 && boxSize == 3 && others.Count > 1 && random.Next(0, 100) < 40)
+                    if (maxColorsPerBox > 2 && boxSize == 3 && others.Count > 1 &&
+                        random.Next(0, 100) < thirdColorChance)
                     {
                         Soda.SodaColor tertiary = others[random.Next(0, others.Count)];
                         if (tertiary != secondary)

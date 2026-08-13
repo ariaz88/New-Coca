@@ -3460,101 +3460,107 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 1
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 1
       count: 1
     - color: 4
       count: 1
   - sodas:
     - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 4
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 1
       count: 1
     - color: 2
       count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
     - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 3
       count: 1
   - sodas:
     - color: 1
       count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
     - color: 5
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 3
       count: 1
   - sodas:
     - color: 3
@@ -3563,13 +3569,36 @@ MonoBehaviour:
     - color: 1
       count: 2
   - sodas:
-    - color: 2
+    - color: 1
       count: 1
     - color: 3
       count: 1
   - sodas:
-    - color: 2
+    - color: 1
       count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 159634
   allowedColors: 030000000100000002000000040000000500000000000000

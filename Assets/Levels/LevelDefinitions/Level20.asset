@@ -55,43 +55,41 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 2
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 0
+    - color: 2
       count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 4
-      count: 3
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 0
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
   - sodas:
     - color: 4
       count: 1
     - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 3
       count: 1
   - sodas:
     - color: 4
@@ -105,24 +103,14 @@ MonoBehaviour:
       count: 1
     - color: 3
       count: 1
-  - sodas:
-    - color: 0
+    - color: 2
       count: 1
-    - color: 3
+  - sodas:
+    - color: 4
       count: 1
     - color: 1
       count: 1
-  - sodas:
-    - color: 4
-      count: 2
     - color: 0
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 2
-      count: 1
-    - color: 3
       count: 1
   - sodas:
     - color: 4
@@ -130,25 +118,15 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 1
-    - color: 5
+    - color: 1
+      count: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 0
       count: 2
-  - sodas:
     - color: 4
-      count: 2
-    - color: 0
       count: 1
-  - sodas:
-    - color: 4
-      count: 3
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 4
-      count: 3
   - sodas:
     - color: 0
       count: 1
@@ -157,6 +135,39 @@ MonoBehaviour:
     - color: 1
       count: 1
   - sodas:
+    - color: 4
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
     - color: 0
       count: 1
     - color: 4
@@ -169,19 +180,15 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 2
-  - sodas:
     - color: 4
-      count: 1
-    - color: 2
       count: 1
   - sodas:
     - color: 4
       count: 1
-  - sodas:
-    - color: 1
+    - color: 0
       count: 1
   - sodas:
-    - color: 2
+    - color: 4
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -190,7 +197,7 @@ MonoBehaviour:
   expectedSeconds: 390
   mainChallenge: Three-colour rail boxes arrive for the first time on a tight board.
   designerNotes: 
-  bakedChecksum: 2bb5f7de-159
+  bakedChecksum: 77516871-16c
   lastVerification:
     checksum: 2bb5f7de-159
     solved: 1

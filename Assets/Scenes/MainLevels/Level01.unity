@@ -3446,12 +3446,15 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 1
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 1
       count: 3
   - sodas:
     - color: 4
-      count: 3
-  - sodas:
-    - color: 1
       count: 2
   - sodas:
     - color: 4
@@ -3460,17 +3463,20 @@ MonoBehaviour:
     - color: 1
       count: 2
   - sodas:
-    - color: 4
+    - color: 1
       count: 3
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
   - sodas:
     - color: 1
       count: 2
   - sodas:
-    - color: 1
-      count: 3
-  - sodas:
     - color: 4
-      count: 3
+      count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 17092
   allowedColors: 0400000001000000

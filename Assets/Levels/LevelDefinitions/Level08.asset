@@ -46,55 +46,44 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 2
-      count: 3
+      count: 2
   - sodas:
     - color: 3
+      count: 2
+    - color: 4
       count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
     - color: 4
       count: 1
   - sodas:
     - color: 3
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 2
       count: 3
   - sodas:
-    - color: 3
-      count: 1
     - color: 2
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 3
@@ -104,16 +93,15 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 3
-      count: 3
+      count: 2
+    - color: 2
+      count: 1
   - sodas:
     - color: 2
       count: 2
   - sodas:
-    - color: 2
-      count: 1
-  - sodas:
     - color: 3
-      count: 1
+      count: 2
   - sodas:
     - color: 4
       count: 2
@@ -125,7 +113,7 @@ MonoBehaviour:
   mainChallenge: 'Six blockers and a narrow working area: order of operations starts
     to matter.'
   designerNotes: 
-  bakedChecksum: 99a5683b-d7
+  bakedChecksum: 5bdc9982-c3
   lastVerification:
     checksum: 99a5683b-d7
     solved: 1

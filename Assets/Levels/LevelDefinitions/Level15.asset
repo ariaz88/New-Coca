@@ -35,14 +35,25 @@ MonoBehaviour:
   - kind: 0
     color: 5
     requiredCount: 3
+  - kind: 0
+    color: 3
+    requiredCount: 3
   - kind: 1
     color: 0
     requiredCount: 2
-  palette: 0500000003000000040000000000000001000000
+  palette: 050000000300000004000000000000000100000002000000
   railQueue:
   - sodas:
+    - color: 3
+      count: 2
+  - sodas:
     - color: 5
-      count: 3
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
   - sodas:
     - color: 5
       count: 1
@@ -50,78 +61,110 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 5
-      count: 3
-  - sodas:
-    - color: 5
-      count: 3
-  - sodas:
-    - color: 5
-      count: 2
-    - color: 1
       count: 1
-  - sodas:
-    - color: 5
-      count: 2
+    - color: 2
+      count: 1
     - color: 3
       count: 1
   - sodas:
     - color: 5
-      count: 3
+      count: 2
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
   - sodas:
     - color: 5
       count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
     - color: 0
       count: 1
   - sodas:
     - color: 5
+      count: 2
+    - color: 1
       count: 1
+  - sodas:
     - color: 3
+      count: 2
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 4
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 5
+      count: 3
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 5
       count: 2
-    - color: 3
+  - sodas:
+    - color: 0
       count: 1
-  - sodas:
-    - color: 5
-      count: 3
-  - sodas:
-    - color: 5
-      count: 3
-  - sodas:
     - color: 5
       count: 1
-    - color: 1
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 5
-      count: 3
   - sodas:
     - color: 4
-      count: 3
-  - sodas:
+      count: 1
     - color: 0
       count: 1
-    - color: 4
-      count: 1
   - sodas:
-    - color: 0
+    - color: 3
       count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
-  difficulty: 2
-  difficultyRating: 5
-  expectedSeconds: 270
+  difficulty: 3
+  difficultyRating: 6
+  expectedSeconds: 330
   mainChallenge: 'Both blocker types side by side: one cheap to open, one expensive.'
   designerNotes: 
-  bakedChecksum: 1866757f-d1
+  bakedChecksum: c0534015-11f
   lastVerification:
     checksum: 1866757f-d1
     solved: 1

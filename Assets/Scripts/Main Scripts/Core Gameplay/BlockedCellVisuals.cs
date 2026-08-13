@@ -21,6 +21,88 @@ public static class BlockedCellVisuals
     private const string CrackRootName = "Cracks";
 
     /// <summary>
+    /// Cut edge of a permanent hole. Slightly lighter than the pit so the two
+    /// plates read as a rim and a floor rather than as one flat black square.
+    /// </summary>
+    private static readonly Color HoleRimColor = new Color(0.30f, 0.31f, 0.38f, 1f);
+
+    /// <summary>Floor of a permanent hole.</summary>
+    private static readonly Color HolePitColor = new Color(0.13f, 0.13f, 0.17f, 1f);
+
+    /// <summary>
+    /// Covers a permanent hole so it stops reading as an empty playable cell.
+    ///
+    /// This exists because the light blue cell tiles are painted into the
+    /// Platform mesh, not spawned per cell - the Node prefab's own renderer is
+    /// disabled - so the platform draws a full 4x5 grid of tiles whatever shape
+    /// the level actually has. A Removed cell got no Node and no visual, which
+    /// left the player looking at a tile identical to a free cell that silently
+    /// refused every drop. The cover is what makes the board's real shape
+    /// visible.
+    ///
+    /// Built in code with fixed colours rather than from serialized Board fields,
+    /// because a new serialized field would keep its authored-day default in the
+    /// 25 already-baked scenes and show nothing until every one was re-baked.
+    /// </summary>
+    /// <param name="parent">Board transform; the cover is parented to it.</param>
+    /// <param name="localPosition">Cell centre in Board local space, already lifted clear of the platform.</param>
+    /// <param name="cellSize">Board cell spacing, used to size the plates.</param>
+    public static GameObject CreateHoleCover(Transform parent, Vector3 localPosition, Vector2 cellSize)
+    {
+        GameObject root = new GameObject("Hole Cover");
+        root.transform.SetParent(parent, false);
+        root.transform.localPosition = localPosition;
+        root.transform.localRotation = Quaternion.identity;
+
+        float width = Mathf.Abs(cellSize.x);
+        float depth = Mathf.Abs(cellSize.y);
+
+        // The rim is sized to the full cell so it covers the painted tile
+        // completely; anything smaller leaves a blue fringe that still reads as a
+        // placeable square.
+        CreatePlate(root.transform, Vector3.zero, width * 0.98f, depth * 0.98f, HoleRimColor);
+
+        // The pit sits a hair above the rim rather than below it: this is a flat
+        // board seen from almost directly overhead, so depth has to be faked with
+        // shading. Drawing it lower would just make it disappear behind the rim.
+        CreatePlate(
+            root.transform,
+            new Vector3(0f, 0.004f, 0f),
+            width * 0.80f,
+            depth * 0.80f,
+            HolePitColor);
+
+        return root;
+    }
+
+    private static void CreatePlate(Transform parent, Vector3 localOffset, float width, float depth, Color color)
+    {
+        GameObject plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        plate.name = "Plate";
+
+        // A hole must never intercept a drop raycast, and the cube primitive
+        // ships with a collider.
+        Collider collider = plate.GetComponent<Collider>();
+        if (collider != null)
+        {
+            Object.Destroy(collider);
+        }
+
+        plate.transform.SetParent(parent, false);
+        plate.transform.localPosition = localOffset;
+        plate.transform.localRotation = Quaternion.identity;
+        plate.transform.localScale = new Vector3(width, 0.008f, depth);
+
+        Renderer renderer = plate.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.sharedMaterial = CreateTapeMaterial(color);
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+    }
+
+    /// <summary>
     /// Lays two crossed tape strips over the top face of a blocked box.
     ///
     /// The strips are sized and placed from the box's own renderer bounds, so

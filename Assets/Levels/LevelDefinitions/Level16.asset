@@ -43,76 +43,31 @@ MonoBehaviour:
   - kind: 0
     color: 0
     requiredCount: 3
+  - kind: 0
+    color: 4
+    requiredCount: 3
   - kind: 1
     color: 0
     requiredCount: 2
-  palette: 0000000004000000050000000100000002000000
+  palette: 000000000400000005000000010000000200000003000000
   railQueue:
   - sodas:
     - color: 0
       count: 1
     - color: 5
       count: 1
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 0
+    - color: 4
       count: 1
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 4
+      count: 2
     - color: 5
       count: 1
   - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 5
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 0
+    - color: 4
       count: 2
   - sodas:
     - color: 0
@@ -121,22 +76,93 @@ MonoBehaviour:
     - color: 4
       count: 3
   - sodas:
-    - color: 2
+    - color: 0
       count: 2
+    - color: 5
+      count: 1
   - sodas:
+    - color: 0
+      count: 2
     - color: 1
       count: 1
   - sodas:
     - color: 4
+      count: 3
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 2
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
-  difficultyRating: 6
-  expectedSeconds: 300
+  difficultyRating: 7
+  expectedSeconds: 360
   mainChallenge: The cheap blockers are inside, the expensive ones out at the corners.
   designerNotes: 
-  bakedChecksum: 0c09dcb6-f4
+  bakedChecksum: c20e6cd8-123
   lastVerification:
     checksum: 0c09dcb6-f4
     solved: 1

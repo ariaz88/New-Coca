@@ -37,21 +37,18 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 1
-      count: 2
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 1
       count: 3
   - sodas:
     - color: 4
       count: 3
   - sodas:
     - color: 1
-      count: 3
+      count: 2
   - sodas:
     - color: 4
+      count: 2
+  - sodas:
+    - color: 1
       count: 2
   - sodas:
     - color: 4
@@ -60,11 +57,14 @@ MonoBehaviour:
     - color: 1
       count: 2
   - sodas:
+    - color: 4
+      count: 3
+  - sodas:
     - color: 1
-      count: 2
+      count: 3
   - sodas:
     - color: 4
-      count: 2
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 1
@@ -74,7 +74,7 @@ MonoBehaviour:
     to unpick.
   designerNotes: Redesigned. The shipped Level 2 was a byte-identical copy of Level
     1.
-  bakedChecksum: 4318fccb-6f
+  bakedChecksum: 366c0165-6f
   lastVerification:
     checksum: 4318fccb-6f
     solved: 1

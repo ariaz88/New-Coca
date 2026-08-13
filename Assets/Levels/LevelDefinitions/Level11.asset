@@ -42,16 +42,11 @@ MonoBehaviour:
   - kind: 1
     color: 0
     requiredCount: 2
-  palette: 0200000005000000000000000100000003000000
+  palette: 020000000500000000000000010000000300000004000000
   railQueue:
   - sodas:
     - color: 2
-      count: 2
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
+      count: 3
   - sodas:
     - color: 2
       count: 2
@@ -59,19 +54,27 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 2
-      count: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
     - color: 1
       count: 1
   - sodas:
     - color: 2
-      count: 1
+      count: 2
     - color: 5
       count: 1
   - sodas:
     - color: 2
-      count: 1
+      count: 2
     - color: 3
       count: 1
+  - sodas:
+    - color: 2
+      count: 2
   - sodas:
     - color: 2
       count: 3
@@ -80,52 +83,55 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 2
-      count: 3
+      count: 2
+    - color: 4
+      count: 1
   - sodas:
     - color: 2
       count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+  - sodas:
     - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 2
-      count: 2
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 3
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -134,7 +140,7 @@ MonoBehaviour:
   expectedSeconds: 270
   mainChallenge: First permanent holes. Unlike blockers, these corners never open.
   designerNotes: Teaches the hole/blocker distinction before both appear together.
-  bakedChecksum: ffdca9aa-ec
+  bakedChecksum: 62917024-f8
   lastVerification:
     checksum: ffdca9aa-ec
     solved: 1

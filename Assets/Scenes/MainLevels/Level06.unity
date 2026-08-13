@@ -3440,42 +3440,45 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 4
-      count: 3
+      count: 2
   - sodas:
     - color: 4
-      count: 1
+      count: 2
     - color: 0
       count: 1
   - sodas:
     - color: 4
-      count: 2
-  - sodas:
-    - color: 4
-      count: 2
+      count: 3
   - sodas:
     - color: 4
       count: 3
   - sodas:
     - color: 1
       count: 2
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
     - color: 0
       count: 1
   - sodas:
     - color: 2
       count: 2
-    - color: 0
-      count: 1
   - sodas:
     - color: 1
-      count: 2
-  - sodas:
-    - color: 2
       count: 2
   - sodas:
     - color: 4
       count: 1
   - sodas:
     - color: 0
+      count: 1
+  - sodas:
+    - color: 2
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 56687

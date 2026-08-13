@@ -42,83 +42,69 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
       count: 2
-  - sodas:
     - color: 4
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 3
       count: 1
   - sodas:
     - color: 4
       count: 2
+    - color: 3
+      count: 1
   - sodas:
     - color: 1
       count: 3
   - sodas:
     - color: 4
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
       count: 1
     - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 1
       count: 1
   - sodas:
     - color: 4
       count: 3
   - sodas:
     - color: 1
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 4
       count: 2
   - sodas:
     - color: 1
-      count: 1
-  - sodas:
-    - color: 2
       count: 1
     - color: 3
       count: 1
   - sodas:
     - color: 4
-      count: 1
+      count: 2
   - sodas:
     - color: 2
-      count: 1
+      count: 2
   - sodas:
-    - color: 3
+    - color: 1
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -127,7 +113,7 @@ MonoBehaviour:
   expectedSeconds: 180
   mainChallenge: Blockers split the board into lanes until they are broken open.
   designerNotes: 
-  bakedChecksum: 1ad6b9f1-d8
+  bakedChecksum: 3e4b700a-c0
   lastVerification:
     checksum: 1ad6b9f1-d8
     solved: 1

@@ -37,17 +37,7 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 2
-      count: 2
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 2
-      count: 1
+      count: 3
   - sodas:
     - color: 5
       count: 2
@@ -56,40 +46,43 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 2
-  - sodas:
     - color: 2
-      count: 2
+      count: 1
+  - sodas:
     - color: 5
       count: 1
-  - sodas:
     - color: 2
       count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
   - sodas:
     - color: 5
       count: 3
   - sodas:
     - color: 2
-      count: 2
+      count: 1
     - color: 5
       count: 1
   - sodas:
     - color: 2
       count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
   - sodas:
     - color: 5
       count: 2
+  - sodas:
     - color: 2
       count: 1
-  - sodas:
     - color: 5
       count: 1
+  - sodas:
     - color: 2
-      count: 1
+      count: 3
+  - sodas:
+    - color: 5
+      count: 2
   - sodas:
     - color: 5
       count: 1
@@ -101,7 +94,7 @@ MonoBehaviour:
   mainChallenge: Fewer starting anchors, so the board has to be built up before it
     pays out.
   designerNotes: 
-  bakedChecksum: 6b0161bb-9f
+  bakedChecksum: 0a80d885-92
   lastVerification:
     checksum: 6b0161bb-9f
     solved: 1

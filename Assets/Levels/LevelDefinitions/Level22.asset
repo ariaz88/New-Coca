@@ -54,10 +54,95 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 0
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
       count: 3
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 2
+      count: 1
   - sodas:
     - color: 1
       count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 5
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 5
+      count: 1
   - sodas:
     - color: 1
       count: 2
@@ -65,88 +150,13 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 0
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 2
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 0
       count: 1
     - color: 1
       count: 1
   - sodas:
     - color: 0
       count: 2
-  - sodas:
     - color: 1
-      count: 2
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
-      count: 2
-  - sodas:
-    - color: 0
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 3
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 0
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 2
       count: 1
   - sodas:
     - color: 0
@@ -155,29 +165,31 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 1
-      count: 3
+      count: 2
+    - color: 0
+      count: 1
   - sodas:
     - color: 0
       count: 2
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 0
-      count: 1
-  - sodas:
     - color: 1
       count: 1
   - sodas:
-    - color: 2
+    - color: 1
+      count: 2
+    - color: 0
       count: 1
   - sodas:
-    - color: 3
+    - color: 0
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -187,7 +199,7 @@ MonoBehaviour:
   mainChallenge: 'Only two anchors on a heavily blocked board: the opening is the
     whole puzzle.'
   designerNotes: 
-  bakedChecksum: 153dcf31-151
+  bakedChecksum: fefb6a42-16d
   lastVerification:
     checksum: 153dcf31-151
     solved: 1

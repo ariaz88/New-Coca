@@ -54,84 +54,100 @@ MonoBehaviour:
   - kind: 0
     color: 3
     requiredCount: 2
-  palette: 04000000010000000300000005000000
+  palette: 0400000001000000030000000500000000000000
   railQueue:
   - sodas:
     - color: 1
-      count: 2
-    - color: 4
       count: 1
-  - sodas:
     - color: 4
-      count: 2
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 3
       count: 1
   - sodas:
     - color: 1
       count: 3
   - sodas:
     - color: 4
-      count: 3
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
   - sodas:
     - color: 3
+      count: 3
+  - sodas:
+    - color: 4
       count: 2
   - sodas:
     - color: 1
       count: 3
   - sodas:
-    - color: 4
-      count: 2
-  - sodas:
     - color: 3
-      count: 2
+      count: 3
   - sodas:
     - color: 4
-      count: 1
+      count: 2
     - color: 3
       count: 1
   - sodas:
     - color: 1
-      count: 2
+      count: 1
     - color: 4
       count: 1
   - sodas:
-    - color: 3
-      count: 2
+    - color: 1
+      count: 3
   - sodas:
     - color: 4
-      count: 2
+      count: 1
     - color: 5
       count: 1
   - sodas:
-    - color: 1
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 4
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
     - color: 3
       count: 2
-    - color: 5
+    - color: 1
       count: 1
   - sodas:
     - color: 4
       count: 2
   - sodas:
+    - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
     - color: 3
       count: 1
   - sodas:
     - color: 5
       count: 2
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
@@ -140,7 +156,7 @@ MonoBehaviour:
   mainChallenge: 'X-blocker mastery: eight blockers, three orders, very little free
     space.'
   designerNotes: 
-  bakedChecksum: 2bae218b-fe
+  bakedChecksum: 0da1c68f-11c
   lastVerification:
     checksum: 2bae218b-fe
     solved: 1

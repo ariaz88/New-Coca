@@ -52,15 +52,15 @@ MonoBehaviour:
   - kind: 1
     color: 0
     requiredCount: 2
-  palette: 0100000002000000030000000500000000000000
+  palette: 010000000200000003000000050000000000000004000000
   railQueue:
   - sodas:
     - color: 1
-      count: 3
+      count: 2
   - sodas:
     - color: 2
-      count: 2
-    - color: 5
+      count: 1
+    - color: 4
       count: 1
   - sodas:
     - color: 2
@@ -69,29 +69,22 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 1
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 1
       count: 1
     - color: 5
       count: 1
   - sodas:
-    - color: 2
+    - color: 1
       count: 3
   - sodas:
-    - color: 1
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 1
-      count: 2
     - color: 2
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 1
       count: 1
     - color: 3
       count: 1
@@ -101,59 +94,88 @@ MonoBehaviour:
   - sodas:
     - color: 1
       count: 1
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
     - color: 5
       count: 1
   - sodas:
     - color: 1
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 1
       count: 1
     - color: 2
-      count: 1
-  - sodas:
-    - color: 1
       count: 1
     - color: 3
       count: 1
   - sodas:
     - color: 1
-      count: 3
+      count: 2
+    - color: 3
+      count: 1
   - sodas:
     - color: 2
       count: 1
     - color: 0
       count: 1
   - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
     - color: 2
+      count: 1
+    - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
       count: 3
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
   - sodas:
     - color: 1
       count: 3
   - sodas:
     - color: 2
       count: 1
+    - color: 4
+      count: 1
   - sodas:
-    - color: 3
-      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
@@ -161,7 +183,7 @@ MonoBehaviour:
   expectedSeconds: 330
   mainChallenge: Every cell type at once, with three orders to satisfy.
   designerNotes: 
-  bakedChecksum: fea12a2a-126
+  bakedChecksum: f68226a7-150
   lastVerification:
     checksum: fea12a2a-126
     solved: 1

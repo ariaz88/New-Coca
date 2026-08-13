@@ -54,101 +54,107 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 1
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 1
       count: 1
     - color: 4
       count: 1
   - sodas:
     - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 2
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 4
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 1
       count: 1
     - color: 2
       count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
     - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 3
       count: 1
   - sodas:
     - color: 1
       count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
     - color: 5
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 3
       count: 1
   - sodas:
     - color: 3
@@ -157,13 +163,36 @@ MonoBehaviour:
     - color: 1
       count: 2
   - sodas:
-    - color: 2
+    - color: 1
       count: 1
     - color: 3
       count: 1
   - sodas:
-    - color: 2
+    - color: 1
       count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 3
@@ -171,7 +200,7 @@ MonoBehaviour:
   expectedSeconds: 360
   mainChallenge: 'A lattice board: almost every free cell touches a blocker.'
   designerNotes: 
-  bakedChecksum: 594e206c-136
+  bakedChecksum: 3d9a0edb-16d
   lastVerification:
     checksum: 594e206c-136
     solved: 1

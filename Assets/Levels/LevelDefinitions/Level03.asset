@@ -40,39 +40,42 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 0
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 0
       count: 2
     - color: 3
       count: 1
   - sodas:
     - color: 3
-      count: 3
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 3
-      count: 1
+      count: 2
     - color: 0
       count: 1
   - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
     - color: 3
       count: 1
+  - sodas:
+    - color: 3
+      count: 2
     - color: 0
       count: 1
   - sodas:
-    - color: 3
-      count: 3
-  - sodas:
-    - color: 0
-      count: 3
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 3
-      count: 1
     - color: 0
       count: 1
   - sodas:
@@ -86,7 +89,7 @@ MonoBehaviour:
   mainChallenge: 'First mixed-colour rail boxes: a box can now carry two colours
     at once.'
   designerNotes: 
-  bakedChecksum: f5fd8f28-88
+  bakedChecksum: f420c13d-8d
   lastVerification:
     checksum: f5fd8f28-88
     solved: 1

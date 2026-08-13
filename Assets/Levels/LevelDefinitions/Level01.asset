@@ -40,12 +40,15 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 1
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 1
       count: 3
   - sodas:
     - color: 4
-      count: 3
-  - sodas:
-    - color: 1
       count: 2
   - sodas:
     - color: 4
@@ -54,17 +57,20 @@ MonoBehaviour:
     - color: 1
       count: 2
   - sodas:
-    - color: 4
+    - color: 1
       count: 3
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
   - sodas:
     - color: 1
       count: 2
   - sodas:
-    - color: 1
-      count: 3
-  - sodas:
     - color: 4
-      count: 3
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   difficulty: 0
@@ -72,7 +78,7 @@ MonoBehaviour:
   expectedSeconds: 90
   mainChallenge: Place a box, watch matching sodas gather, complete a colour.
   designerNotes: Unchanged from the shipped Level 1. Known-good opener.
-  bakedChecksum: 7c7afb76-6f
+  bakedChecksum: 14c9a58c-79
   lastVerification:
     checksum: 7c7afb76-6f
     solved: 1

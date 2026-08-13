@@ -3452,55 +3452,44 @@ MonoBehaviour:
   railQueue:
   - sodas:
     - color: 2
-      count: 3
+      count: 2
   - sodas:
     - color: 3
+      count: 2
+    - color: 4
       count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
     - color: 4
       count: 1
   - sodas:
     - color: 3
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 2
       count: 3
   - sodas:
-    - color: 3
-      count: 1
     - color: 2
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 3
@@ -3510,16 +3499,15 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 3
-      count: 3
+      count: 2
+    - color: 2
+      count: 1
   - sodas:
     - color: 2
       count: 2
   - sodas:
-    - color: 2
-      count: 1
-  - sodas:
     - color: 3
-      count: 1
+      count: 2
   - sodas:
     - color: 4
       count: 2
