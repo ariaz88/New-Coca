@@ -51,6 +51,15 @@ public class UIManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
+        }
+
+        // Added in code so the HUD arrangement reaches all 25 level scenes without
+        // any of them being opened and re-saved. UIManager sits on the Canvas, so
+        // the layout component finds the HUD from here.
+        if (GetComponent<LevelHudLayout>() == null)
+        {
+            gameObject.AddComponent<LevelHudLayout>();
         }
     }
 

@@ -265,19 +265,27 @@ public static class BlockedCellVisuals
         float crackThickness = Mathf.Max(0.0004f, shortEdge * 0.012f);
         float diagonal = new Vector2(bounds.size.x, bounds.size.z).magnitude;
 
+        // A symmetric star radiating from the centre of the lid.
+        //
+        // The first version scattered five strips at random angles and random
+        // offsets, aiming for a shattered pane. At the size a cell occupies on a
+        // phone that did not read as damage at all - it read as a dark scribble
+        // someone had drawn on the box, and players could not tell what it meant.
+        // Evenly spaced spokes from one point are instantly legible as a crack,
+        // and being symmetric they look deliberate rather than like an artefact.
         System.Random random = new System.Random(seed);
-        for (int index = 0; index < crackCount; index++)
+        int spokes = Mathf.Max(2, crackCount);
+        float baseYaw = (float)(random.NextDouble() * 180.0);
+
+        for (int index = 0; index < spokes; index++)
         {
-            float yaw = (float)(random.NextDouble() * 180.0);
-            float length = diagonal * Mathf.Lerp(0.45f, 0.9f, (float)random.NextDouble());
+            float yaw = baseYaw + index * (180f / spokes);
 
-            // Offset off centre so the fractures form a shattered pane rather than
-            // a star radiating from one point.
-            float offsetX = (float)(random.NextDouble() - 0.5) * bounds.size.x * 0.45f;
-            float offsetZ = (float)(random.NextDouble() - 0.5) * bounds.size.z * 0.45f;
-            Vector3 centre = top + new Vector3(offsetX, 0f, offsetZ);
+            // Slight per-spoke jitter so the star is not mechanically perfect.
+            yaw += (float)(random.NextDouble() - 0.5) * 12f;
+            float length = diagonal * Mathf.Lerp(0.5f, 0.72f, (float)random.NextDouble());
 
-            CreateStrip(root.transform, centre, length, crackThickness, crackWidth, yaw, crackMaterial);
+            CreateStrip(root.transform, top, length, crackThickness, crackWidth, yaw, crackMaterial);
         }
     }
 

@@ -44,8 +44,11 @@ public sealed class OrderPanelSkin : MonoBehaviour
     [Header("Layout")]
     [SerializeField] private Vector2 cardSize = new Vector2(392f, 186f);
 
-    [SerializeField, Tooltip("Distance from the top of the screen to the top of the card, in canvas units. Sits below the coin and gem HUD and the level progress bar, in the clear strip above the delivery lane.")]
-    private float cardTopMargin = 350f;
+    [SerializeField, Tooltip("Distance from the top of the screen to the top of the card, in canvas units. Sits in the strip the hidden progress bar used to occupy, between the level label and the coin/gem row.")]
+    private float cardTopMargin = 150f;
+
+    [SerializeField, Min(0f), Tooltip("Gap between the outermost chip and the edge of the card, in canvas units. The card is sized from its contents plus twice this.")]
+    private float slotEdgeMargin = 5f;
     [SerializeField] private Vector2 ribbonSize = new Vector2(196f, 56f);
 
     [SerializeField, Tooltip("Taller than it is wide: the drink stands upright, so a square chip left no room between the bottle and its count badge.")]
@@ -251,8 +254,8 @@ public sealed class OrderPanelSkin : MonoBehaviour
         }
 
         Stretch(container);
-        container.offsetMin = new Vector2(18f, 14f);
-        container.offsetMax = new Vector2(-18f, -30f);
+        container.offsetMin = new Vector2(slotEdgeMargin, 12f);
+        container.offsetMax = new Vector2(-slotEdgeMargin, -26f);
 
         const float slotSpacing = 10f;
         HorizontalLayoutGroup layout = container.GetComponent<HorizontalLayoutGroup>();
@@ -265,29 +268,50 @@ public sealed class OrderPanelSkin : MonoBehaviour
         // The card sizes itself to its contents. Levels carry between one and four
         // orders, and a card wide enough for four leaves a single order stranded in
         // the middle of an empty panel, while a card sized for two clips at four.
-        int slotCount = 0;
-        foreach (Transform child in container)
+        // Counted from the panel's own list, not by walking the container.
+        //
+        // OrderPanelUI rebuilds its slots more than once during start-up, and
+        // Destroy is deferred to the end of the frame - so a walk of the children
+        // sees the outgoing slots alongside the incoming ones. That counted six
+        // slots for a three-order level and produced a card twice as wide as it
+        // should be. The panel's list only ever holds the live slots.
+        OrderPanelUI panelUI = GetComponent<OrderPanelUI>();
+        int slotCount;
+
+        if (panelUI != null && panelUI.Slots != null)
         {
-            if (child.GetComponent<OrderSlotUI>() != null)
+            slotCount = panelUI.Slots.Count;
+        }
+        else
+        {
+            slotCount = 0;
+            foreach (Transform child in container)
             {
-                slotCount++;
+                if (child.gameObject.activeSelf && child.GetComponent<OrderSlotUI>() != null)
+                {
+                    slotCount++;
+                }
             }
         }
 
         if (slotCount > 0)
         {
-            // Hugs its contents in both directions. Treating the authored width as
-            // a minimum left a single-order level showing one drink marooned in a
-            // card wide enough for three.
+            // Hugs its contents: card width is exactly the chips plus one small
+            // margin each side. The card previously carried a wide dead zone at
+            // both ends that made the orders look stranded in the middle of it.
             float contentWidth = slotCount * chipSize.x + (slotCount - 1) * slotSpacing;
-            float width = Mathf.Max(contentWidth + 48f, 210f);
+
+            // The floor exists only for the ribbon. A single-order level would
+            // otherwise produce a card narrower than the word "ORDERS", and the
+            // auto-sized label would shrink to something unreadable.
+            float width = Mathf.Max(contentWidth + slotEdgeMargin * 2f, 200f);
             panel.sizeDelta = new Vector2(width, cardSize.y);
 
             RectTransform ribbon = panel.Find("LabelTab") as RectTransform;
             if (ribbon != null)
             {
                 ribbon.sizeDelta = new Vector2(
-                    Mathf.Min(ribbonSize.x, width - 46f), ribbonSize.y);
+                    Mathf.Min(ribbonSize.x, width - 40f), ribbonSize.y);
             }
         }
 

@@ -298,8 +298,70 @@ public static class LevelSceneGenerator
             element.FindPropertyRelative("requiredCount").intValue = Mathf.Max(1, order.requiredCount);
         }
 
+        ApplyBlockerStyle(serialized);
+
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(board);
+    }
+
+    /// <summary>
+    /// Pushes the current blocker look into every generated scene.
+    ///
+    /// These are style values, not level design, but they are serialized on Board -
+    /// so once a scene has been generated it keeps whatever the C# defaults were on
+    /// that day, and editing the default afterwards changes nothing. That is
+    /// exactly how the frozen blockers ended up rendering with an old, far too
+    /// opaque frost in all 25 scenes. Writing them here means one edit to the
+    /// defaults plus a re-bake updates the whole campaign.
+    ///
+    /// Values are read from a throwaway Board instance rather than duplicated as
+    /// literals, so the defaults live in exactly one place: Board itself.
+    /// </summary>
+    private static void ApplyBlockerStyle(SerializedObject serialized)
+    {
+        GameObject probeObject = new GameObject("~BoardStyleProbe") { hideFlags = HideFlags.HideAndDontSave };
+        try
+        {
+            Board probe = probeObject.AddComponent<Board>();
+            SerializedObject defaults = new SerializedObject(probe);
+
+            string[] styleFields =
+            {
+                "frozenCellFrostColor",
+                "frozenCellFrostThickness",
+                "frozenCellCrackColor",
+                "frozenCellCrackCount",
+                "frozenCellCrackShardCount",
+                "frozenCellCrackPunchDuration"
+            };
+
+            foreach (string field in styleFields)
+            {
+                SerializedProperty source = defaults.FindProperty(field);
+                SerializedProperty target = serialized.FindProperty(field);
+                if (source == null || target == null)
+                {
+                    continue;
+                }
+
+                switch (source.propertyType)
+                {
+                    case SerializedPropertyType.Color:
+                        target.colorValue = source.colorValue;
+                        break;
+                    case SerializedPropertyType.Float:
+                        target.floatValue = source.floatValue;
+                        break;
+                    case SerializedPropertyType.Integer:
+                        target.intValue = source.intValue;
+                        break;
+                }
+            }
+        }
+        finally
+        {
+            Object.DestroyImmediate(probeObject);
+        }
     }
 
     private static void ApplyToSpawner(LevelDefinition definition, SpawnContoller spawner)

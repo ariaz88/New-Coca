@@ -180,14 +180,14 @@ public class Board : MonoBehaviour
     private float blockedCellShakeSpeed = 38f;
 
     [Header("Frozen Blocker")]
-    [SerializeField, Tooltip("Pale frost shell laid over a frozen blocker so it reads as different from a plain X blocker before it takes any damage.")]
-    private Color frozenCellFrostColor = new Color(0.66f, 0.9f, 1f, 0.72f);
+    [SerializeField, Tooltip("Ice shell over a frozen blocker. Alpha is deliberately low: at high opacity the shell hid the cardboard box underneath entirely and the cell read as a pale ghost rather than as a frozen crate.")]
+    private Color frozenCellFrostColor = new Color(0.36f, 0.72f, 1f, 0.42f);
     [SerializeField, Range(0.02f, 0.4f), Tooltip("Frost shell thickness as a fraction of the box height.")]
     private float frozenCellFrostThickness = 0.1f;
-    [SerializeField, Tooltip("Colour of the fracture lines drawn across a cracked frozen blocker.")]
-    private Color frozenCellCrackColor = new Color(0.13f, 0.32f, 0.45f, 1f);
-    [SerializeField, Min(0), Tooltip("Fracture lines drawn when a frozen blocker takes its first hit.")]
-    private int frozenCellCrackCount = 5;
+    [SerializeField, Tooltip("Colour of the fracture lines on a cracked frozen blocker. Pale, not dark: dark lines on a cardboard box read as a scribble rather than as split ice.")]
+    private Color frozenCellCrackColor = new Color(0.85f, 0.97f, 1f, 1f);
+    [SerializeField, Min(0), Tooltip("Fracture spokes radiating from the centre of the lid when a frozen blocker takes its first hit.")]
+    private int frozenCellCrackCount = 3;
     [SerializeField, Min(0), Tooltip("Ice shards thrown when a frozen blocker cracks. 0 disables the burst.")]
     private int frozenCellCrackShardCount = 12;
     [SerializeField, Min(0f), Tooltip("Seconds for the punch that plays when a frozen blocker cracks.")]

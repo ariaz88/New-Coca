@@ -3021,10 +3021,10 @@ MonoBehaviour:
   - {r: 0.95, g: 0.35, b: 0.45, a: 1}
   blockedCellShakeAmount: 0.06
   blockedCellShakeSpeed: 38
-  frozenCellFrostColor: {r: 0.66, g: 0.9, b: 1, a: 0.72}
+  frozenCellFrostColor: {r: 0.36, g: 0.72, b: 1, a: 0.42}
   frozenCellFrostThickness: 0.1
-  frozenCellCrackColor: {r: 0.13, g: 0.32, b: 0.45, a: 1}
-  frozenCellCrackCount: 5
+  frozenCellCrackColor: {r: 0.85, g: 0.97, b: 1, a: 1}
+  frozenCellCrackCount: 3
   frozenCellCrackShardCount: 12
   frozenCellCrackPunchDuration: 0.32
   awardPackedBoxRewards: 1
