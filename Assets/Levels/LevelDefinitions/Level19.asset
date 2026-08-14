@@ -43,10 +43,10 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 3
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 1
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 3
@@ -189,6 +189,17 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 1
+      count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
       count: 1
   - sodas:
     - color: 3
@@ -210,11 +221,6 @@ MonoBehaviour:
     - {x: 1, y: 0}
     - {x: 1, y: 1}
     - {x: 3, y: 3}
-  - cells:
-    - {x: 0, y: 3}
-    - {x: 1, y: 0}
-    - {x: 3, y: 0}
-    - {x: 3, y: 2}
   - cells:
     - {x: 0, y: 3}
     - {x: 1, y: 0}
@@ -245,12 +251,17 @@ MonoBehaviour:
     - {x: 0, y: 3}
     - {x: 3, y: 2}
     - {x: 3, y: 3}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 0, y: 3}
+    - {x: 1, y: 0}
+    - {x: 3, y: 4}
   difficulty: 3
   difficultyRating: 7
   expectedSeconds: 360
   mainChallenge: 'A lattice board: almost every free cell touches a blocker.'
   designerNotes: 
-  bakedChecksum: 3d9a0edb-16d
+  bakedChecksum: a3cc86a4-180
   lastVerification:
     checksum: 594e206c-136
     solved: 1

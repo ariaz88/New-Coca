@@ -47,103 +47,127 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 1
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 3
-    requiredCount: 2
-  palette: 0400000001000000030000000500000000000000
+    requiredCount: 3
+  palette: 040000000100000003000000050000000000000002000000
   railQueue:
   - sodas:
     - color: 1
       count: 1
+    - color: 3
+      count: 1
+  - sodas:
     - color: 4
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 3
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 2
       count: 1
   - sodas:
     - color: 1
       count: 3
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 1
+      count: 1
   - sodas:
     - color: 4
       count: 2
     - color: 0
       count: 1
   - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 1
+    - color: 5
       count: 2
   - sodas:
     - color: 3
       count: 3
   - sodas:
-    - color: 4
+    - color: 2
       count: 2
   - sodas:
     - color: 1
-      count: 3
-  - sodas:
-    - color: 3
-      count: 3
-  - sodas:
+      count: 1
     - color: 4
+      count: 1
+  - sodas:
+    - color: 0
       count: 2
-    - color: 3
-      count: 1
   - sodas:
-    - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 4
-      count: 1
     - color: 5
       count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
     - color: 4
-      count: 2
-  - sodas:
-    - color: 3
-      count: 1
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 5
-      count: 2
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-    - color: 3
       count: 1
   - sodas:
     - color: 1
       count: 1
   - sodas:
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
+    - color: 2
       count: 1
   - sodas:
     - color: 5
@@ -190,7 +214,7 @@ MonoBehaviour:
   mainChallenge: 'X-blocker mastery: eight blockers, three orders, very little free
     space.'
   designerNotes: 
-  bakedChecksum: 0da1c68f-11c
+  bakedChecksum: e9a77aaa-148
   lastVerification:
     checksum: 2bae218b-fe
     solved: 1

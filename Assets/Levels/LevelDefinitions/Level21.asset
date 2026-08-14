@@ -47,10 +47,10 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 2
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 3
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 3
@@ -193,6 +193,21 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 2
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 2
       count: 1
     - color: 3
       count: 1
@@ -233,6 +248,10 @@ MonoBehaviour:
   - cells:
     - {x: 0, y: 1}
     - {x: 2, y: 0}
+    - {x: 3, y: 1}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 2, y: 0}
     - {x: 3, y: 3}
   - cells:
     - {x: 0, y: 1}
@@ -242,16 +261,12 @@ MonoBehaviour:
     - {x: 0, y: 1}
     - {x: 2, y: 4}
     - {x: 3, y: 3}
-  - cells:
-    - {x: 0, y: 1}
-    - {x: 3, y: 2}
-    - {x: 3, y: 3}
   difficulty: 4
   difficultyRating: 8
   expectedSeconds: 420
   mainChallenge: A six-wide board where the useful space is a narrow cross.
   designerNotes: 
-  bakedChecksum: 7dccc4e3-186
+  bakedChecksum: beac90e3-1a1
   lastVerification:
     checksum: 3b93cb3e-155
     solved: 1

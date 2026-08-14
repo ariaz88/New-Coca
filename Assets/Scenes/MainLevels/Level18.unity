@@ -2989,10 +2989,10 @@ MonoBehaviour:
   levelOrders:
   - kind: 0
     color: 5
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 3
@@ -3647,11 +3647,24 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 5
-      count: 1
+      count: 2
     - color: 4
       count: 1
   - sodas:
+    - color: 4
+      count: 1
     - color: 5
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 4
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 151715

@@ -45,10 +45,10 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 5
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 2
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 3
@@ -187,7 +187,20 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 5
+      count: 2
+    - color: 2
       count: 1
+  - sodas:
+    - color: 2
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
     - color: 2
       count: 1
   - sodas:
@@ -236,22 +249,22 @@ MonoBehaviour:
     - {x: 2, y: 3}
     - {x: 3, y: 4}
   - cells:
-    - {x: 0, y: 1}
-    - {x: 1, y: 1}
-    - {x: 2, y: 2}
-    - {x: 3, y: 4}
-  - cells:
     - {x: 0, y: 0}
     - {x: 0, y: 1}
     - {x: 2, y: 3}
     - {x: 3, y: 1}
+  - cells:
+    - {x: 0, y: 1}
+    - {x: 1, y: 1}
+    - {x: 1, y: 3}
+    - {x: 3, y: 4}
   difficulty: 4
   difficultyRating: 10
   expectedSeconds: 540
   mainChallenge: 'Campaign finale: eight columns, four orders, sixteen blockers.'
   designerNotes: Widest board in the campaign. The four anchors sit on one row, so
     every order has to be grown outward through the blocker lattice.
-  bakedChecksum: 17b04bbd-173
+  bakedChecksum: 7c8d7dd2-18a
   lastVerification:
     checksum: fcc33acc-170
     solved: 1

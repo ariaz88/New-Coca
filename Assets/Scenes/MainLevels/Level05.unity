@@ -2973,13 +2973,13 @@ MonoBehaviour:
   levelOrders:
   - kind: 0
     color: 0
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 1
-    requiredCount: 2
+    requiredCount: 3
   drawLayoutGizmos: 1
   playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}
   removedCellGizmoColor: {r: 0.38, g: 0.18, b: 0.07, a: 0.75}
@@ -3457,12 +3457,17 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 2
-    - color: 4
+    - color: 5
       count: 1
   - sodas:
     - color: 4
       count: 1
-    - color: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 0
@@ -3470,19 +3475,14 @@ MonoBehaviour:
     - color: 4
       count: 1
   - sodas:
-    - color: 4
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
     - color: 0
       count: 1
     - color: 1
       count: 1
   - sodas:
-    - color: 0
-      count: 1
     - color: 4
+      count: 1
+    - color: 1
       count: 1
   - sodas:
     - color: 0
@@ -3496,13 +3496,16 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 2
-    - color: 4
+    - color: 5
       count: 1
   - sodas:
     - color: 1
       count: 2
     - color: 4
       count: 1
+  - sodas:
+    - color: 4
+      count: 2
   - sodas:
     - color: 0
       count: 2
@@ -3514,22 +3517,45 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 0
+      count: 3
+  - sodas:
+    - color: 1
       count: 2
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
   - sodas:
     - color: 1
       count: 3
   - sodas:
-    - color: 4
+    - color: 0
       count: 2
+    - color: 4
+      count: 1
   - sodas:
     - color: 0
       count: 1
-  - sodas:
     - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 0
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 48768
-  allowedColors: 000000000400000001000000
+  allowedColors: 00000000040000000100000005000000
   orderColorWeight: 2
   minSodasPerBox: 1
   maxSodasPerBox: 3

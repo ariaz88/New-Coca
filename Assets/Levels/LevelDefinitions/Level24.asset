@@ -47,10 +47,10 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 0
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 4
@@ -220,6 +220,26 @@ MonoBehaviour:
   - sodas:
     - color: 4
       count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   bombs:
@@ -271,7 +291,7 @@ MonoBehaviour:
     space.
   designerNotes: The distractor is supplied as a whole set of four, so it can always
     be packed away - a remainder would permanently poison a cell.
-  bakedChecksum: ca130ea4-1a8
+  bakedChecksum: c91d5780-1cc
   lastVerification:
     checksum: feefb8a5-178
     solved: 1

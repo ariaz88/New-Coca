@@ -2989,10 +2989,10 @@ MonoBehaviour:
   levelOrders:
   - kind: 0
     color: 1
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 2
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 2
@@ -3056,11 +3056,6 @@ MonoBehaviour:
     - {x: 2, y: 2}
     - {x: 2, y: 4}
   - cells:
-    - {x: 0, y: 3}
-    - {x: 1, y: 0}
-    - {x: 1, y: 2}
-    - {x: 3, y: 3}
-  - cells:
     - {x: 0, y: 1}
     - {x: 1, y: 2}
     - {x: 2, y: 4}
@@ -3085,6 +3080,11 @@ MonoBehaviour:
     - {x: 1, y: 2}
     - {x: 2, y: 2}
     - {x: 3, y: 3}
+  - cells:
+    - {x: 0, y: 3}
+    - {x: 1, y: 1}
+    - {x: 2, y: 2}
+    - {x: 2, y: 4}
   awardPackedBoxRewards: 1
   coinsPerPackedBox: 10
   swapAnimationDuration: 0.35
@@ -3624,13 +3624,26 @@ MonoBehaviour:
   - sodas:
     - color: 2
       count: 1
-    - color: 4
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 2
       count: 1
+    - color: 4
+      count: 1
   - sodas:
-    - color: 5
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 2
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 143796

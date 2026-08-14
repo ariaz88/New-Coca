@@ -42,11 +42,11 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 0
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 5
-    requiredCount: 3
-  palette: 00000000050000000300000004000000
+    requiredCount: 4
+  palette: 0000000005000000030000000400000001000000
   railQueue:
   - sodas:
     - color: 0
@@ -65,7 +65,7 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 1
-    - color: 4
+    - color: 3
       count: 1
   - sodas:
     - color: 5
@@ -76,7 +76,7 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 2
-    - color: 3
+    - color: 1
       count: 1
   - sodas:
     - color: 0
@@ -89,7 +89,7 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 1
-    - color: 4
+    - color: 3
       count: 1
   - sodas:
     - color: 0
@@ -97,25 +97,44 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 1
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 5
+      count: 1
     - color: 4
       count: 1
   - sodas:
     - color: 5
-      count: 1
-    - color: 3
-      count: 1
+      count: 2
   - sodas:
-    - color: 0
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 1
+    - color: 1
+      count: 2
     - color: 5
       count: 1
   - sodas:
     - color: 0
+      count: 1
+  - sodas:
+    - color: 1
       count: 1
   - sodas:
     - color: 3
@@ -138,7 +157,7 @@ MonoBehaviour:
   mainChallenge: 'Work outward from the centre: the corners only open once the ring
     falls.'
   designerNotes: 
-  bakedChecksum: f043b446-e2
+  bakedChecksum: 9d4d9ef4-105
   lastVerification:
     checksum: 4cb5c007-d9
     solved: 1

@@ -29,11 +29,11 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 2
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 5
-    requiredCount: 3
-  palette: 0200000005000000
+    requiredCount: 4
+  palette: 02000000050000000400000000000000
   railQueue:
   - sodas:
     - color: 2
@@ -41,37 +41,13 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 2
-    - color: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 5
       count: 2
-    - color: 2
+    - color: 4
       count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 5
-      count: 3
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 5
-      count: 2
   - sodas:
     - color: 2
       count: 1
@@ -82,10 +58,62 @@ MonoBehaviour:
       count: 3
   - sodas:
     - color: 5
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 5
       count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
   - sodas:
     - color: 5
       count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 3
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
   railBatchSize: 3
   railExhaustionPolicy: 2
   bombs:
@@ -104,7 +132,7 @@ MonoBehaviour:
   mainChallenge: Fewer starting anchors, so the board has to be built up before it
     pays out.
   designerNotes: 
-  bakedChecksum: 0a80d885-92
+  bakedChecksum: a3b4a27a-c8
   lastVerification:
     checksum: 6b0161bb-9f
     solved: 1

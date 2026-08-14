@@ -34,21 +34,21 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 1
-    requiredCount: 3
-  palette: 04000000010000000200000003000000
+    requiredCount: 4
+  palette: 0400000001000000020000000300000005000000
   railQueue:
   - sodas:
     - color: 1
       count: 2
-    - color: 4
+    - color: 5
       count: 1
   - sodas:
     - color: 4
       count: 2
-    - color: 3
+    - color: 5
       count: 1
   - sodas:
     - color: 1
@@ -69,42 +69,61 @@ MonoBehaviour:
     - color: 2
       count: 1
   - sodas:
-    - color: 1
-      count: 2
-    - color: 3
-      count: 1
-  - sodas:
     - color: 4
       count: 2
-    - color: 1
-      count: 1
-  - sodas:
-    - color: 4
-      count: 3
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 1
-      count: 3
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
-    - color: 1
-      count: 1
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 4
-      count: 2
-  - sodas:
     - color: 2
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 4
       count: 2
   - sodas:
     - color: 1
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 1
+      count: 3
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -123,7 +142,7 @@ MonoBehaviour:
   expectedSeconds: 180
   mainChallenge: Blockers split the board into lanes until they are broken open.
   designerNotes: 
-  bakedChecksum: 3e4b700a-c0
+  bakedChecksum: b8e927a5-e3
   lastVerification:
     checksum: 1ad6b9f1-d8
     solved: 1

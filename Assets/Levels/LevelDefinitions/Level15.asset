@@ -34,10 +34,10 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 5
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 3
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 2
@@ -139,23 +139,34 @@ MonoBehaviour:
     - color: 5
       count: 2
   - sodas:
-    - color: 0
+    - color: 3
       count: 1
     - color: 5
       count: 1
   - sodas:
-    - color: 4
+    - color: 3
       count: 1
-    - color: 0
+    - color: 4
       count: 1
   - sodas:
     - color: 3
+      count: 3
+  - sodas:
+    - color: 5
       count: 2
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 3
+      count: 1
   - sodas:
     - color: 4
       count: 2
   - sodas:
-    - color: 0
+    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -206,7 +217,7 @@ MonoBehaviour:
   expectedSeconds: 330
   mainChallenge: 'Both blocker types side by side: one cheap to open, one expensive.'
   designerNotes: 
-  bakedChecksum: c0534015-11f
+  bakedChecksum: 8e23cad4-132
   lastVerification:
     checksum: 1866757f-d1
     solved: 1

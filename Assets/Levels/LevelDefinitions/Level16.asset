@@ -42,10 +42,10 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 0
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 2
@@ -135,7 +135,19 @@ MonoBehaviour:
     - color: 0
       count: 2
   - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 0
+      count: 3
+  - sodas:
     - color: 3
+      count: 2
+  - sodas:
+    - color: 4
       count: 2
   - sodas:
     - color: 1
@@ -143,12 +155,6 @@ MonoBehaviour:
   - sodas:
     - color: 2
       count: 2
-  - sodas:
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 4
-      count: 1
   - sodas:
     - color: 3
       count: 1
@@ -212,7 +218,7 @@ MonoBehaviour:
   expectedSeconds: 360
   mainChallenge: The cheap blockers are inside, the expensive ones out at the corners.
   designerNotes: 
-  bakedChecksum: c20e6cd8-123
+  bakedChecksum: ed942ddc-12d
   lastVerification:
     checksum: 0c09dcb6-f4
     solved: 1

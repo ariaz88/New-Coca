@@ -25,7 +25,7 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   palette: 040000000100000002000000030000000500000000000000
   railQueue:
   - sodas:
@@ -53,19 +53,32 @@ MonoBehaviour:
     - color: 3
       count: 1
   - sodas:
-    - color: 0
+    - color: 4
       count: 3
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 5
+      count: 1
   - sodas:
     - color: 2
       count: 3
   - sodas:
-    - color: 4
+    - color: 0
       count: 1
     - color: 5
       count: 1
   - sodas:
     - color: 1
-      count: 3
+      count: 2
+    - color: 3
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
   - sodas:
     - color: 3
       count: 1
@@ -74,22 +87,14 @@ MonoBehaviour:
   - sodas:
     - color: 4
       count: 1
-    - color: 3
-      count: 1
   - sodas:
-    - color: 4
-      count: 1
-  - sodas:
-    - color: 0
+    - color: 1
       count: 1
   - sodas:
     - color: 2
       count: 1
   - sodas:
     - color: 3
-      count: 1
-  - sodas:
-    - color: 5
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -111,7 +116,7 @@ MonoBehaviour:
   designerNotes: One frozen blocker east of the starting box. The tutorial makes
     the player complete twice next to it and shows the cell is still blocked after
     the first.
-  bakedChecksum: 03efcc73-9f
+  bakedChecksum: b90cc990-a8
   lastVerification:
     checksum: 1758b9ca-98
     solved: 1

@@ -792,10 +792,18 @@ public static class CampaignAuthoring
             });
         }
 
+        // Applied here rather than in the table so the whole campaign moves
+        // together and the per-level rows stay readable as relative weights.
+        int countBonus = GetOrderCountBonus(spec.Number);
+
         List<LevelOrderData> orders = new List<LevelOrderData>();
         foreach (Order order in spec.Orders)
         {
-            orders.Add(new LevelOrderData { color = order.Color, requiredCount = order.Count });
+            orders.Add(new LevelOrderData
+            {
+                color = order.Color,
+                requiredCount = order.Count + countBonus
+            });
         }
 
         // Placed last so the crate always sits at the right of the card, which
@@ -949,10 +957,32 @@ public static class CampaignAuthoring
     /// </summary>
     private static int GetTargetRailColors(int levelNumber)
     {
-        if (levelNumber <= 5) return 0;      // orders only
-        if (levelNumber <= 9) return 4;
-        if (levelNumber == 10) return 5;
+        // Only the very first level is pure: one screen to learn that four of a
+        // drink packs a box, with nothing on the rail that cannot pay off.
+        if (levelNumber <= 1) return 0;
+
+        // From level 2 the rail already carries a colour no order wants, so
+        // "where do I put this" is a question from almost the start. Levels 2-5
+        // used to run on their order colours alone, which is why the opening of
+        // the campaign played itself.
+        if (levelNumber <= 3) return 3;
+        if (levelNumber <= 5) return 4;
+        if (levelNumber <= 9) return 5;
         return 6;
+    }
+
+    /// <summary>
+    /// Extra packed boxes added to every drink order, on top of what the level
+    /// authored.
+    ///
+    /// The whole campaign shipped on 3 packed boxes per drink and finished far
+    /// too quickly. One more is about a third longer per order, which is the
+    /// increase asked for; the first three levels are left alone because they
+    /// are still teaching the rule.
+    /// </summary>
+    private static int GetOrderCountBonus(int levelNumber)
+    {
+        return levelNumber <= 3 ? 0 : 1;
     }
 
     /// <summary>
@@ -1115,10 +1145,16 @@ public static class CampaignAuthoring
 
         Dictionary<Soda.SodaColor, int> totals = new Dictionary<Soda.SodaColor, int>();
 
+        // The same bonus the orders themselves get. Sizing supply from the raw
+        // authored count would leave every level from 4 up short by a whole box
+        // of each ordered colour, which the solver would report as unsolvable
+        // rather than as under-supplied.
+        int countBonus = GetOrderCountBonus(spec.Number);
+
         foreach (Order order in spec.Orders)
         {
             totals.TryGetValue(order.Color, out int existing);
-            totals[order.Color] = existing + (order.Count + spec.SlackSets) * BoxCapacity;
+            totals[order.Color] = existing + (order.Count + countBonus + spec.SlackSets) * BoxCapacity;
         }
 
         // A "open N locked blocks" order still has to be paid for in sodas.

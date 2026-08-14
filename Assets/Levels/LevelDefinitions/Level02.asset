@@ -33,7 +33,7 @@ MonoBehaviour:
   - kind: 0
     color: 1
     requiredCount: 3
-  palette: 0400000001000000
+  palette: 040000000100000002000000
   railQueue:
   - sodas:
     - color: 1
@@ -63,6 +63,12 @@ MonoBehaviour:
     - color: 1
       count: 3
   - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
     - color: 4
       count: 1
   railBatchSize: 3
@@ -84,7 +90,7 @@ MonoBehaviour:
     to unpick.
   designerNotes: Redesigned. The shipped Level 2 was a byte-identical copy of Level
     1.
-  bakedChecksum: 366c0165-6f
+  bakedChecksum: 46ccefef-7b
   lastVerification:
     checksum: 4318fccb-6f
     solved: 1

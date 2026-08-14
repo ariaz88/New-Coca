@@ -3479,11 +3479,17 @@ MonoBehaviour:
     - color: 1
       count: 3
   - sodas:
+    - color: 2
+      count: 2
+  - sodas:
+    - color: 2
+      count: 2
+  - sodas:
     - color: 4
       count: 1
   railExhaustionPolicy: 2
   fallbackSeed: 25011
-  allowedColors: 0400000001000000
+  allowedColors: 040000000100000002000000
   orderColorWeight: 2
   minSodasPerBox: 1
   maxSodasPerBox: 3

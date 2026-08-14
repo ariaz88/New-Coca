@@ -2973,10 +2973,10 @@ MonoBehaviour:
   levelOrders:
   - kind: 0
     color: 2
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 5
-    requiredCount: 3
+    requiredCount: 4
   drawLayoutGizmos: 1
   playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}
   removedCellGizmoColor: {r: 0.38, g: 0.18, b: 0.07, a: 0.75}
@@ -3457,37 +3457,13 @@ MonoBehaviour:
   - sodas:
     - color: 5
       count: 2
-    - color: 2
+    - color: 4
       count: 1
   - sodas:
     - color: 5
       count: 2
-    - color: 2
+    - color: 4
       count: 1
-  - sodas:
-    - color: 5
-      count: 1
-    - color: 2
-      count: 1
-  - sodas:
-    - color: 5
-      count: 3
-  - sodas:
-    - color: 2
-      count: 1
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 2
-      count: 3
-  - sodas:
-    - color: 5
-      count: 2
   - sodas:
     - color: 2
       count: 1
@@ -3498,13 +3474,65 @@ MonoBehaviour:
       count: 3
   - sodas:
     - color: 5
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 5
       count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 5
+      count: 2
+  - sodas:
+    - color: 2
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
   - sodas:
     - color: 5
       count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 5
+      count: 3
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 5
+      count: 1
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
   railExhaustionPolicy: 2
   fallbackSeed: 40849
-  allowedColors: 0200000005000000
+  allowedColors: 02000000050000000400000000000000
   orderColorWeight: 2
   minSodasPerBox: 1
   maxSodasPerBox: 3

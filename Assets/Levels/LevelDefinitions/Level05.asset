@@ -29,24 +29,29 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 0
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 1
-    requiredCount: 2
-  palette: 000000000400000001000000
+    requiredCount: 3
+  palette: 00000000040000000100000005000000
   railQueue:
   - sodas:
     - color: 0
       count: 2
-    - color: 4
+    - color: 5
       count: 1
   - sodas:
     - color: 4
       count: 1
-    - color: 1
+    - color: 5
+      count: 1
+  - sodas:
+    - color: 4
+      count: 2
+    - color: 5
       count: 1
   - sodas:
     - color: 0
@@ -54,19 +59,14 @@ MonoBehaviour:
     - color: 4
       count: 1
   - sodas:
-    - color: 4
-      count: 2
-    - color: 1
-      count: 1
-  - sodas:
     - color: 0
       count: 1
     - color: 1
       count: 1
   - sodas:
-    - color: 0
-      count: 1
     - color: 4
+      count: 1
+    - color: 1
       count: 1
   - sodas:
     - color: 0
@@ -80,13 +80,16 @@ MonoBehaviour:
   - sodas:
     - color: 0
       count: 2
-    - color: 4
+    - color: 5
       count: 1
   - sodas:
     - color: 1
       count: 2
     - color: 4
       count: 1
+  - sodas:
+    - color: 4
+      count: 2
   - sodas:
     - color: 0
       count: 2
@@ -98,18 +101,41 @@ MonoBehaviour:
       count: 2
   - sodas:
     - color: 0
+      count: 3
+  - sodas:
+    - color: 1
       count: 2
+  - sodas:
+    - color: 4
+      count: 3
+  - sodas:
+    - color: 1
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
   - sodas:
     - color: 1
       count: 3
   - sodas:
-    - color: 4
+    - color: 0
       count: 2
+    - color: 4
+      count: 1
   - sodas:
     - color: 0
       count: 1
-  - sodas:
     - color: 4
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+  - sodas:
+    - color: 0
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -128,7 +154,7 @@ MonoBehaviour:
   expectedSeconds: 210
   mainChallenge: 'First mastery test: three orders competing for the same board space.'
   designerNotes: 
-  bakedChecksum: 2704702c-c0
+  bakedChecksum: fe9af294-f0
   lastVerification:
     checksum: ffdef3af-bb
     solved: 1

@@ -43,10 +43,10 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 0
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 3
@@ -189,6 +189,24 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 4
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 4
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -247,7 +265,7 @@ MonoBehaviour:
   expectedSeconds: 390
   mainChallenge: Three-colour rail boxes arrive for the first time on a tight board.
   designerNotes: 
-  bakedChecksum: 77516871-16c
+  bakedChecksum: 6d4587ff-18c
   lastVerification:
     checksum: 2bb5f7de-159
     solved: 1

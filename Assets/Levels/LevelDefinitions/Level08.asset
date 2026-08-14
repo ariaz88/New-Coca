@@ -38,11 +38,11 @@ MonoBehaviour:
   orders:
   - kind: 0
     color: 3
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 2
-    requiredCount: 3
-  palette: 03000000020000000400000005000000
+    requiredCount: 4
+  palette: 0300000002000000040000000500000000000000
   railQueue:
   - sodas:
     - color: 2
@@ -50,13 +50,26 @@ MonoBehaviour:
   - sodas:
     - color: 3
       count: 2
+    - color: 2
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
     - color: 4
       count: 1
   - sodas:
     - color: 2
       count: 2
-    - color: 5
+    - color: 4
       count: 1
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 2
+      count: 3
   - sodas:
     - color: 3
       count: 2
@@ -65,46 +78,52 @@ MonoBehaviour:
   - sodas:
     - color: 2
       count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
     - color: 4
       count: 1
+  - sodas:
+    - color: 2
+      count: 3
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
+    - color: 2
+      count: 2
   - sodas:
     - color: 3
       count: 3
   - sodas:
     - color: 2
       count: 2
-    - color: 5
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 2
-      count: 1
   - sodas:
     - color: 2
-      count: 2
-    - color: 5
-      count: 1
+      count: 3
   - sodas:
     - color: 3
       count: 3
   - sodas:
-    - color: 2
-      count: 2
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 2
+    - color: 5
+      count: 1
+    - color: 0
       count: 1
   - sodas:
-    - color: 2
-      count: 2
+    - color: 5
+      count: 1
+    - color: 0
+      count: 1
   - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 4
-      count: 2
+    - color: 5
+      count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
   bombs:
@@ -123,7 +142,7 @@ MonoBehaviour:
   mainChallenge: 'Six blockers and a narrow working area: order of operations starts
     to matter.'
   designerNotes: 
-  bakedChecksum: 5bdc9982-c3
+  bakedChecksum: 410c7eb9-e6
   lastVerification:
     checksum: 99a5683b-d7
     solved: 1

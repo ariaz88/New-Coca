@@ -2987,10 +2987,10 @@ MonoBehaviour:
   levelOrders:
   - kind: 0
     color: 0
-    requiredCount: 3
+    requiredCount: 4
   - kind: 0
     color: 1
-    requiredCount: 3
+    requiredCount: 4
   - kind: 1
     color: 0
     requiredCount: 3
@@ -3641,7 +3641,20 @@ MonoBehaviour:
       count: 1
   - sodas:
     - color: 1
+      count: 2
+    - color: 0
       count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 1
+      count: 1
+  - sodas:
+    - color: 1
+      count: 2
+    - color: 0
+      count: 1
+  - sodas:
     - color: 0
       count: 1
   - sodas:

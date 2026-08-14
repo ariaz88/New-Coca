@@ -36,50 +36,55 @@ MonoBehaviour:
   - kind: 0
     color: 3
     requiredCount: 3
-  palette: 0000000003000000
+  palette: 000000000300000004000000
   railQueue:
   - sodas:
     - color: 0
       count: 1
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 3
+      count: 2
+  - sodas:
+    - color: 0
+      count: 2
+  - sodas:
+    - color: 3
+      count: 2
+    - color: 4
+      count: 1
+  - sodas:
+    - color: 0
+      count: 2
     - color: 3
       count: 1
   - sodas:
     - color: 0
       count: 2
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 0
-      count: 2
     - color: 3
       count: 1
   - sodas:
     - color: 3
       count: 2
-    - color: 0
-      count: 1
   - sodas:
     - color: 0
-      count: 2
-  - sodas:
-    - color: 3
-      count: 2
-  - sodas:
-    - color: 0
-      count: 2
-    - color: 3
-      count: 1
-  - sodas:
-    - color: 3
-      count: 2
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 0
-      count: 1
-  - sodas:
-    - color: 3
       count: 1
   railBatchSize: 3
   railExhaustionPolicy: 2
@@ -99,7 +104,7 @@ MonoBehaviour:
   mainChallenge: 'First mixed-colour rail boxes: a box can now carry two colours
     at once.'
   designerNotes: 
-  bakedChecksum: f420c13d-8d
+  bakedChecksum: 05797ec5-98
   lastVerification:
     checksum: f5fd8f28-88
     solved: 1
