@@ -345,7 +345,6 @@ public class BoardControllerV2 : MonoBehaviour
                     
                     if (!allBoxes[i, j].IsInstantiated)
                     {
-                        StartCoroutine(MoveToTruck(tempPos));
                         allBoxes[i, j].IsInstantiated = true;
                     }
                 }
@@ -377,45 +376,6 @@ public class BoardControllerV2 : MonoBehaviour
         }
     }
     
-    private IEnumerator MoveToTruck(Transform boxTransform)
-    {
-        LiftTruck activeTruck = LiftTruckManager.instance.GetActiveTruck();
-
-        if (activeTruck != null)
-        {
-            yield return new WaitForSeconds(0.3f);
-
-            GameObject box = Instantiate(
-                boxPref,
-                new Vector3(boxTransform.position.x, boxTransform.position.y + 0.53f, boxTransform.position.z),
-                Quaternion.Euler(0, 0, 0)
-            );
-
-            if (activeTruck.IsEnoughRoomLeft())
-            {
-                Vector3 truckTargetPosition = activeTruck.GetNextAvailablePosition();
-
-                box.transform.DOMove(truckTargetPosition, 0.37f).SetEase(Ease.Linear).OnComplete(() =>
-                {
-                    activeTruck.AddBox(box);
-                });
-            }
-            else
-            {
-                Debug.LogWarning("Active truck is full. Finding next truck...");
-                LiftTruck nextTruck = LiftTruckManager.instance.GetActiveTruck();
-
-                if (nextTruck != null)
-                {
-                    nextTruck.AddBox(box);
-                }
-                else
-                {
-                    Debug.LogError("No available trucks to add the box!");
-                }
-            }
-        }
-    }
     
     // Placeholder methods - implement if needed
     private void CheckAndTransferFromFullBoxes()

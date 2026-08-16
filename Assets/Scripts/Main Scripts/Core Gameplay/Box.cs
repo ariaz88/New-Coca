@@ -1590,9 +1590,6 @@ public class Box_OldVersion : MonoBehaviour
             IsDragged = false;
             IsOnBoard = false;
 
-            //MoveToTruck(tempPos);
-
-
             Destroy(this.gameObject, 1.1f);
 
             #region oldMovememt
@@ -1638,28 +1635,6 @@ public class Box_OldVersion : MonoBehaviour
             //currentHighlightedNode = null;
         }
     }
-    private void MoveToTruck(Transform boxTransform)
-    {
-        LiftTruck activeTruck = LiftTruckManager.instance.GetActiveTruck();
-
-        if (activeTruck != null)
-        {
-            // Add the box to the truck's list
-
-
-            GameObject box = Instantiate(topBox, new Vector3(boxTransform.position.x, boxTransform.position.y + 0.53f, boxTransform.position.z), Quaternion.Euler(90, 0, 0));
-            box.SetActive(false);
-            Vector3 truckTargetPosition = activeTruck.GetNextAvailablePosition();
-
-            box.transform.DOMove(truckTargetPosition, 0.7f).SetEase(Ease.Linear).OnComplete(() =>
-            {
-                activeTruck.AddBox(box);
-
-            });
-
-        }
-    }
-
     IEnumerator SwapClick()
     {
         yield return new WaitForSeconds(0.8f);

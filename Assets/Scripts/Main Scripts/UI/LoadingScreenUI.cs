@@ -37,7 +37,7 @@ public class LoadingScreenUI : MonoBehaviour
     {
         "Match three sodas of the same colour to clear them.",
         "A full carrier box ships out on its own.",
-        "Tap the lift truck to bring the next box forward.",
+        "Watch the order panel - it tells you which colours are wanted.",
         "Empty a slot before it locks you out of a match.",
         "Plan two moves ahead - the queue never stops.",
     };

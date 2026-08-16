@@ -210,6 +210,16 @@ public class Board : MonoBehaviour
     [Header("Packed Box Animation")]
     [SerializeField, Min(0.01f)] private float packedBoxMoveDuration = 0.37f;
 
+    [Tooltip("How long a packed box takes to slide off the right-hand edge of the screen.")]
+    [SerializeField, Min(0.01f)] private float packedBoxExitDuration = 0.5f;
+
+    // Viewport x = 1 is the right edge of the screen; the margin past it guarantees the
+    // box is fully out of view before it is destroyed, whatever size it is.
+    private const float OffScreenViewportX = 1.25f;
+
+    // Only used if there is no Camera.main to measure the screen edge against.
+    private const float OffScreenFallbackDistance = 12f;
+
     public List<Box> boardBoxes = new List<Box>();
     public Box lastPlacedBox;
     public bool IsBoxRemoved;
@@ -1138,7 +1148,7 @@ public class Board : MonoBehaviour
             bool consumedByOrder = ReportPackedBoxToOrders(box, sourcePosition);
 
             AwardPackedBox(box, consumedByOrder);
-            MovePackedCopyToTruck(sourcePosition);
+            MovePackedCopyOffScreen(sourcePosition);
 
             box.gameObject.SetActive(false);
             Destroy(box.gameObject);
@@ -1275,80 +1285,53 @@ public class Board : MonoBehaviour
         }
     }
 
-    private void MovePackedCopyToTruck(Vector3 sourcePosition)
+    // Sends a packed box off the right-hand edge of the screen and destroys it once it
+    // is clear of the view. This animates a copy rather than the box itself because
+    // RetireBox destroys the real one on the same frame it is packed, so anything
+    // animated on the original would never be seen.
+    private void MovePackedCopyOffScreen(Vector3 sourcePosition)
     {
-        LiftTruckManager truckManager = LiftTruckManager.instance;
-        LiftTruck activeTruck = truckManager != null
-            ? truckManager.GetActiveTruck()
-            : null;
-
-        if (activeTruck == null || boxPref == null)
+        if (boxPref == null)
         {
             return;
         }
 
         GameObject movingBox = Instantiate(boxPref, sourcePosition, Quaternion.identity);
 
-        // The match-confirmation punch. It is applied to this copy rather than to
-        // the real box because RetireBox destroys the real one on the same frame it
-        // is packed, so a punch there would never be seen. This copy is purely
-        // visual and already on its way to the truck, so scaling it changes nothing
-        // about the board or the match rules.
+        // The match-confirmation punch, kept from the old behaviour. Scaling this copy
+        // changes nothing about the board or the match rules - it is purely visual.
         Vector3 restScale = movingBox.transform.localScale;
         DOTween.Sequence()
             .Append(movingBox.transform.DOScale(restScale * 1.08f, 0.06f).SetEase(Ease.OutBack))
             .Append(movingBox.transform.DOScale(restScale * 0.96f, 0.05f).SetEase(Ease.InOutQuad))
             .Append(movingBox.transform.DOScale(restScale, 0.05f).SetEase(Ease.OutQuad));
 
-        if (activeTruck.IsEnoughRoomLeft())
-        {
-            Vector3 target = activeTruck.GetNextAvailablePosition();
-            movingBox.transform.DOMove(target, packedBoxMoveDuration).OnComplete(() =>
+        movingBox.transform.DOMove(GetOffScreenRightPosition(sourcePosition), packedBoxExitDuration)
+            .SetEase(Ease.InQuad)
+            .OnComplete(() =>
             {
-                if (movingBox == null)
-                {
-                    return;
-                }
-
-                if (activeTruck != null)
-                {
-                    activeTruck.AddBox(movingBox);
-                }
-                else
+                if (movingBox != null)
                 {
                     Destroy(movingBox);
                 }
             });
-        }
-        else
-        {
-            LiftTruck nextTruck = truckManager.GetActiveTruck();
-            if (nextTruck != null && nextTruck.IsEnoughRoomLeft())
-            {
-                Vector3 target = nextTruck.GetNextAvailablePosition();
-                movingBox.transform.DOMove(target, packedBoxMoveDuration)
-                    .OnComplete(() =>
-                    {
-                        if (movingBox == null)
-                        {
-                            return;
-                        }
+    }
 
-                        if (nextTruck != null)
-                        {
-                            nextTruck.AddBox(movingBox);
-                        }
-                        else
-                        {
-                            Destroy(movingBox);
-                        }
-                    });
-            }
-            else
-            {
-                Destroy(movingBox);
-            }
+    // Screen-right, not world +X: the level cameras are angled, so travelling along a
+    // world axis would not read as horizontal on screen. The height is pinned back to
+    // the source so the box leaves flat instead of drifting up or down on its way out.
+    private Vector3 GetOffScreenRightPosition(Vector3 sourcePosition)
+    {
+        Camera cam = Camera.main;
+        if (cam == null)
+        {
+            return sourcePosition + Vector3.right * OffScreenFallbackDistance;
         }
+
+        Vector3 viewport = cam.WorldToViewportPoint(sourcePosition);
+        Vector3 target = cam.ViewportToWorldPoint(new Vector3(OffScreenViewportX, viewport.y, viewport.z));
+        target.y = sourcePosition.y;
+        return target;
     }
 
     private void CheckBoardFill()
@@ -2862,7 +2845,6 @@ public class Board_OldVersion : MonoBehaviour
                     
                     if (!allBoxes[i, j].IsInstantiated)
                     {
-                        StartCoroutine(MoveToTruck(tempPos));
                         allBoxes[i, j].IsInstantiated = true;
                     }
                 }
@@ -2880,27 +2862,6 @@ public class Board_OldVersion : MonoBehaviour
         }
         yield return new WaitForSeconds(delay);
         if (box != null) Destroy(box.gameObject, 1.5f);
-    }
-    
-    private IEnumerator MoveToTruck(Transform boxTransform)
-    {
-        LiftTruck activeTruck = LiftTruckManager.instance.GetActiveTruck();
-        if (activeTruck != null)
-        {
-            yield return new WaitForSeconds(0.3f);
-            GameObject box = Instantiate(boxPref, boxTransform.position + Vector3.up * 0.53f, Quaternion.identity);
-            
-            if (activeTruck.IsEnoughRoomLeft())
-            {
-                Vector3 target = activeTruck.GetNextAvailablePosition();
-                box.transform.DOMove(target, 0.37f).OnComplete(() => activeTruck.AddBox(box));
-            }
-            else
-            {
-                LiftTruck nextTruck = LiftTruckManager.instance.GetActiveTruck();
-                nextTruck?.AddBox(box);
-            }
-        }
     }
     
     private void CheckBoardFill()

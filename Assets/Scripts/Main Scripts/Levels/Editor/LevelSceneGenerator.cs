@@ -35,10 +35,10 @@ public readonly struct GenerationResult
 /// The scene stays authoritative at runtime; this only writes into it. Every
 /// generated scene is a copy of the template, which is the one scene known to
 /// have every manager wired (Board, SpawnContoller, GameManager, OrderManager,
-/// OrderPanelUI, OrderVfxDirector, UIManager, LiftTruckManager, ...). Copying
-/// rather than building a scene from scratch means new levels inherit that wiring
-/// for free, at the cost of also inheriting the template's camera framing and
-/// truck placement - so the template is worth auditing before a bulk generate.
+/// OrderPanelUI, OrderVfxDirector, UIManager, ...). Copying rather than building
+/// a scene from scratch means new levels inherit that wiring for free, at the cost
+/// of also inheriting the template's camera framing and prop placement - so the
+/// template is worth auditing before a bulk generate.
 /// </summary>
 public static class LevelSceneGenerator
 {

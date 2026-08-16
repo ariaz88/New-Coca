@@ -59,7 +59,7 @@ public static class OrderPanelPreview
             canvas.renderMode = RenderMode.WorldSpace;
 
             // Far from any real level geometry, so the open scene's board and
-            // trucks cannot appear behind the card. Same trick SodaIconBaker uses.
+            // props cannot appear behind the card. Same trick SodaIconBaker uses.
             Vector3 rigOrigin = new Vector3(0f, -10000f, 0f);
 
             RectTransform canvasRect = rig.GetComponent<RectTransform>();
