@@ -5,40 +5,31 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Sequences the effect that connects a packed box on the board to its order slot
-/// in the panel.
+/// Plays the sequence that connects a packed box on the board to its order slot
+/// in the panel. This is stages 3 to 7 of the reference effect; stages 1 and 2,
+/// closing and lifting the box, are already handled by the existing gameplay.
 ///
-/// Phase 1, at the box
-///     A soft flash, a handful of warm dust motes, and the "+1" with the drink's
-///     icon. This is the confirmation beat: it says the match registered, before
-///     anything starts moving.
+///   3. "+1" label rises from where the box was and fades out.
+///   4. A tinted comet flies from that point up to the slot, along a curved
+///      path, shedding sparkles behind it.
+///   5. Arrival. The director calls back, and the panel flashes the halo and
+///      decrements the number.
+///   6. The slot's icon hops. Owned by OrderSlotUI, not by this script.
+///   7. The remaining sparkles finish falling and everything returns to a pool.
 ///
-/// Phase 2, the delivery
-///     A small white-hot head flies up to the slot along a gentle Bezier, dragging
-///     a narrow white-cyan-lavender ribbon and shedding five-pointed stars and fine
-///     dust. Owned by <see cref="ObjectiveDeliveryVfx"/>.
+/// Why this is done in UI space
+/// ----------------------------
+/// The effect starts on a 3D board and has to land exactly on a UI element. Any
+/// world-space implementation would have to convert the target back every frame
+/// and would still sort awkwardly against the canvas. Converting once, at the
+/// start, into the canvas's own coordinates makes the landing pixel-exact and
+/// removes all sorting questions.
 ///
-/// Phase 3, at the slot
-///     A compact flash, a small radial star burst, an expanding cyan ring, and the
-///     callback that lets the panel tick the number down. The slot's own halo and
-///     hop are owned by OrderSlotUI.
-///
-/// Why the effect runs in UI space
-/// -------------------------------
-/// It starts on a 3D board and has to finish exactly on a UI element. A world-space
-/// implementation would have to convert the slot's screen position back into the
-/// world every frame and would still need sorting rules to draw over the canvas.
-/// Converting once, at launch, into the canvas's own coordinates makes the landing
-/// pixel-exact and removes the sorting question entirely.
-///
-/// It also means TrailRenderer and ParticleSystem are unavailable, since neither
-/// draws inside a screen-space Canvas. The trail is a UI mesh
-/// (<see cref="OrderTrailRibbon"/>) and the particles are pooled Images
-/// (<see cref="OrderVfxParticles"/>), which give the same look and sort correctly
-/// with the rest of the UI for free.
-///
-/// Tuning lives in <see cref="OrderVfxSettings"/>, not on this component, because
-/// this component exists in five level scenes and per-scene copies would drift.
+/// Why plain Images instead of a ParticleSystem
+/// --------------------------------------------
+/// Unity's particle systems do not render inside a Canvas without an extra
+/// package. Pooled Image objects give the same look here, sort correctly with
+/// the rest of the UI for free, and keep the whole effect in one hierarchy.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
@@ -50,68 +41,88 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
     [SerializeField, Tooltip("Full-screen RectTransform the effects are parented to. Created automatically when empty.")]
     private RectTransform effectRoot;
 
-    [SerializeField, Tooltip("Maps a soda color to its icon and tint. Falls back to built-in colors when empty.")]
+    [SerializeField, Tooltip("Maps a soda color to its tint. Falls back to built-in colors when empty.")]
     private SodaVisualLibrary visualLibrary;
 
-    [SerializeField, Tooltip("All timings, colors and counts. Falls back to built-in defaults when empty.")]
-    private OrderVfxSettings settings;
+    [Header("Stage 3 - Plus One Label")]
+    [SerializeField, Tooltip("Turn off to skip the +1 label entirely.")]
+    private bool showPlusOneLabel = true;
 
-    [SerializeField, Tooltip("Additive UI material for the glow. Falls back to a runtime material when empty.")]
-    private Material glowMaterial;
+    [SerializeField, Min(0.01f)] private float plusOneDuration = 0.7f;
+    [SerializeField, Tooltip("How far the label rises, in canvas units.")]
+    private float plusOneRise = 80f;
+    [SerializeField, Min(1f)] private float plusOneFontSize = 52f;
+
+    [SerializeField, Tooltip("Draws the drink's icon next to the +1, as in the reference.")]
+    private bool showPlusOneIcon = true;
+
+    [SerializeField, Tooltip("Height of that icon, in canvas units.")]
+    private float plusOneIconSize = 76f;
+
+    [SerializeField, Tooltip("Distance from the centre of the text to the centre of the icon.")]
+    private float plusOneIconGap = 92f;
+
+    [Header("Stage 4 - Travelling Streak")]
+    [SerializeField, Min(0f), Tooltip("Pause after packing before the streak launches, so the +1 is read first.")]
+    private float streakDelay = 0.22f;
+
+    [SerializeField, Min(0.05f)] private float streakDuration = 0.5f;
+
+    [SerializeField, Tooltip("Sideways bow of the flight path, as a fraction of its length. 0 is a straight line.")]
+    [Range(-0.6f, 0.6f)]
+    private float pathCurvature = 0.3f;
+
+    [SerializeField, Tooltip("Length and thickness of the comet, in canvas units.")]
+    private Vector2 streakSize = new Vector2(300f, 84f);
+
+    [SerializeField, Range(0f, 1f), Tooltip("Peak opacity of the comet.")]
+    private float streakAlpha = 1f;
+
+    [SerializeField, Tooltip("Draws a narrower white-hot core inside the tinted comet, so it reads as light rather than as a smear.")]
+    private bool useHotCore = true;
+
+    [SerializeField, Range(0.1f, 1f), Tooltip("Size of that core relative to the comet.")]
+    private float hotCoreScale = 0.52f;
+
+    [SerializeField, Tooltip("Optional override for the generated comet sprite.")]
+    private Sprite streakSpriteOverride;
+
+    [Header("Stage 4 - Sparkles")]
+    [SerializeField, Min(0), Tooltip("Sparkles shed along the flight. 0 disables them.")]
+    private int sparkleCount = 24;
+
+    [SerializeField] private Vector2 sparkleSizeRange = new Vector2(16f, 40f);
+    [SerializeField, Min(0.05f)] private float sparkleLifetime = 0.5f;
+    [SerializeField, Tooltip("How far a sparkle drifts sideways from the path before fading.")]
+    private float sparkleScatter = 34f;
+    [SerializeField, Tooltip("Downward drift applied over a sparkle's life, so the trail settles.")]
+    private float sparkleFall = 40f;
+    [SerializeField, Tooltip("Optional override for the generated sparkle sprite.")]
+    private Sprite sparkleSpriteOverride;
+
+    [Header("Stage 5 - Impact Star Burst")]
+    [SerializeField, Min(0), Tooltip("Bright stars thrown outward from the slot on arrival. 0 disables the burst.")]
+    private int burstStarCount = 12;
+
+    [SerializeField] private Vector2 burstStarSizeRange = new Vector2(14f, 34f);
+    [SerializeField, Min(0.05f)] private float burstLifetime = 0.55f;
+    [SerializeField, Tooltip("How far the stars travel from the slot.")]
+    private Vector2 burstRadiusRange = new Vector2(30f, 95f);
+    [SerializeField, Tooltip("Color of the burst stars. Warm yellow matches the impact halo.")]
+    private Color burstColor = new Color(1f, 0.93f, 0.55f, 1f);
+    [SerializeField, Tooltip("Optional override for the generated star sprite.")]
+    private Sprite starSpriteOverride;
 
     [Header("Audio")]
-    [SerializeField, Tooltip("Optional clip played when the head reaches its slot.")]
+    [SerializeField, Tooltip("Optional clip played when the streak reaches its slot.")]
     private AudioClip impactClip;
 
     [SerializeField, Range(0f, 1f)] private float impactVolume = 0.7f;
 
-    [Header("Debug")]
-    [SerializeField, Tooltip("Board object the test delivery launches from. Empty uses the screen centre.")]
-    private Transform testSource;
-
-    [SerializeField, Tooltip("UI element the test delivery lands on. Empty uses the first order slot.")]
-    private RectTransform testTarget;
-
-    [SerializeField, Tooltip("Soda color the test delivery pretends to have packed.")]
-    private Soda.SodaColor testColor = Soda.SodaColor.Blue;
-
     private Canvas parentCanvas;
     private Camera canvasCamera;
-    private OrderVfxPool pool;
-    private OrderVfxParticles particles;
-    private OrderVfxSettings runtimeSettings;
-    private Material runtimeGlowMaterial;
-
-    private readonly Stack<ObjectiveDeliveryVfx> deliveryPool = new Stack<ObjectiveDeliveryVfx>();
-    private readonly List<ObjectiveDeliveryVfx> activeDeliveries = new List<ObjectiveDeliveryVfx>();
-    private readonly List<ImpactCallback> pendingCallbacks = new List<ImpactCallback>();
-
-    /// <summary>
-    /// A callback that can be fired from two places but runs at most once.
-    ///
-    /// Unity stops a MonoBehaviour's coroutines when it is disabled, so a delivery
-    /// in flight when the panel is torn down would never reach its own callback.
-    /// OrderManager counts pending impacts and only raises AllOrdersFulfilled once
-    /// every one has landed, so a lost callback means a level that can never be
-    /// completed. Wrapping the callback lets OnDisable settle anything still in
-    /// flight without any risk of ticking an order down twice.
-    /// </summary>
-    private sealed class ImpactCallback
-    {
-        private System.Action action;
-
-        public ImpactCallback(System.Action action)
-        {
-            this.action = action;
-        }
-
-        public void Fire()
-        {
-            System.Action pending = action;
-            action = null;
-            pending?.Invoke();
-        }
-    }
+    private readonly Stack<Image> imagePool = new Stack<Image>();
+    private readonly Stack<TextMeshProUGUI> labelPool = new Stack<TextMeshProUGUI>();
 
     private void Awake()
     {
@@ -121,51 +132,20 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
             parentCanvas = parentCanvas.rootCanvas;
 
             // Overlay canvases convert with a null camera; every other mode needs
-            // the canvas's own camera. Getting this wrong offsets every effect, and
-            // this project ships both kinds: Level 2 is Overlay, MainLevels/Level1
-            // is Screen Space Camera.
+            // the canvas's own camera. Getting this wrong offsets every effect.
             canvasCamera = parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay
                 ? null
                 : parentCanvas.worldCamera;
         }
 
         EnsureEffectRoot();
-        EnsureRuntime();
-    }
-
-    private void OnDisable()
-    {
-        // Disabling stops every coroutine, so any delivery still in flight would
-        // otherwise never reach its callback. Settle them here: the order ticks
-        // down without its animation, which is far better than a level that can
-        // never be completed.
-        for (int index = 0; index < pendingCallbacks.Count; index++)
-        {
-            pendingCallbacks[index].Fire();
-        }
-
-        pendingCallbacks.Clear();
-
-        // Anything still in flight releases the pooled objects it holds, rather
-        // than leaving them stranded active on the effect layer.
-        for (int index = 0; index < activeDeliveries.Count; index++)
-        {
-            activeDeliveries[index]?.Abort();
-        }
-
-        activeDeliveries.Clear();
-        particles?.ClearAll();
     }
 
     /// <summary>
     /// IOrderImpactPresenter. Starts the sequence and guarantees that
-    /// <paramref name="onImpact"/> runs exactly once, even if the effect cannot be
-    /// played at all.
-    ///
-    /// This is the single most important rule in the file. OrderManager counts
-    /// pending impacts and only raises AllOrdersFulfilled when every one has
-    /// landed; a skipped callback leaves an order permanently in flight and the
-    /// level can never be completed.
+    /// <paramref name="onImpact"/> runs exactly once, even if the effect cannot
+    /// be played at all. Skipping it would leave the order stuck mid-flight and
+    /// the level unable to complete.
     /// </summary>
     public void PlayImpact(OrderConsumedEvent consumedEvent, OrderSlotUI targetSlot, System.Action onImpact)
     {
@@ -183,214 +163,71 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
         OrderSlotUI targetSlot,
         System.Action onImpact)
     {
-        EnsureRuntime();
-
-        ImpactCallback callback = new ImpactCallback(onImpact);
-        pendingCallbacks.Add(callback);
-
-        // Same auto-resolve as the panel: an unassigned inspector reference must not
-        // silently turn every trail white.
+        // Same auto-resolve as the panel: an unassigned inspector reference
+        // must not silently turn every trail white.
         if (visualLibrary == null)
         {
             visualLibrary = SodaVisualLibrary.Resolve();
         }
 
-        Color sodaColor = visualLibrary != null
+        Color tint = visualLibrary != null
             ? visualLibrary.GetEffectColor(consumedEvent.Color)
             : SodaVisualLibrary.DefaultColorFor(consumedEvent.Color);
 
         Vector2 origin = WorldToEffectSpace(consumedEvent.SourceWorldPosition, ResolveBoardCamera());
 
-        PlayMatchConfirmation(origin, consumedEvent.Color, sodaColor);
-
-        if (runtimeSettings.DeliveryDelay > 0f)
+        if (showPlusOneLabel)
         {
-            yield return new WaitForSecondsRealtime(runtimeSettings.DeliveryDelay);
+            Sprite icon = showPlusOneIcon && visualLibrary != null
+                ? visualLibrary.GetIcon(consumedEvent.Color)
+                : null;
+
+            StartCoroutine(PlayPlusOneLabel(origin, tint, icon));
         }
 
-        // Resolved after the delay rather than before: the panel may have been
-        // rebuilt, and a layout pass could have moved the slot in the meantime.
+        if (streakDelay > 0f)
+        {
+            yield return new WaitForSecondsRealtime(streakDelay);
+        }
+
+        // Resolved after the delay: the panel may have been rebuilt, and the
+        // target could have moved with a layout pass.
         if (targetSlot == null)
         {
-            callback.Fire();
-            pendingCallbacks.Remove(callback);
+            onImpact?.Invoke();
             yield break;
         }
 
         Vector2 target = UiWorldToEffectSpace(targetSlot.ImpactWorldPosition);
+        yield return PlayStreak(origin, target, tint);
 
-        ObjectiveDeliveryVfx delivery = RentDelivery();
-        activeDeliveries.Add(delivery);
-
-        yield return delivery.Fly(origin, target, sodaColor, runtimeSettings);
-
-        PlayDestinationImpact(target, sodaColor);
+        PlayImpactBurst(target);
         PlayImpactSound();
 
-        // The counter changes here and nowhere else. OrderPanelUI.ApplyImpact is
-        // the only thing this callback reaches, so the number can never move before
-        // the head has visually landed.
-        callback.Fire();
-        pendingCallbacks.Remove(callback);
-
-        // The ribbon is still bright at this point and is released separately, once
-        // its tail has faded. Pooling it here would cut the streak off in mid-air.
-        yield return delivery.ReleaseWhenTrailFaded();
-
-        activeDeliveries.Remove(delivery);
-        deliveryPool.Push(delivery);
-    }
-
-    // -------------------------------------------------------- phase 1, the box
-
-    /// <summary>
-    /// The confirmation beat at the completed box: a soft flash, a few warm motes,
-    /// an optional subtle ring, and the "+1".
-    ///
-    /// This is the only place warm gold appears in the whole effect. It marks the
-    /// match itself; everything that travels is cool by design.
-    /// </summary>
-    private void PlayMatchConfirmation(Vector2 origin, Soda.SodaColor color, Color sodaColor)
-    {
-        StartCoroutine(PlayConfirmFlash(origin));
-
-        EmitConfirmDust(origin);
-
-        if (runtimeSettings.ConfirmRingEnabled)
-        {
-            StartCoroutine(PlayRing(
-                origin,
-                runtimeSettings.ConfirmRingSize,
-                Vector2.one,
-                runtimeSettings.ConfirmRingDuration,
-                WithAlpha(runtimeSettings.IceCyan, runtimeSettings.ConfirmRingAlpha)));
-        }
-
-        if (!runtimeSettings.ShowPlusOne)
-        {
-            return;
-        }
-
-        Sprite icon = runtimeSettings.ShowPlusOneIcon && visualLibrary != null
-            ? visualLibrary.GetIcon(color)
-            : null;
-
-        StartCoroutine(PlayPlusOne(origin, icon));
+        // Stage 5 and 6 belong to the panel and the slot. The director's job ends
+        // the moment the comet arrives.
+        onImpact?.Invoke();
     }
 
     /// <summary>
-    /// The golden flash at the completed box.
-    ///
-    /// Both layers are gold. An earlier version put a white core inside a gold
-    /// halo, which at these sizes reads as a white flash with a faint warm rim
-    /// rather than as a gold one, because the bright centre is what the eye takes
-    /// the colour from. Two gold layers at different sizes give the same sense of
-    /// depth while the flash stays unambiguously gold.
+    /// The "+1" and, beside it, the drink's own icon, exactly as the reference
+    /// shows. The two are separate pooled objects moved by the same offset each
+    /// frame rather than a parented pair, because the pools stay flat and the
+    /// icon is optional.
     /// </summary>
-    private IEnumerator PlayConfirmFlash(Vector2 origin)
+    private IEnumerator PlayPlusOneLabel(Vector2 origin, Color tint, Sprite icon)
     {
-        Image outer = pool.RentImage();
-        outer.sprite = OrderVfxTextures.Glow;
-        outer.rectTransform.sizeDelta = Vector2.one * runtimeSettings.ConfirmFlashSize;
-        outer.rectTransform.anchoredPosition = origin;
-        outer.gameObject.SetActive(true);
+        TextMeshProUGUI label = RentLabel();
+        RectTransform labelRect = label.rectTransform;
+        labelRect.localScale = Vector3.one;
 
-        Image inner = pool.RentImage();
-        inner.sprite = OrderVfxTextures.Glow;
-        inner.rectTransform.sizeDelta = Vector2.one * (runtimeSettings.ConfirmFlashSize * 0.55f);
-        inner.rectTransform.anchoredPosition = origin;
-        inner.gameObject.SetActive(true);
-
-        Color gold = runtimeSettings.ConfirmGold;
-        Color deepGold = runtimeSettings.ConfirmGoldDeep;
-
-        float duration = runtimeSettings.ConfirmFlashDuration;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-
-            // Snaps to full brightness and decays. Fading in would make the match
-            // feel soft, which is the opposite of a confirmation.
-            float alpha = 1f - t * t;
-            float scale = Mathf.Lerp(0.6f, 1.15f, EaseOutCubic(t));
-
-            outer.rectTransform.localScale = new Vector3(scale, scale, 1f);
-            inner.rectTransform.localScale = new Vector3(scale * 0.9f, scale * 0.9f, 1f);
-
-            // The deeper gold goes on the outside so the flash keeps a warm rim as
-            // it expands instead of washing pale at the edge.
-            outer.color = WithAlpha(deepGold, alpha * 0.75f);
-            inner.color = WithAlpha(gold, alpha);
-
-            yield return null;
-        }
-
-        pool.ReturnImage(outer);
-        pool.ReturnImage(inner);
-    }
-
-    private void EmitConfirmDust(Vector2 origin)
-    {
-        int count = runtimeSettings.ConfirmDustCount;
-        if (count <= 0)
-        {
-            return;
-        }
-
-        for (int index = 0; index < count; index++)
-        {
-            // Biased upward: the box is being lifted away, so its dust should rise
-            // rather than spray evenly in a circle.
-            float angle = Random.Range(20f, 160f) * Mathf.Deg2Rad;
-            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-
-            float radius = Random.Range(
-                runtimeSettings.ConfirmDustRadius.x,
-                runtimeSettings.ConfirmDustRadius.y);
-
-            float lifetime = Random.Range(
-                runtimeSettings.ConfirmDustLifetime.x,
-                runtimeSettings.ConfirmDustLifetime.y);
-
-            // Gold throughout, matching the flash it belongs to. White motes made
-            // the whole confirmation read as a white pop with a warm edge.
-            Color color = Random.value < 0.6f
-                ? runtimeSettings.ConfirmGold
-                : runtimeSettings.ConfirmGoldDeep;
-
-            particles.Spawn(
-                OrderVfxTextures.SoftDust,
-                origin,
-                direction * (radius / Mathf.Max(0.01f, lifetime)),
-                color,
-                Random.Range(runtimeSettings.ConfirmDustSize.x, runtimeSettings.ConfirmDustSize.y),
-                lifetime,
-                0f,
-                6f);
-        }
-    }
-
-    /// <summary>
-    /// The "+1" and the drink's own icon beside it. Scales from 0.70 through a 1.15
-    /// overshoot to 1.0, rises a short distance, holds while it is read, then fades
-    /// as the delivery launches.
-    ///
-    /// The two are separate pooled objects moved by the same offset rather than a
-    /// parented pair, because the pools stay flat and the icon is optional.
-    /// </summary>
-    private IEnumerator PlayPlusOne(Vector2 origin, Sprite icon)
-    {
-        TextMeshProUGUI label = pool.RentLabel();
         label.text = "+1";
-        label.fontSize = runtimeSettings.PlusOneFontSize;
+        label.fontSize = plusOneFontSize;
         label.color = Color.white;
 
-        // A dark outline, not a tinted one. The board is a light wooden surface, so
-        // a pale outline leaves white text barely readable; the drink's identity is
-        // already carried by the icon beside it.
+        // A dark outline, not a tinted one. The board is a light blue grid, so a
+        // pale outline left the white text barely readable; the drink's identity
+        // is already carried by the icon beside it and by the streak.
         label.outlineColor = new Color(0.1f, 0.08f, 0.06f, 1f);
         label.outlineWidth = 0.32f;
         label.gameObject.SetActive(true);
@@ -398,205 +235,246 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
         Image iconImage = null;
         if (icon != null)
         {
-            // Not additive: this is real artwork and has to render as itself.
-            iconImage = pool.RentImage(false);
+            iconImage = RentImage();
             iconImage.sprite = icon;
             iconImage.preserveAspect = true;
             iconImage.type = Image.Type.Simple;
             iconImage.color = Color.white;
-            iconImage.rectTransform.sizeDelta = Vector2.one * runtimeSettings.PlusOneIconSize;
+            iconImage.rectTransform.sizeDelta = new Vector2(plusOneIconSize, plusOneIconSize);
+            iconImage.rectTransform.localRotation = Quaternion.identity;
+            iconImage.rectTransform.localScale = Vector3.one;
             iconImage.gameObject.SetActive(true);
         }
 
         // The pair is centred on the origin, so adding an icon does not shift the
         // "+1" away from where the box actually was.
-        float halfGap = iconImage != null ? runtimeSettings.PlusOneIconGap * 0.5f : 0f;
+        float halfGap = iconImage != null ? plusOneIconGap * 0.5f : 0f;
         Vector2 labelOffset = new Vector2(-halfGap, 0f);
         Vector2 iconOffset = new Vector2(halfGap, 0f);
 
-        float duration = runtimeSettings.PlusOneDuration;
         float elapsed = 0f;
-
-        while (elapsed < duration)
+        while (elapsed < plusOneDuration)
         {
             elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
+            float t = Mathf.Clamp01(elapsed / plusOneDuration);
 
-            Vector2 rise = new Vector2(0f, runtimeSettings.PlusOneRise * EaseOutCubic(t));
-            float scale = PlusOneScale(t);
+            Vector2 rise = new Vector2(0f, plusOneRise * EaseOutCubic(t));
 
-            // Held opaque for the first half so the number is readable, then faded.
-            // A linear fade from zero reads as a flicker.
+            // Held fully opaque for the first half so the number is readable,
+            // then faded. A linear fade from zero reads as a flicker.
             float alpha = t < 0.5f ? 1f : 1f - (t - 0.5f) / 0.5f;
 
-            label.rectTransform.anchoredPosition = origin + labelOffset + rise;
-            label.rectTransform.localScale = new Vector3(scale, scale, 1f);
+            labelRect.anchoredPosition = origin + labelOffset + rise;
             label.color = new Color(1f, 1f, 1f, alpha);
 
             if (iconImage != null)
             {
                 iconImage.rectTransform.anchoredPosition = origin + iconOffset + rise;
-                iconImage.rectTransform.localScale = new Vector3(scale, scale, 1f);
                 iconImage.color = new Color(1f, 1f, 1f, alpha);
             }
 
             yield return null;
         }
 
-        pool.ReturnLabel(label);
-        pool.ReturnImage(iconImage);
+        ReturnLabel(label);
+        ReturnImage(iconImage);
     }
 
-    /// <summary>
-    /// 0.70 -> 1.15 -> 1.0, with the overshoot reached early. Done as an explicit
-    /// two-segment curve so the peak lands at a known moment rather than wherever
-    /// an OutBack ease happens to put it.
-    /// </summary>
-    private float PlusOneScale(float t)
+    private IEnumerator PlayStreak(Vector2 origin, Vector2 target, Color tint)
     {
-        const float overshootEnd = 0.28f;
-        const float settleEnd = 0.45f;
+        Sprite streakSprite = streakSpriteOverride != null ? streakSpriteOverride : OrderVfxTextures.Streak;
 
-        if (t < overshootEnd)
+        Image streak = RentImage();
+        RectTransform rect = streak.rectTransform;
+        rect.sizeDelta = streakSize;
+        streak.sprite = streakSprite;
+        streak.color = new Color(tint.r, tint.g, tint.b, streakAlpha);
+        streak.gameObject.SetActive(true);
+
+        // A single tinted shape reads as a faint smear. Layering a narrower,
+        // near-white copy on top gives the comet a hot centre with a colored
+        // fringe, which is what makes it look like emitted light.
+        Image core = null;
+        if (useHotCore)
         {
-            return Mathf.Lerp(
-                runtimeSettings.PlusOneStartScale,
-                runtimeSettings.PlusOnePeakScale,
-                EaseOutCubic(t / overshootEnd));
+            core = RentImage();
+            core.sprite = streakSprite;
+            core.rectTransform.sizeDelta = streakSize * hotCoreScale;
+            core.color = Color.Lerp(tint, Color.white, 0.75f);
+            core.gameObject.SetActive(true);
         }
 
-        if (t < settleEnd)
+        // Quadratic Bezier. The control point is pushed sideways from the middle
+        // of the flight so the path bows instead of running dead straight, which
+        // is what the reference footage shows.
+        Vector2 middle = (origin + target) * 0.5f;
+        Vector2 direction = target - origin;
+        Vector2 perpendicular = new Vector2(-direction.y, direction.x).normalized;
+        Vector2 control = middle + perpendicular * (direction.magnitude * pathCurvature);
+
+        int sparklesSpawned = 0;
+        float elapsed = 0f;
+        Vector2 previous = origin;
+
+        while (elapsed < streakDuration)
         {
-            return Mathf.Lerp(
-                runtimeSettings.PlusOnePeakScale,
-                1f,
-                (t - overshootEnd) / (settleEnd - overshootEnd));
-        }
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / streakDuration);
 
-        return 1f;
-    }
+            // Eased so the comet accelerates away and decelerates into the slot.
+            float eased = EaseInOutQuad(t);
+            Vector2 position = EvaluateBezier(origin, control, target, eased);
 
-    // ------------------------------------------------------ phase 3, the slot
+            rect.anchoredPosition = position;
 
-    /// <summary>
-    /// The arrival: a compact white-cyan flash, a small ring of stars, and an
-    /// expanding thin ring. Deliberately not a golden explosion; the destination
-    /// stays in the same cool palette as the streak that fed it.
-    /// </summary>
-    private void PlayDestinationImpact(Vector2 at, Color sodaColor)
-    {
-        StartCoroutine(PlayImpactFlash(at));
-
-        int count = runtimeSettings.ImpactStarCount;
-        if (count > 0)
-        {
-            // Evenly spaced angles with a random offset, rather than fully random
-            // ones: random directions clump, and a clumped burst looks like a
-            // mistake rather than a spray.
-            float step = 360f / count;
-            float offset = Random.Range(0f, step);
-
-            for (int index = 0; index < count; index++)
+            Vector2 travel = position - previous;
+            if (travel.sqrMagnitude > 0.0001f)
             {
-                float angle = (offset + index * step + Random.Range(-step * 0.2f, step * 0.2f))
-                              * Mathf.Deg2Rad;
-                Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-
-                float radius = Random.Range(
-                    runtimeSettings.ImpactStarRadius.x,
-                    runtimeSettings.ImpactStarRadius.y);
-
-                float lifetime = runtimeSettings.ImpactStarLifetime;
-
-                particles.Spawn(
-                    OrderVfxTextures.StarSparkle,
-                    at,
-                    direction * (radius / Mathf.Max(0.01f, lifetime)),
-                    Random.value < 0.6f
-                        ? runtimeSettings.CoreWhite
-                        : runtimeSettings.Tint(runtimeSettings.ElectricCyan, sodaColor, 0.5f),
-                    Random.Range(runtimeSettings.ImpactStarSize.x, runtimeSettings.ImpactStarSize.y),
-                    lifetime,
-                    Random.Range(runtimeSettings.StarSpin.x, runtimeSettings.StarSpin.y));
+                // The bright end of the sprite is its right edge, so aligning the
+                // rotation with the travel vector points the head forward.
+                float angle = Mathf.Atan2(travel.y, travel.x) * Mathf.Rad2Deg;
+                rect.localRotation = Quaternion.Euler(0f, 0f, angle);
             }
-        }
 
-        if (runtimeSettings.ImpactRingEnabled)
-        {
-            StartCoroutine(PlayRing(
-                at,
-                runtimeSettings.ImpactRingSize,
-                runtimeSettings.ImpactRingScale,
-                runtimeSettings.ImpactRingDuration,
-                WithAlpha(runtimeSettings.IceCyan, runtimeSettings.ImpactRingAlpha)));
-        }
-    }
+            if (core != null)
+            {
+                core.rectTransform.anchoredPosition = position;
+                core.rectTransform.localRotation = rect.localRotation;
+            }
 
-    private IEnumerator PlayImpactFlash(Vector2 at)
-    {
-        Image glow = pool.RentImage();
-        glow.sprite = OrderVfxTextures.Glow;
-        glow.rectTransform.sizeDelta = Vector2.one * runtimeSettings.ImpactFlashSize;
-        glow.rectTransform.anchoredPosition = at;
-        glow.gameObject.SetActive(true);
+            // Sparkles are released by distance travelled rather than per frame,
+            // so the trail density does not change with frame rate.
+            int wanted = Mathf.FloorToInt(t * sparkleCount);
+            while (sparklesSpawned < wanted)
+            {
+                StartCoroutine(PlaySparkle(position, tint));
+                sparklesSpawned++;
+            }
 
-        Image core = pool.RentImage();
-        core.sprite = OrderVfxTextures.Sparkle;
-        core.rectTransform.sizeDelta = Vector2.one * (runtimeSettings.ImpactFlashSize * 0.4f);
-        core.rectTransform.anchoredPosition = at;
-        core.gameObject.SetActive(true);
+            // Fades out over the last quarter so it dissolves into the impact
+            // glow instead of vanishing on a frame boundary.
+            float alpha = t < 0.75f ? streakAlpha : streakAlpha * (1f - (t - 0.75f) / 0.25f);
+            streak.color = new Color(tint.r, tint.g, tint.b, alpha);
 
-        float duration = runtimeSettings.ImpactFlashDuration;
-        float elapsed = 0f;
+            if (core != null)
+            {
+                Color hot = Color.Lerp(tint, Color.white, 0.75f);
+                core.color = new Color(hot.r, hot.g, hot.b, alpha);
+            }
 
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-
-            float alpha = 1f - t * t;
-            float scale = Mathf.Lerp(0.5f, 1.2f, EaseOutCubic(t));
-
-            glow.rectTransform.localScale = new Vector3(scale, scale, 1f);
-            core.rectTransform.localScale = new Vector3(scale * 0.8f, scale * 0.8f, 1f);
-
-            glow.color = WithAlpha(runtimeSettings.ElectricCyan, alpha * 0.85f);
-            core.color = WithAlpha(runtimeSettings.CoreWhite, alpha);
-
+            previous = position;
             yield return null;
         }
 
-        pool.ReturnImage(glow);
-        pool.ReturnImage(core);
+        ReturnImage(streak);
+        ReturnImage(core);
     }
 
     /// <summary>
-    /// A thin ring that expands and fades. Shared by the optional confirmation ring
-    /// at the box and the impact ring at the slot, which differ only in their
-    /// numbers.
+    /// The arrival burst: small bright stars thrown outward from the slot.
+    ///
+    /// The halo alone was reading as a flat yellow box. Stars give the impact
+    /// the scatter the reference has, and being separate short-lived objects
+    /// they cost nothing once the burst is over.
     /// </summary>
-    private IEnumerator PlayRing(Vector2 at, float size, Vector2 scaleRange, float duration, Color color)
+    private void PlayImpactBurst(Vector2 at)
     {
-        Image ring = pool.RentImage();
-        ring.sprite = OrderVfxTextures.Ring;
-        ring.rectTransform.sizeDelta = Vector2.one * size;
-        ring.rectTransform.anchoredPosition = at;
-        ring.gameObject.SetActive(true);
+        if (burstStarCount <= 0)
+        {
+            return;
+        }
+
+        // Evenly spaced angles with a random offset, rather than fully random
+        // angles: random directions clump, and a clumped burst looks like a
+        // mistake rather than a spray.
+        float angleStep = 360f / burstStarCount;
+        float angleOffset = Random.Range(0f, angleStep);
+
+        for (int index = 0; index < burstStarCount; index++)
+        {
+            float angle = (angleOffset + index * angleStep + Random.Range(-angleStep * 0.25f, angleStep * 0.25f))
+                          * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            float radius = Random.Range(burstRadiusRange.x, burstRadiusRange.y);
+
+            StartCoroutine(PlayBurstStar(at, direction * radius));
+        }
+    }
+
+    private IEnumerator PlayBurstStar(Vector2 origin, Vector2 travel)
+    {
+        Image star = RentImage();
+        RectTransform rect = star.rectTransform;
+
+        float size = Random.Range(burstStarSizeRange.x, burstStarSizeRange.y);
+        rect.sizeDelta = new Vector2(size, size);
+        rect.anchoredPosition = origin;
+
+        // A random roll stops twelve identical four-point stars from looking
+        // like a stamped pattern.
+        rect.localRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 90f));
+
+        star.sprite = starSpriteOverride != null ? starSpriteOverride : OrderVfxTextures.Star;
+        star.gameObject.SetActive(true);
 
         float elapsed = 0f;
-        while (elapsed < duration)
+        while (elapsed < burstLifetime)
         {
             elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
+            float t = Mathf.Clamp01(elapsed / burstLifetime);
 
-            float scale = Mathf.Lerp(scaleRange.x, scaleRange.y, EaseOutCubic(t));
-            ring.rectTransform.localScale = new Vector3(scale, scale, 1f);
-            ring.color = WithAlpha(color, color.a * (1f - t));
+            rect.anchoredPosition = origin + travel * EaseOutCubic(t);
 
+            // Pops to full size quickly, then shrinks away. A constant size makes
+            // the burst appear and vanish rather than bloom.
+            float scale = t < 0.2f
+                ? Mathf.Lerp(0.3f, 1f, t / 0.2f)
+                : Mathf.Lerp(1f, 0.25f, (t - 0.2f) / 0.8f);
+            rect.localScale = new Vector3(scale, scale, 1f);
+
+            star.color = new Color(burstColor.r, burstColor.g, burstColor.b, 1f - t * t);
             yield return null;
         }
 
-        pool.ReturnImage(ring);
+        ReturnImage(star);
+    }
+
+    private IEnumerator PlaySparkle(Vector2 position, Color tint)
+    {
+        Image sparkle = RentImage();
+        RectTransform rect = sparkle.rectTransform;
+
+        float size = Random.Range(sparkleSizeRange.x, sparkleSizeRange.y);
+        rect.sizeDelta = new Vector2(size, size);
+        rect.anchoredPosition = position;
+
+        // Stars rather than round dots. Dots read as dust; the reference trail is
+        // made of small bright sparkles with visible points.
+        sparkle.sprite = sparkleSpriteOverride != null ? sparkleSpriteOverride : OrderVfxTextures.Star;
+        sparkle.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 90f));
+        sparkle.gameObject.SetActive(true);
+
+        Vector2 drift = new Vector2(
+            Random.Range(-sparkleScatter, sparkleScatter),
+            Random.Range(-sparkleScatter, sparkleScatter) - sparkleFall);
+
+        float elapsed = 0f;
+        while (elapsed < sparkleLifetime)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / sparkleLifetime);
+
+            rect.anchoredPosition = position + drift * EaseOutCubic(t);
+
+            // Shrinking as it fades keeps the trail from looking like a row of
+            // dots that all switch off together.
+            float scale = Mathf.Lerp(1f, 0.35f, t);
+            rect.localScale = new Vector3(scale, scale, 1f);
+            sparkle.color = new Color(tint.r, tint.g, tint.b, 1f - t);
+            yield return null;
+        }
+
+        ReturnImage(sparkle);
     }
 
     private void PlayImpactSound()
@@ -609,115 +487,6 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
         Camera listener = ResolveBoardCamera();
         Vector3 at = listener != null ? listener.transform.position : Vector3.zero;
         AudioSource.PlayClipAtPoint(impactClip, at, impactVolume);
-    }
-
-    // ----------------------------------------------------------------- debug
-
-    /// <summary>
-    /// Plays the whole sequence without a real match, so the effect can be tuned
-    /// without hunting for a board state that produces one.
-    ///
-    /// Enter Play Mode first: the effect is driven by coroutines and pooled runtime
-    /// objects, neither of which exist in Edit Mode.
-    /// </summary>
-    [ContextMenu("Play Test Delivery")]
-    public void PlayTestDelivery()
-    {
-        if (!Application.isPlaying)
-        {
-            Debug.LogWarning("Enter Play Mode before running the test delivery.", this);
-            return;
-        }
-
-        EnsureEffectRoot();
-        EnsureRuntime();
-
-        Vector3 sourceWorld = testSource != null
-            ? testSource.position
-            : ResolveTestSourceFallback();
-
-        // No slot and no explicit target is not a failure: the effect is being
-        // tuned, and refusing to play makes it impossible to look at before a level
-        // has built its orders. It aims at the top of the canvas instead.
-        OrderSlotUI slot = ResolveTestSlot();
-
-        StartCoroutine(PlayTestSequence(sourceWorld, slot));
-    }
-
-    private IEnumerator PlayTestSequence(Vector3 sourceWorld, OrderSlotUI slot)
-    {
-        if (visualLibrary == null)
-        {
-            visualLibrary = SodaVisualLibrary.Resolve();
-        }
-
-        Color sodaColor = visualLibrary != null
-            ? visualLibrary.GetEffectColor(testColor)
-            : SodaVisualLibrary.DefaultColorFor(testColor);
-
-        Vector2 origin = WorldToEffectSpace(sourceWorld, ResolveBoardCamera());
-
-        PlayMatchConfirmation(origin, testColor, sodaColor);
-
-        if (runtimeSettings.DeliveryDelay > 0f)
-        {
-            yield return new WaitForSecondsRealtime(runtimeSettings.DeliveryDelay);
-        }
-
-        Vector2 target;
-        if (testTarget != null)
-        {
-            target = UiWorldToEffectSpace(testTarget.position);
-        }
-        else if (slot != null)
-        {
-            target = UiWorldToEffectSpace(slot.ImpactWorldPosition);
-        }
-        else
-        {
-            // Roughly where the Orders card sits: upper middle of the canvas.
-            Rect area = effectRoot.rect;
-            target = new Vector2(0f, area.height * 0.35f);
-        }
-
-        ObjectiveDeliveryVfx delivery = RentDelivery();
-        activeDeliveries.Add(delivery);
-
-        yield return delivery.Fly(origin, target, sodaColor, runtimeSettings);
-
-        PlayDestinationImpact(target, sodaColor);
-        PlayImpactSound();
-
-        // The real sequence would tick the counter here. The test deliberately does
-        // not, so it can be replayed without consuming an order.
-        slot?.PlayImpact();
-
-        yield return delivery.ReleaseWhenTrailFaded();
-
-        activeDeliveries.Remove(delivery);
-        deliveryPool.Push(delivery);
-    }
-
-    private Vector3 ResolveTestSourceFallback()
-    {
-        Camera camera = ResolveBoardCamera();
-        if (camera == null)
-        {
-            return Vector3.zero;
-        }
-
-        return camera.ViewportToWorldPoint(new Vector3(0.5f, 0.35f, 10f));
-    }
-
-    private OrderSlotUI ResolveTestSlot()
-    {
-        OrderPanelUI panel = GetComponentInParent<OrderPanelUI>();
-        if (panel == null || panel.Slots.Count == 0)
-        {
-            return null;
-        }
-
-        return panel.Slots[0];
     }
 
     // ---------------------------------------------------------------- space
@@ -733,9 +502,9 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
     }
 
     /// <summary>
-    /// Converts a UI element's world position into the effect root's local space.
-    /// Canvas elements need the canvas camera rather than the board camera, which
-    /// is why this is separate from the board conversion.
+    /// Converts a UI element's world position into the effect root's local
+    /// space. Canvas elements need the canvas camera rather than the board
+    /// camera, which is why this is separate from the board conversion.
     /// </summary>
     private Vector2 UiWorldToEffectSpace(Vector3 uiWorldPosition)
     {
@@ -762,12 +531,10 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
         return boardCamera != null ? boardCamera : Camera.main;
     }
 
-    // --------------------------------------------------------------- runtime
-
     /// <summary>
-    /// Creates the full-screen layer the effects live in. It is added as the last
-    /// child of the canvas so streaks draw over the Orders card, and it ignores
-    /// raycasts so it can never block a drag.
+    /// Creates the full-screen layer the effects live in. It is added as the
+    /// last child of the canvas so streaks draw over the Orders card, and it
+    /// ignores raycasts so it can never block a drag.
     /// </summary>
     private void EnsureEffectRoot()
     {
@@ -779,6 +546,7 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
         Transform parent = parentCanvas != null ? parentCanvas.transform : transform;
         GameObject rootObject = new GameObject("OrderVfxLayer", typeof(RectTransform));
         rootObject.transform.SetParent(parent, false);
+        rootObject.transform.SetAsLastSibling();
 
         effectRoot = rootObject.GetComponent<RectTransform>();
         effectRoot.anchorMin = Vector2.zero;
@@ -791,90 +559,100 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
         group.interactable = false;
     }
 
-    /// <summary>
-    /// Builds the pool, the particle simulation and the settings fallback. Called
-    /// from Awake and again from every entry point, because a scene can be loaded
-    /// with this component starting disabled.
-    /// </summary>
-    private void EnsureRuntime()
+    // ---------------------------------------------------------------- pool
+
+    private Image RentImage()
     {
-        if (runtimeSettings == null)
-        {
-            // A scene that was never given the asset still plays a correct effect
-            // rather than nothing at all. Resolve falls back to Resources, then to
-            // the built-in defaults, so this is never null.
-            runtimeSettings = settings != null ? settings : OrderVfxSettings.Resolve();
-        }
-
-        if (runtimeSettings.DrawAbovePanel && effectRoot != null)
-        {
-            effectRoot.SetAsLastSibling();
-        }
-
-        if (pool == null && effectRoot != null)
-        {
-            pool = new OrderVfxPool(effectRoot, ResolveGlowMaterial());
-        }
-
-        if (particles == null && effectRoot != null)
-        {
-            GameObject created = new GameObject("OrderVfxParticles");
-            created.transform.SetParent(effectRoot, false);
-
-            particles = created.AddComponent<OrderVfxParticles>();
-            particles.Initialize(pool);
-        }
+        Image image = imagePool.Count > 0 ? imagePool.Pop() : CreateImage();
+        image.transform.SetAsLastSibling();
+        return image;
     }
 
-    /// <summary>
-    /// The additive UI material.
-    ///
-    /// An Overlay canvas gets no URP post-processing, so bloom cannot be used to
-    /// make this effect glow. The glow has to come from the blend mode instead,
-    /// which is what the Coca Sorting/UI Glow shader provides. If neither the
-    /// assigned material nor the shader can be found, null is returned and the
-    /// graphics fall back to Unity's standard UI material: dimmer, but correct.
-    /// </summary>
-    private Material ResolveGlowMaterial()
+    private void ReturnImage(Image image)
     {
-        if (glowMaterial != null)
+        if (image == null)
         {
-            return glowMaterial;
+            return;
         }
 
-        if (runtimeGlowMaterial != null)
-        {
-            return runtimeGlowMaterial;
-        }
+        image.gameObject.SetActive(false);
+        image.rectTransform.localScale = Vector3.one;
+        image.rectTransform.localRotation = Quaternion.identity;
 
-        Shader shader = Shader.Find("Coca Sorting/UI Glow");
-        if (shader == null)
-        {
-            Debug.LogWarning(
-                "Shader 'Coca Sorting/UI Glow' was not found, so the order effects will render " +
-                "without additive glow. Assign a glow material on OrderVfxDirector, or make sure " +
-                "the shader is included in the build.",
-                this);
-            return null;
-        }
+        // Reset here, not at rent time. The same pooled Image serves as a comet,
+        // a sparkle, and a "+1" icon, and only the icon wants aspect preserved.
+        // Leaving it on would squash the next comet into its sprite's ratio.
+        image.preserveAspect = false;
+        image.sprite = null;
 
-        runtimeGlowMaterial = new Material(shader)
-        {
-            name = "OrderVfx_Glow (runtime)",
-            hideFlags = HideFlags.HideAndDontSave
-        };
-
-        return runtimeGlowMaterial;
+        imagePool.Push(image);
     }
 
-    private ObjectiveDeliveryVfx RentDelivery()
+    private Image CreateImage()
     {
-        return deliveryPool.Count > 0
-            ? deliveryPool.Pop()
-            : new ObjectiveDeliveryVfx(pool, particles);
+        GameObject created = new GameObject("OrderVfxImage", typeof(RectTransform));
+        created.transform.SetParent(effectRoot, false);
+
+        Image image = created.AddComponent<Image>();
+        image.raycastTarget = false;
+
+        // Anchored to the centre so anchoredPosition maps directly onto the
+        // canvas coordinates the conversion helpers produce.
+        RectTransform rect = image.rectTransform;
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+
+        created.SetActive(false);
+        return image;
+    }
+
+    private TextMeshProUGUI RentLabel()
+    {
+        TextMeshProUGUI label = labelPool.Count > 0 ? labelPool.Pop() : CreateLabel();
+        label.transform.SetAsLastSibling();
+        return label;
+    }
+
+    private void ReturnLabel(TextMeshProUGUI label)
+    {
+        if (label == null)
+        {
+            return;
+        }
+
+        label.gameObject.SetActive(false);
+        labelPool.Push(label);
+    }
+
+    private TextMeshProUGUI CreateLabel()
+    {
+        GameObject created = new GameObject("OrderVfxLabel", typeof(RectTransform));
+        created.transform.SetParent(effectRoot, false);
+
+        TextMeshProUGUI label = created.AddComponent<TextMeshProUGUI>();
+        label.alignment = TextAlignmentOptions.Center;
+        label.raycastTarget = false;
+        label.enableWordWrapping = false;
+        label.fontStyle = FontStyles.Bold;
+
+        RectTransform rect = label.rectTransform;
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(140f, 60f);
+
+        created.SetActive(false);
+        return label;
     }
 
     // ---------------------------------------------------------------- math
+
+    private static Vector2 EvaluateBezier(Vector2 start, Vector2 control, Vector2 end, float t)
+    {
+        float inverse = 1f - t;
+        return inverse * inverse * start + 2f * inverse * t * control + t * t * end;
+    }
 
     private static float EaseOutCubic(float t)
     {
@@ -882,9 +660,10 @@ public sealed class OrderVfxDirector : MonoBehaviour, IOrderImpactPresenter
         return 1f - inverse * inverse * inverse;
     }
 
-    private static Color WithAlpha(Color color, float alpha)
+    private static float EaseInOutQuad(float t)
     {
-        color.a = alpha;
-        return color;
+        return t < 0.5f
+            ? 2f * t * t
+            : 1f - Mathf.Pow(-2f * t + 2f, 2f) * 0.5f;
     }
 }

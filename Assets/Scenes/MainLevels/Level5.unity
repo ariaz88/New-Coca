@@ -2182,9 +2182,6 @@ MonoBehaviour:
   isLevel3Reached: 1
   countdownTime: 10
   countdownGlow: 5
-  selectionPulseScale: 1.07
-  selectionPulseTime: 0.45
-  selectionTintStrength: 0.25
 --- !u!1 &98026750
 GameObject:
   m_ObjectHideFlags: 0
@@ -2895,16 +2892,6 @@ MonoBehaviour:
   BGImage: {fileID: 144687178}
   progressBar: {fileID: 1110592607}
   barText: {fileID: 1071063899}
-  gemCount: 5
-  coinCount: 25
-  hammerCount: 1
-  gemRewardText: {fileID: 0}
-  coinRewardText: {fileID: 0}
-  hammerRewardText: {fileID: 0}
-  gemBurstSprites: 5
-  coinBurstSprites: 40
-  gemToCoinGap: 0.6
-  coinSettleTime: 0.6
 --- !u!1 &145359800
 GameObject:
   m_ObjectHideFlags: 0
@@ -3010,7 +2997,6 @@ MonoBehaviour:
   blockedCellShakeSpeed: 38
   awardPackedBoxRewards: 1
   coinsPerPackedBox: 10
-  swapAnimationDuration: 0.35
   packedCoinVisualDelay: 0.95
   packedBoxMoveDuration: 0.37
   boardBoxes: []
@@ -33105,8 +33091,6 @@ MonoBehaviour:
   BGImage: {fileID: 339707943}
   progressBar: {fileID: 1880380651}
   barText: {fileID: 369602342}
-  reviveCosts: 05000000070000000a0000000f00000014000000
-  costText: {fileID: 0}
   isReviveButtonPressed: 0
   isReviveActive: 0
   countdownDuration: 9
@@ -33467,13 +33451,35 @@ MonoBehaviour:
   boardCamera: {fileID: 0}
   effectRoot: {fileID: 0}
   visualLibrary: {fileID: 11400000, guid: 70ccf1227a73184499950e7253839261, type: 2}
-  settings: {fileID: 11400000, guid: 3cb7bcbf6d7a7b242a248247b8068918, type: 2}
-  glowMaterial: {fileID: 2100000, guid: eec1b64b631b4e64b9e0d9a3b20ae62a, type: 2}
+  showPlusOneLabel: 1
+  plusOneDuration: 0.7
+  plusOneRise: 80
+  plusOneFontSize: 52
+  showPlusOneIcon: 1
+  plusOneIconSize: 76
+  plusOneIconGap: 92
+  streakDelay: 0.22
+  streakDuration: 0.5
+  pathCurvature: 0.3
+  streakSize: {x: 300, y: 84}
+  streakAlpha: 1
+  useHotCore: 1
+  hotCoreScale: 0.52
+  streakSpriteOverride: {fileID: 0}
+  sparkleCount: 24
+  sparkleSizeRange: {x: 16, y: 40}
+  sparkleLifetime: 0.5
+  sparkleScatter: 34
+  sparkleFall: 40
+  sparkleSpriteOverride: {fileID: 0}
+  burstStarCount: 12
+  burstStarSizeRange: {x: 14, y: 34}
+  burstLifetime: 0.55
+  burstRadiusRange: {x: 30, y: 95}
+  burstColor: {r: 1, g: 0.93, b: 0.55, a: 1}
+  starSpriteOverride: {fileID: 0}
   impactClip: {fileID: 0}
   impactVolume: 0.7
-  testSource: {fileID: 0}
-  testTarget: {fileID: 0}
-  testColor: 1
 --- !u!114 &2060434956
 MonoBehaviour:
   m_ObjectHideFlags: 0

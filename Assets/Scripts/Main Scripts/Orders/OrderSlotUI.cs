@@ -56,8 +56,8 @@ public sealed class OrderSlotUI : MonoBehaviour
     [SerializeField, Min(0.01f), Tooltip("Seconds from peak back to transparent. Longer than the attack so it fades softly.")]
     private float glowDecay = 0.45f;
 
-    [SerializeField, Tooltip("Fallback halo color, used only when no OrderVfxSettings asset can be found.")]
-    private Color glowColor = new Color(0.867f, 0.984f, 1f, 1f);
+    [SerializeField, Tooltip("Warm halo color seen in the reference. Independent of the soda color on purpose.")]
+    private Color glowColor = new Color(1f, 0.92f, 0.55f, 1f);
 
     [Header("Completion")]
     [SerializeField, Min(0.01f), Tooltip("Seconds for the green tick to scale up from zero.")]
@@ -77,26 +77,6 @@ public sealed class OrderSlotUI : MonoBehaviour
     private bool restCaptured;
     private Sequence punchSequence;
     private Sequence glowSequence;
-
-    /// <summary>
-    /// The shared palette, or null while none can be found.
-    ///
-    /// The halo colour and the punch shape are read from here rather than from the
-    /// serialized fields above, because the panels in the five level scenes already
-    /// have the old warm-gold values baked into their YAML. Reading from the asset
-    /// means retuning the palette fixes every scene at once, and no scene file has
-    /// to be hand-edited. The serialized fields remain as the fallback.
-    /// </summary>
-    private OrderVfxSettings Settings => OrderVfxSettings.Resolve();
-
-    private Color ActiveGlowColor
-    {
-        get
-        {
-            OrderVfxSettings resolved = Settings;
-            return resolved != null ? resolved.SlotGlowColor : glowColor;
-        }
-    }
 
     /// <summary>Which order this slot renders. Assigned by OrderPanelUI.</summary>
     public int OrderIndex { get; private set; } = -1;
@@ -173,7 +153,7 @@ public sealed class OrderSlotUI : MonoBehaviour
             // sliced draw would stretch its middle row and column into bars.
             glowImage.type = Image.Type.Simple;
             glowImage.raycastTarget = false;
-            glowImage.color = WithAlpha(ActiveGlowColor, 0f);
+            glowImage.color = WithAlpha(glowColor, 0f);
             glowImage.rectTransform.sizeDelta = new Vector2(glowSize, glowSize);
         }
 
@@ -283,38 +263,20 @@ public sealed class OrderSlotUI : MonoBehaviour
         iconTransform.anchoredPosition = iconRestPosition;
         iconTransform.localScale = iconRestScale;
 
-        OrderVfxSettings resolved = Settings;
-
-        float peak = resolved != null ? resolved.IconPunchPeak : 1f + punchScale;
-        float dip = resolved != null ? resolved.IconPunchDip : 1f;
-        float duration = resolved != null ? resolved.IconPunchDuration : punchDuration;
-
-        // 1.0 -> peak -> dip -> 1.0. The dip is what makes the hit feel like an
-        // impact rather than a swell: a punch that only grows and relaxes reads as
-        // the icon breathing.
-        float up = duration * 0.35f;
-        float down = duration * 0.3f;
-        float settle = duration * 0.35f;
-
+        float half = punchDuration * 0.5f;
         punchSequence = DOTween.Sequence().SetUpdate(true);
-
         punchSequence.Append(iconTransform
-            .DOScale(iconRestScale * peak, up)
+            .DOAnchorPosY(iconRestPosition.y + punchHeight, half)
             .SetEase(Ease.OutQuad));
         punchSequence.Join(iconTransform
-            .DOAnchorPosY(iconRestPosition.y + punchHeight, up)
+            .DOScale(iconRestScale * (1f + punchScale), half)
             .SetEase(Ease.OutQuad));
-
         punchSequence.Append(iconTransform
-            .DOScale(iconRestScale * dip, down)
-            .SetEase(Ease.InOutQuad));
-        punchSequence.Join(iconTransform
-            .DOAnchorPosY(iconRestPosition.y, down)
+            .DOAnchorPosY(iconRestPosition.y, half)
             .SetEase(Ease.InQuad));
-
-        punchSequence.Append(iconTransform
-            .DOScale(iconRestScale, settle)
-            .SetEase(Ease.OutBack));
+        punchSequence.Join(iconTransform
+            .DOScale(iconRestScale, half)
+            .SetEase(Ease.InQuad));
     }
 
     private void CaptureRestState()
