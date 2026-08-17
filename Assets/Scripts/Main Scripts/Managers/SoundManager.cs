@@ -79,11 +79,16 @@ public class SoundManager : MonoBehaviour
         PlaySound(boxSpawnClip, boxSpawnVolume);
     }
 
-    /// <summary>Plays main music only in real gameplay levels (Level1 and later).</summary>
+    /// <summary>
+    /// Plays main music in any playable board scene - campaign levels and
+    /// sandbox test levels alike. Music is presentation, so it uses
+    /// IsPlayableLevelScene rather than the campaign-only number parse; a
+    /// sandbox level playing in silence just looks broken.
+    /// </summary>
     public void PlayLevelMusic()
     {
         string sceneName = SceneManager.GetActiveScene().name;
-        if (!LevelNaming.TryGetLevelNumber(sceneName, out _))
+        if (!LevelNaming.IsPlayableLevelScene(sceneName))
         {
             return;
         }

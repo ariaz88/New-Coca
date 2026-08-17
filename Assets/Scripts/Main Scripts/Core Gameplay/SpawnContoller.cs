@@ -816,16 +816,23 @@ public class SpawnContoller : MonoBehaviour
         {
             foreach (Soda.SodaColor color in allowedColors)
             {
-                if (!palette.Contains(color))
+                // Soda.Yellow has no supply, no order and no solver coverage.
+                // Dropped here rather than trusted not to be authored.
+                if (!Soda.IsSpawnable(color) || palette.Contains(color))
                 {
-                    palette.Add(color);
+                    continue;
                 }
+
+                palette.Add(color);
             }
         }
 
         if (palette.Count == 0)
         {
-            palette.AddRange((Soda.SodaColor[])Enum.GetValues(typeof(Soda.SodaColor)));
+            // Soda.SpawnableColors, not Enum.GetValues: the latter now includes
+            // Yellow, which would put the new art's yellow can into every level
+            // that leaves allowedColors empty.
+            palette.AddRange(Soda.SpawnableColors);
         }
 
         return palette;

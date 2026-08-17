@@ -155,6 +155,10 @@ public sealed class SodaVisualLibrary : ScriptableObject
             case Soda.SodaColor.Pink: return new Color(1f, 0.38f, 0.66f);
             case Soda.SodaColor.Green: return new Color(0.45f, 0.90f, 0.40f);
             case Soda.SodaColor.Purple: return new Color(0.72f, 0.45f, 0.95f);
+            // Unspawnable, so this never reaches an order card in normal play -
+            // it is here so a hand-authored Yellow reads as yellow instead of
+            // falling through to the white fallback and looking like a bug.
+            case Soda.SodaColor.Yellow: return new Color(1f, 0.83f, 0.20f);
             default: return Color.white;
         }
     }

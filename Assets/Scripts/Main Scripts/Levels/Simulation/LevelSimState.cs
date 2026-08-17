@@ -22,6 +22,11 @@ namespace CocaSorting.Levels.Simulation
     /// </summary>
     public sealed class SimBox
     {
+        // Must equal Soda.SpawnableColors.Length. Deliberately NOT the enum's
+        // length: Soda.SodaColor carries an unspawnable Yellow for the new Coke
+        // Pack art, and every colour here is used as a raw array index, so a
+        // seventh member would be an out-of-range crash in the solver rather
+        // than a wider board. If a colour is ever made spawnable, raise this.
         public const int ColorCount = 6;
 
         public int Id;

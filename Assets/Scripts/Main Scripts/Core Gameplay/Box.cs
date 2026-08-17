@@ -60,11 +60,23 @@ public class Box : MonoBehaviour, IRailItem
     private readonly List<Material> dragOverlayMaterials = new List<Material>();
     private Shader dragOverlayShader;
 
+    /// <summary>
+    /// A pristine overlay material, never copied into. Holds the shader's
+    /// declared defaults so RestoreOverlayOnlyProperties has something to read
+    /// them back from.
+    /// </summary>
+    private Material dragOverlayDefaults;
+
+    private static readonly int ShadeColorId = Shader.PropertyToID("_ShadeColor");
+    private static readonly int FlatLightingId = Shader.PropertyToID("_FlatLighting");
+
     private sealed class DragRendererState
     {
         public Renderer Renderer;
         public int SortingOrder;
         public Material[] SharedMaterials;
+        public int Layer;
+        public bool LayerChanged;
     }
 
     [Header("Board")]
@@ -908,9 +920,14 @@ public class Box : MonoBehaviour, IRailItem
 
     /// <summary>
     /// Gives this Box and its Soda renderers visual priority without changing
-    /// the transform used by dragging or placement. ToyGloss moves only their
-    /// rendered depth close to the camera; the original materials and sorting
-    /// orders are restored as soon as dragging ends.
+    /// the transform used by dragging or placement. The original materials and
+    /// sorting orders are restored as soon as dragging ends.
+    ///
+    /// The overlay swap only happens for materials the overlay can reproduce
+    /// EXACTLY - see CanOverlayReproduce. A dragged box must look identical to a
+    /// resting one; a shader that merely approximates the source is worse than
+    /// no depth priority at all, because the colour shift is visible on every
+    /// single drag while the occlusion it prevents is rare.
     /// </summary>
     private void EnableDraggedDisplayPriority()
     {
@@ -929,14 +946,31 @@ public class Box : MonoBehaviour, IRailItem
             }
 
             Material[] originalMaterials = childRenderer.sharedMaterials;
-            dragRendererStates.Add(new DragRendererState
+            DragRendererState state = new DragRendererState
             {
                 Renderer = childRenderer,
                 SortingOrder = childRenderer.sortingOrder,
-                SharedMaterials = originalMaterials
-            });
+                SharedMaterials = originalMaterials,
+                Layer = childRenderer.gameObject.layer
+            };
+            dragRendererStates.Add(state);
 
-            if (dragOverlayShader != null)
+            bool overlayCanReproduce = CanOverlayReproduce(originalMaterials);
+
+            // Materials the overlay shader cannot reproduce go to the overlay
+            // camera instead, which draws them on top without touching how they
+            // are shaded. Preferred over the shader swap; the swap survives only
+            // because it is exact for ToyGloss and is what the 25 shipped levels
+            // have always used.
+            if (!overlayCanReproduce && DraggedItemOverlay.IsAvailable)
+            {
+                childRenderer.gameObject.layer = DraggedItemOverlay.Layer;
+                state.LayerChanged = true;
+                childRenderer.sortingOrder = short.MaxValue;
+                continue;
+            }
+
+            if (dragOverlayShader != null && overlayCanReproduce)
             {
                 Material[] overlayMaterials = new Material[originalMaterials.Length];
                 for (int i = 0; i < originalMaterials.Length; i++)
@@ -954,6 +988,7 @@ public class Box : MonoBehaviour, IRailItem
                     };
                     int overlayRenderQueue = overlayMaterial.renderQueue;
                     overlayMaterial.CopyPropertiesFromMaterial(originalMaterial);
+                    RestoreOverlayOnlyProperties(overlayMaterial, originalMaterial);
                     overlayMaterial.renderQueue = overlayRenderQueue;
                     overlayMaterials[i] = overlayMaterial;
                     dragOverlayMaterials.Add(overlayMaterial);
@@ -964,6 +999,108 @@ public class Box : MonoBehaviour, IRailItem
 
             childRenderer.sortingOrder = short.MaxValue;
         }
+    }
+
+    /// <summary>
+    /// Puts back every DraggedBoxOverlay property the source material could not
+    /// supply.
+    ///
+    /// Material.CopyPropertiesFromMaterial replaces the destination's whole
+    /// property block rather than merging into it, so anything the source does
+    /// not declare is left at ZERO - not at the shader's declared default. The
+    /// overlay's last line is "color *= _Brightness", so a source material
+    /// without a _Brightness property rendered the dragged box PURE BLACK.
+    ///
+    /// This never showed up before because the only materials ever dragged were
+    /// CocaSorting/ToyGloss, which happens to declare the same property names as
+    /// the overlay, so every one of them survived the copy. The new Coke Pack art
+    /// is Universal Render Pipeline/Lit - it carries _MainTex and _Color, but
+    /// none of the overlay's styling properties.
+    ///
+    /// Driven off the shader's property list rather than a hand-written set, so
+    /// a future material with yet another shader cannot reintroduce this.
+    /// </summary>
+    private void RestoreOverlayOnlyProperties(Material overlayMaterial, Material sourceMaterial)
+    {
+        if (overlayMaterial == null || sourceMaterial == null || dragOverlayShader == null)
+        {
+            return;
+        }
+
+        if (dragOverlayDefaults == null)
+        {
+            dragOverlayDefaults = new Material(dragOverlayShader)
+            {
+                name = "Drag Overlay Defaults",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+        }
+
+        int propertyCount = dragOverlayShader.GetPropertyCount();
+        for (int index = 0; index < propertyCount; index++)
+        {
+            string propertyName = dragOverlayShader.GetPropertyName(index);
+
+            // The source supplied this one, so the copy carried a real value.
+            if (sourceMaterial.HasProperty(propertyName))
+            {
+                continue;
+            }
+
+            switch (dragOverlayShader.GetPropertyType(index))
+            {
+                case UnityEngine.Rendering.ShaderPropertyType.Color:
+                    overlayMaterial.SetColor(propertyName, dragOverlayDefaults.GetColor(propertyName));
+                    break;
+                case UnityEngine.Rendering.ShaderPropertyType.Vector:
+                    overlayMaterial.SetVector(propertyName, dragOverlayDefaults.GetVector(propertyName));
+                    break;
+                case UnityEngine.Rendering.ShaderPropertyType.Float:
+                case UnityEngine.Rendering.ShaderPropertyType.Range:
+                    overlayMaterial.SetFloat(propertyName, dragOverlayDefaults.GetFloat(propertyName));
+                    break;
+                case UnityEngine.Rendering.ShaderPropertyType.Texture:
+                    overlayMaterial.SetTexture(propertyName, dragOverlayDefaults.GetTexture(propertyName));
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// True only when the drag overlay can reproduce these materials EXACTLY.
+    ///
+    /// The overlay shader is CocaSorting/ToyGloss plus a vertex depth trick, so
+    /// it is pixel-identical for ToyGloss materials and an approximation for
+    /// anything else. _ShadeColor is the marker: ToyGloss declares it, Universal
+    /// Render Pipeline/Lit does not.
+    ///
+    /// Approximating was tried and rejected. The overlay has no ambient term,
+    /// and this project runs Flat ambient at ~(0.72, 0.71, 0.82) - a large share
+    /// of total light - so tinting could not close the gap (0.83 green against
+    /// URP Lit's 1.38 across every shade/wrap combination). Adding a URP-Lit-like
+    /// path to the shader got within ~3%, and that was still visible on the new
+    /// Coke Pack art on every drag.
+    ///
+    /// When this returns false the caller uses DraggedItemOverlay instead, which
+    /// gets the item drawn on top via a Depth-only-clear camera while leaving its
+    /// materials completely alone.
+    /// </summary>
+    private static bool CanOverlayReproduce(Material[] materials)
+    {
+        if (materials == null)
+        {
+            return false;
+        }
+
+        foreach (Material material in materials)
+        {
+            if (material != null && !material.HasProperty(ShadeColorId))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void RestoreNormalDisplayPriority()
@@ -977,6 +1114,11 @@ public class Box : MonoBehaviour, IRailItem
 
             state.Renderer.sharedMaterials = state.SharedMaterials;
             state.Renderer.sortingOrder = state.SortingOrder;
+
+            if (state.LayerChanged)
+            {
+                state.Renderer.gameObject.layer = state.Layer;
+            }
         }
 
         dragRendererStates.Clear();
@@ -995,6 +1137,14 @@ public class Box : MonoBehaviour, IRailItem
     private void OnDisable()
     {
         RestoreNormalDisplayPriority();
+
+        // Cached across drags, so it outlives RestoreNormalDisplayPriority and
+        // has to be released here or every Box leaks one hidden material.
+        if (dragOverlayDefaults != null)
+        {
+            Destroy(dragOverlayDefaults);
+            dragOverlayDefaults = null;
+        }
     }
 
     private void ClearCurrentHighlight()

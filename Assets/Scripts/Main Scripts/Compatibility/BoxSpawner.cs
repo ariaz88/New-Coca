@@ -238,7 +238,9 @@ public class BoxSpawner : MonoBehaviour
 
     private Soda.SodaColor GetRandomSodaColor()
     {
-        Soda.SodaColor[] colors = (Soda.SodaColor[])System.Enum.GetValues(typeof(Soda.SodaColor));
+        // Soda.SpawnableColors, not Enum.GetValues: the enum now carries an
+        // unspawnable Yellow for the new Coke Pack art.
+        Soda.SodaColor[] colors = Soda.SpawnableColors;
         return colors[Random.Range(0, colors.Length)];
     }
 
@@ -373,7 +375,9 @@ public class BoxSpawner : MonoBehaviour
 
     private Soda.SodaColor GetRandomSodaColor()
     {
-        Soda.SodaColor[] colors = (Soda.SodaColor[])System.Enum.GetValues(typeof(Soda.SodaColor));
+        // Soda.SpawnableColors, not Enum.GetValues: the enum now carries an
+        // unspawnable Yellow for the new Coke Pack art.
+        Soda.SodaColor[] colors = Soda.SpawnableColors;
         return colors[Random.Range(0, colors.Length)];
     }
 
