@@ -210,15 +210,11 @@ public class Board : MonoBehaviour
     [Header("Packed Box Animation")]
     [SerializeField, Min(0.01f)] private float packedBoxMoveDuration = 0.37f;
 
-    [Tooltip("How long a packed box takes to slide off the right-hand edge of the screen.")]
-    [SerializeField, Min(0.01f)] private float packedBoxExitDuration = 0.5f;
+    [Tooltip("Timing of the pull-back and launch a packed box plays as it leaves the board.")]
+    [SerializeField] private PackedBoxExitSettings packedBoxExit = new PackedBoxExitSettings();
 
-    // Viewport x = 1 is the right edge of the screen; the margin past it guarantees the
-    // box is fully out of view before it is destroyed, whatever size it is.
-    private const float OffScreenViewportX = 1.25f;
-
-    // Only used if there is no Camera.main to measure the screen edge against.
-    private const float OffScreenFallbackDistance = 12f;
+    [Tooltip("The confetti, dust and sparkle burst played as a box closes.")]
+    [SerializeField] private PackedBoxVfxSettings packedBoxVfx = new PackedBoxVfxSettings();
 
     public List<Box> boardBoxes = new List<Box>();
     public Box lastPlacedBox;
@@ -1285,12 +1281,16 @@ public class Board : MonoBehaviour
         }
     }
 
-    // Sends a packed box off the right-hand edge of the screen and destroys it once it
-    // is clear of the view. This animates a copy rather than the box itself because
-    // RetireBox destroys the real one on the same frame it is packed, so anything
-    // animated on the original would never be seen.
+    // Spawns the closed-box copy that plays the shipping animation: burst, pull back to
+    // the left, then launch off the right of the screen. A copy is used rather than the
+    // box itself because RetireBox destroys the real one on the same frame it is packed,
+    // so anything animated on the original would never be seen.
     private void MovePackedCopyOffScreen(Vector3 sourcePosition)
     {
+        Camera cam = Camera.main;
+
+        PackedBoxVfx.Play(sourcePosition, cam, packedBoxVfx);
+
         if (boxPref == null)
         {
             return;
@@ -1302,36 +1302,12 @@ public class Board : MonoBehaviour
         // changes nothing about the board or the match rules - it is purely visual.
         Vector3 restScale = movingBox.transform.localScale;
         DOTween.Sequence()
+            .SetUpdate(true)
             .Append(movingBox.transform.DOScale(restScale * 1.08f, 0.06f).SetEase(Ease.OutBack))
             .Append(movingBox.transform.DOScale(restScale * 0.96f, 0.05f).SetEase(Ease.InOutQuad))
             .Append(movingBox.transform.DOScale(restScale, 0.05f).SetEase(Ease.OutQuad));
 
-        movingBox.transform.DOMove(GetOffScreenRightPosition(sourcePosition), packedBoxExitDuration)
-            .SetEase(Ease.InQuad)
-            .OnComplete(() =>
-            {
-                if (movingBox != null)
-                {
-                    Destroy(movingBox);
-                }
-            });
-    }
-
-    // Screen-right, not world +X: the level cameras are angled, so travelling along a
-    // world axis would not read as horizontal on screen. The height is pinned back to
-    // the source so the box leaves flat instead of drifting up or down on its way out.
-    private Vector3 GetOffScreenRightPosition(Vector3 sourcePosition)
-    {
-        Camera cam = Camera.main;
-        if (cam == null)
-        {
-            return sourcePosition + Vector3.right * OffScreenFallbackDistance;
-        }
-
-        Vector3 viewport = cam.WorldToViewportPoint(sourcePosition);
-        Vector3 target = cam.ViewportToWorldPoint(new Vector3(OffScreenViewportX, viewport.y, viewport.z));
-        target.y = sourcePosition.y;
-        return target;
+        PackedBoxExit.Play(movingBox, cam, packedBoxExit);
     }
 
     private void CheckBoardFill()

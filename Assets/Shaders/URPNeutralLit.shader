@@ -6,6 +6,11 @@ Shader "CocaSorting/URPNeutralLit"
         _MainTex ("Albedo", 2D) = "white" {}
         _Metallic ("Metallic", Range(0,1)) = 0
         _Glossiness ("Smoothness", Range(0,1)) = 0.35
+
+        // Depth comparison, overridable per material instance. 4 is LEqual, the normal
+        // behaviour every existing material keeps. A packed box on its way off screen
+        // sets this to 8 (Always) so it draws over the board instead of through it.
+        [HideInInspector] _ZTest ("ZTest", Float) = 4
     }
 
     SubShader
@@ -23,7 +28,7 @@ Shader "CocaSorting/URPNeutralLit"
             Tags { "LightMode"="UniversalForward" }
             Cull Back
             ZWrite On
-            ZTest LEqual
+            ZTest [_ZTest]
 
             HLSLPROGRAM
             #pragma target 3.0
