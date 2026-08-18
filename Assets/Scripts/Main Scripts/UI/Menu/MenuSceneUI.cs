@@ -177,13 +177,13 @@ public sealed class MenuSceneUI : MonoBehaviour
         button.onClick.AddListener(EnterLevel);
 
         GameObject labelHost = NewUIObject("Label", host.transform);
-        TextMeshProUGUI label = labelHost.AddComponent<TextMeshProUGUI>();
-        label.text = "Level " + HomeButtonLevel;
-        label.alignment = TextAlignmentOptions.Center;
-        label.fontSize = 72f;
-        label.fontStyle = FontStyles.Bold;
-        label.color = Color.white;
-        label.raycastTarget = false;
+        levelButtonLabel = labelHost.AddComponent<TextMeshProUGUI>();
+        levelButtonLabel.text = "Level " + NextLevel;
+        levelButtonLabel.alignment = TextAlignmentOptions.Center;
+        levelButtonLabel.fontSize = 72f;
+        levelButtonLabel.fontStyle = FontStyles.Bold;
+        levelButtonLabel.color = Color.white;
+        levelButtonLabel.raycastTarget = false;
         Stretch(labelHost.GetComponent<RectTransform>());
     }
 
@@ -255,9 +255,10 @@ public sealed class MenuSceneUI : MonoBehaviour
             return;
         }
 
-        if (!LevelNaming.TryResolveLoadableSceneName(HomeButtonLevel, out string sceneName))
+        int level = NextLevel;
+        if (!LevelNaming.TryResolveLoadableSceneName(level, out string sceneName))
         {
-            Debug.LogWarning($"Level {HomeButtonLevel} is not in Build Settings.", this);
+            Debug.LogWarning($"Level {level} is not in Build Settings.", this);
             return;
         }
 
