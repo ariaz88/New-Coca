@@ -114,6 +114,14 @@ internal static class VisualStyleRuntime
 
     private static void ConfigureSceneRendering()
     {
+        // Ambient first: it is the whole reason the cans read flat. The authored
+        // (0.72, 0.71, 0.82) is ~0.48 linear against a 1.0 key light, so the lit
+        // and shadow sides sit only 3:1 apart and the lit side clips past 1.0.
+        // Only the URP/Lit art reacts - ToyGloss never samples ambient - so this
+        // reaches the cans and crate without touching the board.
+        if (settings != null)
+            settings.ApplyToRenderSettings();
+
         Type cameraDataType = Type.GetType(
             $"UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, {UniversalAssembly}");
 

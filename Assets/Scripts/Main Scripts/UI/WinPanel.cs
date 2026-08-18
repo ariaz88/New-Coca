@@ -231,6 +231,18 @@ public class WinPanel : MonoBehaviour
         }
 
         int nextLogicalLevel = currentLogicalLevel + 1;
+
+        // Finishing level 5 hands the player to the menu instead of straight into
+        // level 6. Progress is still recorded, so the menu's Level button and a
+        // direct load both arrive at the same place.
+        if (nextLogicalLevel == MenuSceneUI.HomeButtonLevel &&
+            Application.CanStreamedLevelBeLoaded(MenuSceneUI.SceneName))
+        {
+            GameDataManager.instance?.SetLevel(nextLogicalLevel);
+            SceneManager.LoadScene(MenuSceneUI.SceneName);
+            return;
+        }
+
         if (LevelNaming.TryResolveLoadableSceneName(nextLogicalLevel, out _))
         {
             LoadConfiguredLevel(nextLogicalLevel);

@@ -2976,10 +2976,10 @@ MonoBehaviour:
   levelOrders:
   - kind: 0
     color: 4
-    requiredCount: 3
+    requiredCount: 10
   - kind: 0
     color: 1
-    requiredCount: 3
+    requiredCount: 10
   drawLayoutGizmos: 1
   playableCellGizmoColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.9}
   removedCellGizmoColor: {r: 0.38, g: 0.18, b: 0.07, a: 0.75}
@@ -3506,14 +3506,14 @@ MonoBehaviour:
   railExhaustionPolicy: 2
   fallbackSeed: 17092
   allowedColors: 0400000001000000
-  orderColorWeight: 2
+  orderColorWeight: 4
   minSodasPerBox: 1
   maxSodasPerBox: 3
   minDistinctColorsPerBox: 1
   maxDistinctColorsPerBox: 1
   useColorMixChances: 0
-  singleColorChance: 100
-  twoColorChance: 0
+  singleColorChance: 70
+  twoColorChance: 30
   threeColorChance: 0
   speed: 100
   boxPrefab: {fileID: 8677507212249493355, guid: 6c7ef21cec80a3d47a0de2329d8902fa, type: 3}
@@ -13592,7 +13592,6 @@ GameObject:
   m_Component:
   - component: {fileID: 705507995}
   - component: {fileID: 705507994}
-  - component: {fileID: 705507996}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -13680,35 +13679,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!114 &705507996
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 705507993}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
-  m_UsePipelineSettings: 1
-  m_AdditionalLightsShadowResolutionTier: 2
-  m_CustomShadowLayers: 0
-  m_LightCookieSize: {x: 1, y: 1}
-  m_LightCookieOffset: {x: 0, y: 0}
-  m_SoftShadowQuality: 0
-  m_RenderingLayersMask:
-    serializedVersion: 0
-    m_Bits: 1
-  m_ShadowRenderingLayersMask:
-    serializedVersion: 0
-    m_Bits: 1
-  m_Version: 4
-  m_LightLayerMask: 1
-  m_ShadowLayerMask: 1
-  m_RenderingLayers: 1
-  m_ShadowRenderingLayers: 1
 --- !u!1 &715457172
 GameObject:
   m_ObjectHideFlags: 0
@@ -22477,7 +22447,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.3466108}
   m_AnchorMax: {x: 1, y: 0.78633827}
-  m_AnchoredPosition: {x: -307, y: 299}
+  m_AnchoredPosition: {x: -306.99997, y: 299}
   m_SizeDelta: {x: 0, y: -8.256165}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1370363074
