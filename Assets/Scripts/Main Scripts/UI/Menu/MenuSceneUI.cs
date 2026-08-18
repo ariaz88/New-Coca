@@ -55,6 +55,7 @@ public sealed class MenuSceneUI : MonoBehaviour
     private readonly List<Image> tabPlates = new List<Image>();
     private readonly List<TextMeshProUGUI> tabLabels = new List<TextMeshProUGUI>();
 
+    private TextMeshProUGUI levelButtonLabel;
     private bool sceneLoadRequested;
 
     private void Awake()
@@ -62,6 +63,16 @@ public sealed class MenuSceneUI : MonoBehaviour
         EnsureEventSystem();
         Build();
         SelectTab(HomeTabIndex);
+        RefreshLevelButton();
+    }
+
+    /// <summary>Re-reads progress, so returning to the menu re-labels the button.</summary>
+    private void RefreshLevelButton()
+    {
+        if (levelButtonLabel != null)
+        {
+            levelButtonLabel.text = "Level " + NextLevel;
+        }
     }
 
     // ------------------------------------------------------------------ build
